@@ -19,10 +19,10 @@ identificador       {letter}({letter}|{number})*
 
 %%
 
-"/*"([^}]|\n)*"*/"    {/* Ignora tudo entre "{" e "}" */}
+"/*"([^}]|\n)*"*/"  {/* Ignora tudo entre "{" e "}" */}
 "//".*              {/* Ignora tudo após "--* até o final da linha */}
 
-{whitespace}                {column_counter += strlen(yytext);}
+{whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0;}
 "bool"              {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); return TIPO_BOOL;}
 "int"               {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); return TIPO_INT;}
@@ -39,3 +39,41 @@ identificador       {letter}({letter}|{number})*
 "=="                {column_counter += strlen(yytext); return EQUAL;}
 "!="                {column_counter += strlen(yytext); return NOT_EQUAL;}
 
+"+"                 {column_counter += strlen(yytext); return PLUS;}
+"-"                 {column_counter += strlen(yytext); return MINUS;}
+"*"                 {column_counter += strlen(yytext); return MULTIPLY;}
+"/"                 {column_counter += strlen(yytext); return DIVIDE;}
+"%"                 {column_counter += strlen(yytext); return REMAINDER;}
+
+"!"                 {column_counter += strlen(yytext); return NOT;}
+"&&"                {column_counter += strlen(yytext); return AND;}
+"||"                {column_counter += strlen(yytext); return OR;}
+
+"("                 {column_counter += strlen(yytext); return LEFT_PARENTH;}
+")"                 {column_counter += strlen(yytext); return RIGHT_PARENTH;}
+"["                 {column_counter += strlen(yytext); return LEFT_BRACK;}
+"]"                 {column_counter += strlen(yytext); return RIGHT_BRACK;}
+"{"                 {column_counter += strlen(yytext); return LEFT_BRACES;}
+"}"                 {column_counter += strlen(yytext); return RIGHT_BRACES;}
+
+"\.\."              {column_counter += strlen(yytext); return INTERVAL;}
+"\."                {column_counter += strlen(yytext); return DOT;}
+":"                 {column_counter += strlen(yytext); return COLON;}
+";"                 {column_counter += strlen(yytext); return SEMICOLON;}
+
+"const"             {column_counter += strlen(yytext); return CONST;}
+"let"               {column_counter += strlen(yytext); return LET;}
+"&"                 {column_counter += strlen(yytext); return REF;}
+"if"                {column_counter += strlen(yytext); return IF;}
+"else"              {column_counter += strlen(yytext); return ELSE;}
+"loop"              {column_counter += strlen(yytext); return LOOP;}
+"while"             {column_counter += strlen(yytext); return WHILE;}
+"for"               {column_counter += strlen(yytext); return FOR;}
+
+"function"          {column_counter += strlen(yytext); return FUNCTION;}
+
+"return"            {column_counter += strlen(yytext); return RETURN;}
+"break"             {column_counter += strlen(yytext); return BREAK;}
+"continue"          {column_counter += strlen(yytext); return CONTINUE;}
+"struct"            {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); return STRUCT;}
+"array"             {column_counter += strlen(yytext); yytext.info.name = strdup(yytext); return ARRAY;}
