@@ -77,3 +77,40 @@ identificador       {letter}({letter}|{number})*
 "continue"          {column_counter += strlen(yytext); return CONTINUE;}
 "struct"            {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); return STRUCT;}
 "array"             {column_counter += strlen(yytext); yytext.info.name = strdup(yytext); return ARRAY;}
+
+"true"|"false"          {
+                            yylval.info.value.valor_bool = yytext[0] == 't' ? 1 : 0;
+                            yylval.info.name = strdup(yytext);
+                            column_counter += strlen(yytext);
+                            return VALOR_BOOL;
+
+                        }
+
+{number}+               {
+                            yylval.info.value.valor_int = atoin(yytext);
+                            yylval.info.name = strdup(yytext);
+                            column_counter += strlen(yytext);
+                            return VALOR_INT;
+                        }
+
+{number}+\.{number}+    {
+                            yylval.info.value.valor_float = strtof(yytext, NULL);
+                            yylval.info.name = strdup(yytext);
+                            column_counter += strlen(yytext);
+                            return VALOR_FLOAT;
+                        }
+
+\'.\'                   {
+                            yylval.info.value.valor_char = yytext[1];
+                            yylval.info.name = strdup(yytext);
+                            column_counter += strlen(yytext);
+                            return VALOR_CHAR;
+                        }
+
+\".*\"                  {
+                            yylval.info.value.valor_string = strdup(yytext + 1);
+                            yylval.info.value.valor_string[yyleng - 2] = '\0';
+                            yylval.info.name = strdup(yytext);
+                            column_counter += strlen(yytext);
+                            return VALOR_STRING;
+                        }
