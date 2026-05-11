@@ -13,14 +13,14 @@ int column_counter;
 number              [0-9]
 letter              [a-zA-Z\_]
 indentation         [ \t]
-whitespaces         {delim}+
+whitespace          [ \t]+
 newline             [\n]+
 identificador       {letter}({letter}|{number})*
 
 %%
 
-"/*"([^}]|\n)*"*/"  {/* Ignora tudo entre "{" e "}" */}
-"//".*              {/* Ignora tudo após "--* até o final da linha */}
+"/*"(.|\n)*?"*/"    {/* Ignora tudo entre "/asterico" e  " asterico/"  */}
+"//".*              {/* Ignora tudo após "//" até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0;}
@@ -76,7 +76,7 @@ identificador       {letter}({letter}|{number})*
 "break"             {column_counter += strlen(yytext); return BREAK;}
 "continue"          {column_counter += strlen(yytext); return CONTINUE;}
 "struct"            {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); return STRUCT;}
-"array"             {column_counter += strlen(yytext); yytext.info.name = strdup(yytext); return ARRAY;}
+"array"             {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); return ARRAY;}
 
 "true"|"false"          {
                             yylval.info.value.valor_bool = yytext[0] == 't' ? 1 : 0;
@@ -86,18 +86,18 @@ identificador       {letter}({letter}|{number})*
 
                         }
 
-{number}+               {
-                            yylval.info.value.valor_int = atoin(yytext);
-                            yylval.info.name = strdup(yytext);
-                            column_counter += strlen(yytext);
-                            return VALOR_INT;
-                        }
-
 {number}+\.{number}+    {
                             yylval.info.value.valor_float = strtof(yytext, NULL);
                             yylval.info.name = strdup(yytext);
                             column_counter += strlen(yytext);
                             return VALOR_FLOAT;
+                        }
+
+{number}+               {
+                            yylval.info.value.valor_int = atoi(yytext);
+                            yylval.info.name = strdup(yytext);
+                            column_counter += strlen(yytext);
+                            return VALOR_INT;
                         }
 
 \'.\'                   {
