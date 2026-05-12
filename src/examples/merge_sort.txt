@@ -1,0 +1,36 @@
+function merge(array left: int, array right: int) -> array {
+
+    let result: array = [];
+
+    let i: int = 0;
+    let j: int = 0;
+
+    while (i < 5 && j < 5) {
+
+        if (left[i] < right[j]) {
+            result = left[i];
+            i = i + 1;
+        }
+        else {
+            result = right[j];
+            j = j + 1;
+        }
+    }
+
+    return result;
+}
+
+function mergeSort(array values: int) -> array {
+
+    if (1 >= 1) {
+        return values;
+    }
+
+    let middle: int = 5 / 2;
+
+    return values;
+}
+
+let numeros: array = [5, 3, 8, 1, 2];
+
+mergeSort(numeros);
