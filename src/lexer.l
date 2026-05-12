@@ -4,6 +4,8 @@
 #include <string.h>
 
 int column_counter;
+
+extern int yyerror (char *msg); 
 %}
 
 %option noinput nounput
@@ -13,103 +15,115 @@ int column_counter;
 number              [0-9]
 letter              [a-zA-Z\_]
 indentation         [ \t]
-whitespaces         {delim}+
+whitespace          {indentation}+
 newline             [\n]+
 identificador       {letter}({letter}|{number})*
 
 %%
+
 
 "/*"([^}]|\n)*"*/"  {/* Ignora tudo entre "{" e "}" */}
 "//".*              {/* Ignora tudo após "--* até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0;}
-"bool"              {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); printf("TIPO_BOOL")};
-"int"               {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); printf("TIPO_INT")};
-"float"             {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); printf("TIPO_FLOAT")};
-"char"              {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); printf("TIPO_CHAR")};
-"string"            {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); printf("TIPO_STRING")};
+"bool"              {printf("TIPO_BOOL\n");}
 
-"="                 {column_counter += strlen(yytext); printf("ATTRIBUTION")};
+"s_int8"            {printf("TIPO_S_INT8\n");}
+"s_int16"           {printf("TIPO_S_INT16\n");}
+"s_int32"           {printf("TIPO_S_INT32\n");}
+"s_size"            {printf("TIPO_S_SIZE\n");}
+"u_int8"            {printf("TIPO_U_INT8\n");}
+"u_int16"           {printf("TIPO_U_INT16\n");}
+"u_int32"           {printf("TIPO_U_INT32\n");}
+"u_size"            {printf("TIPO_U_SIZE\n");}
 
-">"                 {column_counter += strlen(yytext); printf("GREATER")};
-"<"                 {column_counter += strlen(yytext); printf("LESS")};
-">="                {column_counter += strlen(yytext); printf("GREATER_EQUAL")};
-"<="                {column_counter += strlen(yytext); printf("LESS_EQUAL")};
-"=="                {column_counter += strlen(yytext); printf("EQUAL")};
-"!="                {column_counter += strlen(yytext); printf("NOT_EQUAL")};
+"float32"           {printf("TIPO_FLOAT32\n");}
+"float64"           {printf("TIPO_FLOAT64\n");}
 
-"+"                 {column_counter += strlen(yytext); printf("PLUS")};
-"-"                 {column_counter += strlen(yytext); printf("MINUS")};
-"*"                 {column_counter += strlen(yytext); printf("MULTIPLY")};
-"/"                 {column_counter += strlen(yytext); printf("DIVIDE")};
-"%"                 {column_counter += strlen(yytext); printf("REMAINDER")};
+"char"              {printf("TIPO_CHAR\n");}
+"string"            {printf("TIPO_STRING\n");}
 
-"!"                 {column_counter += strlen(yytext); printf("NOT")};
-"&&"                {column_counter += strlen(yytext); printf("AND")};
-"||"                {column_counter += strlen(yytext); printf("OR")};
+"="                 {printf("ATTRIBUTION\n");}
 
-"("                 {column_counter += strlen(yytext); printf("LEFT_PARENTH")};
-")"                 {column_counter += strlen(yytext); printf("RIGHT_PARENTH")};
-"["                 {column_counter += strlen(yytext); printf("LEFT_BRACK")};
-"]"                 {column_counter += strlen(yytext); printf("RIGHT_BRACK")};
-"{"                 {column_counter += strlen(yytext); printf("LEFT_BRACES")};
-"}"                 {column_counter += strlen(yytext); printf("RIGHT_BRACES")};
+">"                 {printf("GREATER\n");}
+"<"                 {printf("LESS\n");}
+">="                {printf("GREATER_EQUAL\n");}
+"<="                {printf("LESS_EQUAL\n");}
+"=="                {printf("EQUAL\n");}
+"!="                {printf("NOT_EQUAL\n");}
 
-"\.\."              {column_counter += strlen(yytext); printf("INTERVAL")};
-"\."                {column_counter += strlen(yytext); printf("DOT")};
-":"                 {column_counter += strlen(yytext); printf("COLON")};
-";"                 {column_counter += strlen(yytext); printf("SEMICOLON")};
+"+"                 {printf("PLUS\n");}
+"-"                 {printf("MINUS\n");}
+"*"                 {printf("MULTIPLY\n");}
+"/"                 {printf("DIVIDE\n");}
+"%"                 {printf("REMAINDER\n");}
 
-"const"             {column_counter += strlen(yytext); printf("CONST")};
-"let"               {column_counter += strlen(yytext); printf("LET")};
-"&"                 {column_counter += strlen(yytext); printf("REF")};
-"if"                {column_counter += strlen(yytext); printf("IF")};
-"else"              {column_counter += strlen(yytext); printf("ELSE")};
-"loop"              {column_counter += strlen(yytext); printf("LOOP")};
-"while"             {column_counter += strlen(yytext); printf("WHILE")};
-"for"               {column_counter += strlen(yytext); printf("FOR")};
+"!"                 {printf("NOT\n");}
+"&&"                {printf("AND\n");}
+"||"                {printf("OR\n");}
 
-"function"          {column_counter += strlen(yytext); printf("FUNCTION")};
+"("                 {printf("LEFT_PARENTH\n");}
+")"                 {printf("RIGHT_PARENTH\n");}
+"["                 {printf("LEFT_BRACK\n");}
+"]"                 {printf("RIGHT_BRACK\n");}
+"{"                 {printf("LEFT_BRACES\n");}
+";}"                 {printf("RIGHT_BRACES\n");}
 
-"return"            {column_counter += strlen(yytext); printf("RETURN")};
-"break"             {column_counter += strlen(yytext); printf("BREAK")};
-"continue"          {column_counter += strlen(yytext); printf("CONTINUE")};
-"struct"            {column_counter += strlen(yytext); yylval.info.name = strdup(yytext); printf("STRUCT")};
-"array"             {column_counter += strlen(yytext); yytext.info.name = strdup(yytext); printf("ARRAY")};
+"\.\."              {printf("INTERVAL\n");}
+"\."                {printf("DOT\n");}
+":"                 {printf("COLON\n");}
+";"                 {printf("SEMICOLON\n");}
+
+"const"             {printf("CONST\n");}
+"let"               {printf("LET\n");}
+"&"                 {printf("REF\n");}
+"if"                {printf("IF\n");}
+"else"              {printf("ELSE\n");}
+"loop"              {printf("LOOP\n");}
+"while"             {printf("WHILE\n");}
+"for"               {printf("FOR\n");}
+
+"func"              {printf("FUNCTION\n");}
+
+"return"            {printf("RETURN\n");}
+"break"             {printf("BREAK\n");}
+"continue"          {printf("CONTINUE\n");}
+"struct"            {printf("STRUCT\n");}
+"array"             {printf("ARRAY\n");}
+[a-zA-Z][a-zA-Z0-9]* {printf("ID(%s)\n",yytext);}
 
 "true"|"false"          {
-                            yylval.info.value.valor_bool = yytext[0] == 't' ? 1 : 0;
-                            yylval.info.name = strdup(yytext);
-                            column_counter += strlen(yytext);
-                            printf("VALOR_BOOL");
+                            printf("VALOR_BOOL\n");
                         }
 
 {number}+               {
-                            yylval.info.value.valor_int = atoin(yytext);
-                            yylval.info.name = strdup(yytext);
-                            column_counter += strlen(yytext);
-                            printf("VALOR_INT");
+                            printf("VALOR_INT\n");
                         }
 
 {number}+\.{number}+    {
-                            yylval.info.value.valor_float = strtof(yytext, NULL);
-                            yylval.info.name = strdup(yytext);
-                            column_counter += strlen(yytext);
-                            printf("VALOR_FLOAT");
+                            printf("VALOR_FLOAT\n");
                         }
 
 \'.\'                   {
-                            yylval.info.value.valor_char = yytext[1];
-                            yylval.info.name = strdup(yytext);
-                            column_counter += strlen(yytext);
-                            printf("VALOR_CHAR");
+                            printf("VALOR_CHAR\n");
                         }
 
 \".*\"                  {
-                            yylval.info.value.valor_string = strdup(yytext + 1);
-                            yylval.info.value.valor_string[yyleng - 2] = '\0';
-                            yylval.info.name = strdup(yytext);
-                            column_counter += strlen(yytext);
-                            printf("VALOR_STRINT");
+                            printf("VALOR_STRING\n");
                         }
+
+.                      {printf("Caracter Inválido\n");}
+
+%%
+
+#ifndef yywrap
+   // Indicates no more input 
+   int yywrap (void) {return 1;}
+#endif
+
+int main(void)
+{
+  yylex();  
+  return 0;
+}
