@@ -38,7 +38,7 @@ func merge_sort(arr: &[u_int32]) -> Vec<u_int32> {
 
 
 func main() -> Result<(), String> {
-   let array : [i32; 5] = [5, 4, 3, 2, 1];
+   let array : [s_int32; 5] = [5, 4, 3, 2, 1];
    let result : Vec<u_int32> = merge_sort(&array);
    for (i in result) {
        print("{}",i)
