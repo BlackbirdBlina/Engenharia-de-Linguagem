@@ -60,6 +60,8 @@ id                  {letter}({letter}|{number})*
 "=="                { printf("EQUAL%s", char_at_end);}
 "!="                { printf("NOT_EQUAL%s", char_at_end);}
 
+"++"                { printf("INCREMENT%s", char_at_end);}
+
 "+"                 { printf("PLUS%s", char_at_end);}
 "-"                 { printf("MINUS%s", char_at_end);}
 "*"                 { printf("MULTIPLY%s", char_at_end);}
@@ -133,8 +135,23 @@ id                  {letter}({letter}|{number})*
    int yywrap (void) {return 1;}
 #endif
 
-int main(void)
+int main(int argc, char **argv)
 {
-  yylex();  
-  return 0;
+    if (argc > 1)
+    {
+        yyin = fopen(argv[1], "r");
+
+        if (!yyin)
+        {
+            perror("Erro ao abrir arquivo");
+            return 1;
+        }
+    }
+
+    yylex();
+
+    if (yyin)
+        fclose(yyin);
+
+    return 0;
 }

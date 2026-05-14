@@ -1,0 +1,33 @@
+func partition(arr: [u_int32], low: u_size, high: u_size) -> u_size {
+    let pivot: u_int32 = arr[high];
+    let i: u_size = low;
+    let j: u_size = low;
+
+    while (j < high) {
+        if (arr[j] <= pivot) {
+            let temp: u_int32 = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+            i++;
+        }
+
+        j++;
+    }
+
+    let temp: u_int32 = arr[i];
+    arr[i] = arr[high];
+    arr[high] = temp;
+    return i;
+}
+
+func quick(arr: [u_int32], low: u_size, high: u_size) {
+    if (low > high){
+        let pivot_index: u_size = partition(arr, low, high);
+        
+        if (pivot_index > 0) {
+            quick(arr, low, pivot_index - 1);
+        }
+
+        quick(arr, pivot_index + 1, high);
+    }
+}
