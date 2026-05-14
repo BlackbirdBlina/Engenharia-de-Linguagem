@@ -4,8 +4,7 @@
 #include <string.h>
 
 int column_counter = 0;
-int line_counter = 0;
-char char_at_end[] = " ";
+char char_at_end[] = "\n";
 
 extern int yyerror (char *msg); 
 %}
@@ -19,7 +18,7 @@ letter              [a-zA-Z\_]
 indentation         [ \t]
 whitespace          {indentation}+
 newline             [\n]+
-identificador       {letter}({letter}|{number})*
+id                  {letter}({letter}|{number})*
 
 %%
 
@@ -102,27 +101,28 @@ identificador       {letter}({letter}|{number})*
 "continue"          { printf("CONTINUE%s", char_at_end);}
 "struct"            { printf("STRUCT%s", char_at_end);}
 
-"true"|"false"          {
-                            printf("VALOR_BOOL%s", char_at_end);
-                        }
 
-{number}+               {
-                            printf("VALOR_INT%s", char_at_end);
-                        }
+"true"|"false"                              {
+                                                printf("VALOR_BOOL%s", char_at_end);
+                                            }
 
-{number}+\.{number}+    {
-                            printf("VALOR_FLOAT%s", char_at_end);
-                        }
+{number}+(E[+-]?{number}+)?                 {
+                                                printf("VALOR_INT%s", char_at_end);
+                                            }
 
-\'.\'                   {
-                            printf("VALOR_CHAR%s", char_at_end);
-                        }
+{number}+\.{number}+(E[+-]?{number}+)?      {
+                                                printf("VALOR_FLOAT%s", char_at_end);
+                                            }
 
-\".*\"                  {
-                            printf("VALOR_STRING%s", char_at_end);
-                        }
+\'.\'                                       {
+                                                printf("VALOR_CHAR%s", char_at_end);
+                                            }
 
-[a-zA-Z][a-zA-Z0-9_]* { printf("ID(%s)%s", yytext, char_at_end);}
+\".*\"                                      {
+                                                printf("VALOR_STRING%s", char_at_end);
+                                            }
+
+{id}                    { printf("ID(%s)%s", yytext, char_at_end);}
 
 .                       { printf("Error_line_text(%d,%s)%s", yylineno, yytext, char_at_end) ;}
 
