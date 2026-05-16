@@ -69,7 +69,7 @@ func main() -> Result<(), String> {
 
     // Estrutura while
     while (n < 10) {
-        println(" ", n);
+        println("{n}\n");
     }
     n += 1;
     ```

@@ -61,6 +61,11 @@ id                  {letter}({letter}|{number})*
 "!="                { printf("NOT_EQUAL%s", char_at_end);}
 
 "++"                { printf("INCREMENT%s", char_at_end);}
+"--"                { printf("DECREMENT%s", char_at_end);}
+"+="                { printf("PLUS_ATTRIBUTION%s", char_at_end);}
+"-="                { printf("MINUS_ATTRIBUTION%s", char_at_end);}
+"=+"                { printf("MULTIPLY_ATTRIBUTION%s", char_at_end);}
+"=-"                { printf("DIVIDE_ATTRIBUTION%s", char_at_end);}
 
 "+"                 { printf("PLUS%s", char_at_end);}
 "-"                 { printf("MINUS%s", char_at_end);}
@@ -84,25 +89,30 @@ id                  {letter}({letter}|{number})*
 ":"                 { printf("COLON%s", char_at_end);}
 ";"                 { printf("SEMICOLON%s", char_at_end);}
 ","                 { printf("COMMA%s", char_at_end);}
+"\{"                { printf("LEFT_BRACE%s", char_at_end);}
 
 "const"             { printf("CONST%s", char_at_end);}
 "let"               { printf("LET%s", char_at_end);}
+"mute"              { printf("MUTABLE%s", char_at_end);}
 "&"                 { printf("REF%s", char_at_end);}
 "if"                { printf("IF%s", char_at_end);}
 "else"              { printf("ELSE%s", char_at_end);}
+"match"             { printf("MATCH%s", char_at_end);}
 "loop"              { printf("LOOP%s", char_at_end);}
 "while"             { printf("WHILE%s", char_at_end);}
 "for"               { printf("FOR%s", char_at_end);}
-"in"                { printf("IN%s", char_at_end);}
+"in"                { printf("IN%s", char_at_end)}
 
 "func"              { printf("FUNCTION%s", char_at_end);}
 "->"                { printf("ARROW%s", char_at_end);}
+"proced"            { printf("PROCEDURE%s", char_at_end);}
+"pure"              { printf("PURE%s", char_at_end);}
 
 "return"            { printf("RETURN%s", char_at_end);}
 "break"             { printf("BREAK%s", char_at_end);}
 "continue"          { printf("CONTINUE%s", char_at_end);}
 "struct"            { printf("STRUCT%s", char_at_end);}
-
+"enum"              { printf("ENUM%s", char_at_end);}
 
 "true"|"false"                              {
                                                 printf("VALOR_BOOL%s", char_at_end);
