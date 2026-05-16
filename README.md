@@ -19,10 +19,10 @@ sudo apt-get install flex
 flex arquivo.l
 
 # 4. Compile o arquivo lex.yy.c
-gcc lex.yy.c -ll
+gcc -o lex lex.yy.c -ll
 
-# 5. Execute o ./a.out gerado passando o fluxo de entrada para ele
-./a.out < nomePrograma.kjt
+# 5. Execute o ./lex gerado passando o fluxo de entrada para ele
+./lex < nomePrograma.kjt
 ```
 
 - Nome da linguagem: Kojito
@@ -50,16 +50,17 @@ func main() -> Result<(), String> {
 
 - Na linguagem Kojito, usamos tipagem estática.
 
-    ```bash
+    ```c
     // Declaração de variável
     let a : u_int32 = 0;
     let b : String = “Hello!”;
     ```
+
 ### Estruturas de decisão e repetição
 
-- Na linguagem Kojito, usamos if e else, bem como while, for e loop
+- Além disso, usamos if e else, bem como while, for e loop.
 
-    ```bash
+    ```c
     // Estrutura if
     if (idade <= 18) {
            println("Maior de idade");
@@ -71,5 +72,91 @@ func main() -> Result<(), String> {
     while (n < 10) {
         println("{n}\n");
     }
-    n += 1;
+
+    // Estrutura loop
+    let i : u_int8 = 0; 
+    loop {
+        println("{n}\n");
+
+        if (i == 20) {
+            break;
+        }
+
+        i++;
+    }
     ```
+
+### Referências
+
+- Quando uma variável é definida, ela terá apenas um dono,
+que será a função que a declarou. Se for preciso outra função
+olhar e modificar o valor dela, precisará ser passado uma referência,
+da seguinte maneira:
+
+    ```c
+    func transform_to_zero(i: &mut u8) {
+        *i = 0
+    }
+
+    func main() {
+        let t : u_int16 = 10;
+        transform_to_zero(&mut t);
+    }
+    ```
+
+### Funções
+
+- Além do modo tradicional de declarar uma função, onde é colocado
+os inputs e o retorno, temos também a opção de anteceder a palavra
+chave com um "pure", garantindo que a função não 
+
+    ```c
+    pure func return_zero() -> u8 {
+        return 0;
+    }
+
+    func main() {
+        let t : u_int32 = 10;
+        println( "{}", return_zero() );
+    }
+    ```
+
+### Procedures
+
+- Também é possível definir um subprograma que garante que não é
+retornado variáveis, usando a palavra chave procedure.
+
+    ```c
+    procedure print() {
+        println("Oi!");
+    }
+    ```
+
+### Struct, Enum e Union
+
+```c
+    enum Directions {
+        North,
+        West,
+        South,
+        East
+    };
+
+    struct Aluno {
+        String name;
+        u_int16 age = 0;
+    };
+
+    func main() {
+        let aluno = Aluno {
+            name: "Pedro",
+            age: 20,
+        };
+
+        let dir = Direction.North;
+    }
+
+
+```
+
+
