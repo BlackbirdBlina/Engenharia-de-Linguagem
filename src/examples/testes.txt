@@ -1,0 +1,6 @@
+
+
+func main()->s_int32{
+    let oi:[s_int32]= 20; 
+    let bola: char='b';
+}
