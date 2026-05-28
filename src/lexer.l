@@ -23,8 +23,7 @@ id                  {letter}({letter}|{number})*
 
 %%
 
-
-"/*"(.|\n)*"*/" {/* Ignora tudo entre "{" e "}" */}
+"/*"(.|\n)*"*/" {/* Ignora tudo entre */}
 "//".*              {/* Ignora tudo após "//* até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
@@ -73,6 +72,7 @@ id                  {letter}({letter}|{number})*
 "*"                 { return MULTIPLY;}
 "/"                 { return DIVIDE;}
 "%"                 { return REMAINDER;}
+"^"                 { return EXPONENTIAL;}
 
 "!"                 { return NOT;}
 "&&"                { return AND;}
@@ -90,7 +90,6 @@ id                  {letter}({letter}|{number})*
 ":"                 { return COLON;}
 ";"                 { return SEMICOLON;}
 ","                 { return COMMA;}
-"\{"                { return LEFT_BRACE;}
 
 "const"             { return CONST;}
 "let"               { return LET;}

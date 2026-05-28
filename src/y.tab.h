@@ -68,72 +68,73 @@ extern int yydebug;
     GREATER_EQUAL = 269,           /* GREATER_EQUAL  */
     NOT = 270,                     /* NOT  */
     PLUS = 271,                    /* PLUS  */
-    MINUS = 272,                   /* MINUS  */
-    MULTIPLY = 273,                /* MULTIPLY  */
-    DIVIDE = 274,                  /* DIVIDE  */
-    REMAINDER = 275,               /* REMAINDER  */
-    LEFT_PARENTHESIS = 276,        /* LEFT_PARENTHESIS  */
-    RIGHT_PARENTHESIS = 277,       /* RIGHT_PARENTHESIS  */
-    LEFT_BRACKET = 278,            /* LEFT_BRACKET  */
-    RIGHT_BRACKET = 279,           /* RIGHT_BRACKET  */
-    LEFT_BRACE = 280,              /* LEFT_BRACE  */
-    RIGHT_BRACE = 281,             /* RIGHT_BRACE  */
-    DOT = 282,                     /* DOT  */
-    END = 283,                     /* END  */
-    COMMA = 284,                   /* COMMA  */
-    COLON = 285,                   /* COLON  */
-    PROCEDURE = 286,               /* PROCEDURE  */
-    FUNCTION = 287,                /* FUNCTION  */
-    PURE = 288,                    /* PURE  */
-    FOR = 289,                     /* FOR  */
-    TO = 290,                      /* TO  */
-    LOOP = 291,                    /* LOOP  */
-    CONTINUE = 292,                /* CONTINUE  */
-    BREAK = 293,                   /* BREAK  */
-    IF = 294,                      /* IF  */
-    IN = 295,                      /* IN  */
-    THEN = 296,                    /* THEN  */
-    ELSE = 297,                    /* ELSE  */
-    RETURN = 298,                  /* RETURN  */
-    REF = 299,                     /* REF  */
-    PRINT = 300,                   /* PRINT  */
-    ATTRIBUTION = 301,             /* ATTRIBUTION  */
-    INCREMENT = 302,               /* INCREMENT  */
-    DECREMENT = 303,               /* DECREMENT  */
-    PLUS_ATTRIBUTION = 304,        /* PLUS_ATTRIBUTION  */
-    MINUS_ATTRIBUTION = 305,       /* MINUS_ATTRIBUTION  */
-    MULTIPLY_ATTRIBUTION = 306,    /* MULTIPLY_ATTRIBUTION  */
-    DIVIDE_ATTRIBUTION = 307,      /* DIVIDE_ATTRIBUTION  */
-    ID = 308,                      /* ID  */
-    VALOR_INT = 309,               /* VALOR_INT  */
-    VALOR_FLOAT = 310,             /* VALOR_FLOAT  */
-    VALOR_BOOL = 311,              /* VALOR_BOOL  */
-    VALOR_CHAR = 312,              /* VALOR_CHAR  */
-    VALOR_STRING = 313,            /* VALOR_STRING  */
-    TIPO_BOOL = 314,               /* TIPO_BOOL  */
-    TIPO_S_INT8 = 315,             /* TIPO_S_INT8  */
-    TIPO_S_INT32 = 316,            /* TIPO_S_INT32  */
-    TIPO_S_SIZE = 317,             /* TIPO_S_SIZE  */
-    TIPO_S_INT16 = 318,            /* TIPO_S_INT16  */
-    TIPO_U_INT8 = 319,             /* TIPO_U_INT8  */
-    TIPO_U_INT16 = 320,            /* TIPO_U_INT16  */
-    TIPO_U_INT32 = 321,            /* TIPO_U_INT32  */
-    TIPO_U_SIZE = 322,             /* TIPO_U_SIZE  */
-    TIPO_FLOAT32 = 323,            /* TIPO_FLOAT32  */
-    TIPO_FLOAT64 = 324,            /* TIPO_FLOAT64  */
-    TIPO_CHAR = 325,               /* TIPO_CHAR  */
-    TIPO_STRING = 326,             /* TIPO_STRING  */
-    TIPO_VEC = 327,                /* TIPO_VEC  */
-    TIPO_SET = 328,                /* TIPO_SET  */
-    TIPO_MATRIX = 329,             /* TIPO_MATRIX  */
-    TIPO_RESULT = 330,             /* TIPO_RESULT  */
-    INTERVAL = 331,                /* INTERVAL  */
-    MATCH = 332,                   /* MATCH  */
-    WHILE = 333,                   /* WHILE  */
-    STRUCT = 334,                  /* STRUCT  */
-    ENUM = 335,                    /* ENUM  */
-    ARROW = 336,                   /* ARROW  */
-    MAIN = 337                     /* MAIN  */
+    EXPONENTIAL = 272,             /* EXPONENTIAL  */
+    MINUS = 273,                   /* MINUS  */
+    MULTIPLY = 274,                /* MULTIPLY  */
+    DIVIDE = 275,                  /* DIVIDE  */
+    REMAINDER = 276,               /* REMAINDER  */
+    LEFT_PARENTHESIS = 277,        /* LEFT_PARENTHESIS  */
+    RIGHT_PARENTHESIS = 278,       /* RIGHT_PARENTHESIS  */
+    LEFT_BRACKET = 279,            /* LEFT_BRACKET  */
+    RIGHT_BRACKET = 280,           /* RIGHT_BRACKET  */
+    LEFT_BRACE = 281,              /* LEFT_BRACE  */
+    RIGHT_BRACE = 282,             /* RIGHT_BRACE  */
+    DOT = 283,                     /* DOT  */
+    END = 284,                     /* END  */
+    COMMA = 285,                   /* COMMA  */
+    COLON = 286,                   /* COLON  */
+    PROCEDURE = 287,               /* PROCEDURE  */
+    FUNCTION = 288,                /* FUNCTION  */
+    PURE = 289,                    /* PURE  */
+    FOR = 290,                     /* FOR  */
+    TO = 291,                      /* TO  */
+    LOOP = 292,                    /* LOOP  */
+    CONTINUE = 293,                /* CONTINUE  */
+    BREAK = 294,                   /* BREAK  */
+    IF = 295,                      /* IF  */
+    IN = 296,                      /* IN  */
+    THEN = 297,                    /* THEN  */
+    ELSE = 298,                    /* ELSE  */
+    RETURN = 299,                  /* RETURN  */
+    REF = 300,                     /* REF  */
+    PRINT = 301,                   /* PRINT  */
+    ATTRIBUTION = 302,             /* ATTRIBUTION  */
+    INCREMENT = 303,               /* INCREMENT  */
+    DECREMENT = 304,               /* DECREMENT  */
+    PLUS_ATTRIBUTION = 305,        /* PLUS_ATTRIBUTION  */
+    MINUS_ATTRIBUTION = 306,       /* MINUS_ATTRIBUTION  */
+    MULTIPLY_ATTRIBUTION = 307,    /* MULTIPLY_ATTRIBUTION  */
+    DIVIDE_ATTRIBUTION = 308,      /* DIVIDE_ATTRIBUTION  */
+    ID = 309,                      /* ID  */
+    VALOR_INT = 310,               /* VALOR_INT  */
+    VALOR_FLOAT = 311,             /* VALOR_FLOAT  */
+    VALOR_BOOL = 312,              /* VALOR_BOOL  */
+    VALOR_CHAR = 313,              /* VALOR_CHAR  */
+    VALOR_STRING = 314,            /* VALOR_STRING  */
+    TIPO_BOOL = 315,               /* TIPO_BOOL  */
+    TIPO_S_INT8 = 316,             /* TIPO_S_INT8  */
+    TIPO_S_INT32 = 317,            /* TIPO_S_INT32  */
+    TIPO_S_SIZE = 318,             /* TIPO_S_SIZE  */
+    TIPO_S_INT16 = 319,            /* TIPO_S_INT16  */
+    TIPO_U_INT8 = 320,             /* TIPO_U_INT8  */
+    TIPO_U_INT16 = 321,            /* TIPO_U_INT16  */
+    TIPO_U_INT32 = 322,            /* TIPO_U_INT32  */
+    TIPO_U_SIZE = 323,             /* TIPO_U_SIZE  */
+    TIPO_FLOAT32 = 324,            /* TIPO_FLOAT32  */
+    TIPO_FLOAT64 = 325,            /* TIPO_FLOAT64  */
+    TIPO_CHAR = 326,               /* TIPO_CHAR  */
+    TIPO_STRING = 327,             /* TIPO_STRING  */
+    TIPO_VEC = 328,                /* TIPO_VEC  */
+    TIPO_SET = 329,                /* TIPO_SET  */
+    TIPO_MATRIX = 330,             /* TIPO_MATRIX  */
+    TIPO_RESULT = 331,             /* TIPO_RESULT  */
+    INTERVAL = 332,                /* INTERVAL  */
+    MATCH = 333,                   /* MATCH  */
+    WHILE = 334,                   /* WHILE  */
+    STRUCT = 335,                  /* STRUCT  */
+    ENUM = 336,                    /* ENUM  */
+    ARROW = 337,                   /* ARROW  */
+    MAIN = 338                     /* MAIN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -156,72 +157,73 @@ extern int yydebug;
 #define GREATER_EQUAL 269
 #define NOT 270
 #define PLUS 271
-#define MINUS 272
-#define MULTIPLY 273
-#define DIVIDE 274
-#define REMAINDER 275
-#define LEFT_PARENTHESIS 276
-#define RIGHT_PARENTHESIS 277
-#define LEFT_BRACKET 278
-#define RIGHT_BRACKET 279
-#define LEFT_BRACE 280
-#define RIGHT_BRACE 281
-#define DOT 282
-#define END 283
-#define COMMA 284
-#define COLON 285
-#define PROCEDURE 286
-#define FUNCTION 287
-#define PURE 288
-#define FOR 289
-#define TO 290
-#define LOOP 291
-#define CONTINUE 292
-#define BREAK 293
-#define IF 294
-#define IN 295
-#define THEN 296
-#define ELSE 297
-#define RETURN 298
-#define REF 299
-#define PRINT 300
-#define ATTRIBUTION 301
-#define INCREMENT 302
-#define DECREMENT 303
-#define PLUS_ATTRIBUTION 304
-#define MINUS_ATTRIBUTION 305
-#define MULTIPLY_ATTRIBUTION 306
-#define DIVIDE_ATTRIBUTION 307
-#define ID 308
-#define VALOR_INT 309
-#define VALOR_FLOAT 310
-#define VALOR_BOOL 311
-#define VALOR_CHAR 312
-#define VALOR_STRING 313
-#define TIPO_BOOL 314
-#define TIPO_S_INT8 315
-#define TIPO_S_INT32 316
-#define TIPO_S_SIZE 317
-#define TIPO_S_INT16 318
-#define TIPO_U_INT8 319
-#define TIPO_U_INT16 320
-#define TIPO_U_INT32 321
-#define TIPO_U_SIZE 322
-#define TIPO_FLOAT32 323
-#define TIPO_FLOAT64 324
-#define TIPO_CHAR 325
-#define TIPO_STRING 326
-#define TIPO_VEC 327
-#define TIPO_SET 328
-#define TIPO_MATRIX 329
-#define TIPO_RESULT 330
-#define INTERVAL 331
-#define MATCH 332
-#define WHILE 333
-#define STRUCT 334
-#define ENUM 335
-#define ARROW 336
-#define MAIN 337
+#define EXPONENTIAL 272
+#define MINUS 273
+#define MULTIPLY 274
+#define DIVIDE 275
+#define REMAINDER 276
+#define LEFT_PARENTHESIS 277
+#define RIGHT_PARENTHESIS 278
+#define LEFT_BRACKET 279
+#define RIGHT_BRACKET 280
+#define LEFT_BRACE 281
+#define RIGHT_BRACE 282
+#define DOT 283
+#define END 284
+#define COMMA 285
+#define COLON 286
+#define PROCEDURE 287
+#define FUNCTION 288
+#define PURE 289
+#define FOR 290
+#define TO 291
+#define LOOP 292
+#define CONTINUE 293
+#define BREAK 294
+#define IF 295
+#define IN 296
+#define THEN 297
+#define ELSE 298
+#define RETURN 299
+#define REF 300
+#define PRINT 301
+#define ATTRIBUTION 302
+#define INCREMENT 303
+#define DECREMENT 304
+#define PLUS_ATTRIBUTION 305
+#define MINUS_ATTRIBUTION 306
+#define MULTIPLY_ATTRIBUTION 307
+#define DIVIDE_ATTRIBUTION 308
+#define ID 309
+#define VALOR_INT 310
+#define VALOR_FLOAT 311
+#define VALOR_BOOL 312
+#define VALOR_CHAR 313
+#define VALOR_STRING 314
+#define TIPO_BOOL 315
+#define TIPO_S_INT8 316
+#define TIPO_S_INT32 317
+#define TIPO_S_SIZE 318
+#define TIPO_S_INT16 319
+#define TIPO_U_INT8 320
+#define TIPO_U_INT16 321
+#define TIPO_U_INT32 322
+#define TIPO_U_SIZE 323
+#define TIPO_FLOAT32 324
+#define TIPO_FLOAT64 325
+#define TIPO_CHAR 326
+#define TIPO_STRING 327
+#define TIPO_VEC 328
+#define TIPO_SET 329
+#define TIPO_MATRIX 330
+#define TIPO_RESULT 331
+#define INTERVAL 332
+#define MATCH 333
+#define WHILE 334
+#define STRUCT 335
+#define ENUM 336
+#define ARROW 337
+#define MAIN 338
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -234,7 +236,7 @@ union YYSTYPE
 	char * sValue;  
 	
 
-#line 238 "y.tab.h"
+#line 240 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
