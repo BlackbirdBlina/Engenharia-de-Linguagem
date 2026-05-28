@@ -23,8 +23,8 @@ id                  {letter}({letter}|{number})*
 %%
 
 
-"/*"([^}]|\n)*"*/"  {/* Ignora tudo entre "{" e "}" */}
-"//".*              {/* Ignora tudo após "--* até o final da linha */}
+"/*"(.|\n)*"*/"     {/* Ignora tudo entre "/ *" e "* /" */}
+"//".*              {/* Ignora tudo após "//" até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0; printf("\n");}
