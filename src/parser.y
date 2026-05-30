@@ -24,6 +24,7 @@ extern char * yytext;
 
 %%
     Program: SubProgram Program{}
+		| Assigment Program{}
 		| Main {printf("Programa detectado\n");}
         ;
 
@@ -56,9 +57,19 @@ extern char * yytext;
 			  ;
 	
 	Statement: Assigment {}
-			;
+			 | FunctionCall SEMICOLON{}
+			 ;
 
-	Assigment:LET VarTyped ATTRIBUTION Expression SEMICOLON {printf("Atribuição\n");}
+	Assigment: LET VarTyped ATTRIBUTION Expression SEMICOLON {printf("Declaração com atribuição\n");}
+			 | CONST VarTyped ATTRIBUTION Expression SEMICOLON {printf("Declaração constante com atribuição\n");}
+			 | MUTABLE VarTyped ATTRIBUTION Expression SEMICOLON {printf("Declaração mutável com atribuição\n");}
+			 | ID ATTRIBUTION Expression SEMICOLON {printf("Atribuição\n");}
+			 | ID INCREMENT SEMICOLON {printf("Incremento\n");}
+			 | ID DECREMENT SEMICOLON {printf("Decremento\n");}
+			 | ID PLUS_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de soma\n");}
+			 | ID MINUS_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de subtração\n");}
+			 | ID MULTIPLY_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de multiplicação\n");}
+			 | ID DIVIDE_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de divisão\n");}
 			 ;
 
 	Expression: Expression OR AuxExp1 {}
@@ -66,39 +77,55 @@ extern char * yytext;
 			  ;
 
 	AuxExp1: AuxExp1 AND AuxExp2 {}
-		   |AuxExp2 {}
+		   | AuxExp2 {}
 		   ;
 	
 	AuxExp2: AuxExp2 EQUAL AuxExp3 {}
-			|AuxExp3{}
-			;
+           | AuxExp2 NOT_EQUAL AuxExp3{}
+	       | AuxExp3{}
+		   ;
 	
 	AuxExp3: AuxExp3 Compare AuxExp4{}
-			|AuxExp4{}
-			;
+		   | AuxExp4{}
+		   ;
 	
 	AuxExp4: AuxExp4 PLUS AuxExp5{}
-	        |AuxExp4 MINUS AuxExp5{}
-			|AuxExp5{}
-			;
+	       | AuxExp4 MINUS AuxExp5{}
+		   | AuxExp5{}
+		   ;
 	
 	AuxExp5: AuxExp5 MULTIPLY AuxExp6{}
-			|AuxExp5 DIVIDE AuxExp6{}
-			|AuxExp5 REMAINDER AuxExp6{}
-			|AuxExp6{}
-			;
+		   | AuxExp5 DIVIDE AuxExp6{}
+		   | AuxExp5 REMAINDER AuxExp6{}
+		   | AuxExp6{}
+		   ;
 	
 	AuxExp6: AuxExp7 EXPONENTIAL AuxExp6{}
-		    |AuxExp7{}
-			;
+		   | AuxExp7{}
+		   ;
 	
-	AuxExp7: ID{}
-		    | Literal {}
-			| LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS {}
-			;
+	AuxExp7: NOT AuxExp7{}
+		   | AuxExp8{}
+		   ;
+	
+	AuxExp8: ID{}
+		   | Literal {}
+		   | LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS {}
+		   | FunctionCall {}
+		   ;
 
+	FunctionCall: ID FunctionCall {}
+				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS FunctionCall {}
+				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS FunctionCall {}
+				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS {}
+				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS{}
+				;
+
+	ParamsToCall: Expression COMMA ParamsToCall{}
+				| Expression {}
+				;
 	
-	Type:TIPO_BOOL | TIPO_S_INT8 | TIPO_S_INT32 | TIPO_S_SIZE | TIPO_S_INT16 | TIPO_U_INT8 | TIPO_U_INT16 | TIPO_U_INT32 | TIPO_U_SIZE | TIPO_FLOAT32 | TIPO_FLOAT64 | TIPO_CHAR | TIPO_STRING | TIPO_VEC | TIPO_SET | TIPO_MATRIX | TIPO_RESULT| LEFT_BRACKET Type RIGHT_BRACKET;
+	Type: TIPO_BOOL | TIPO_S_INT8 | TIPO_S_INT32 | TIPO_S_SIZE | TIPO_S_INT16 | TIPO_U_INT8 | TIPO_U_INT16 | TIPO_U_INT32 | TIPO_U_SIZE | TIPO_FLOAT32 | TIPO_FLOAT64 | TIPO_CHAR | TIPO_STRING | TIPO_VEC | TIPO_SET | TIPO_MATRIX | TIPO_RESULT| LEFT_BRACKET Type RIGHT_BRACKET;
 
 	Compare: LESS | GREATER | LESS_EQUAL | GREATER_EQUAL;
 

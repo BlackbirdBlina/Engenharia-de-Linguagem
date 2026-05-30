@@ -64,8 +64,8 @@ id                  {letter}({letter}|{number})*
 "--"                { return DECREMENT;}
 "+="                { return PLUS_ATTRIBUTION;}
 "-="                { return MINUS_ATTRIBUTION;}
-"=+"                { return MULTIPLY_ATTRIBUTION;}
-"=-"                { return DIVIDE_ATTRIBUTION;}
+"*="                { return MULTIPLY_ATTRIBUTION;}
+"/="                { return DIVIDE_ATTRIBUTION;}
 
 "+"                 { return PLUS;}
 "-"                 { return MINUS;}
