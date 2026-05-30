@@ -89,7 +89,6 @@ id                  {letter}({letter}|{number})*
 ":"                 { printf("COLON%s", char_at_end);}
 ";"                 { printf("SEMICOLON%s", char_at_end);}
 ","                 { printf("COMMA%s", char_at_end);}
-"\{"                { printf("LEFT_BRACE%s", char_at_end);}
 
 "const"             { printf("CONST%s", char_at_end);}
 "let"               { printf("LET%s", char_at_end);}
