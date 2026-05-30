@@ -64,8 +64,8 @@ id                  {letter}({letter}|{number})*
 "--"                { printf("DECREMENT%s", char_at_end);}
 "+="                { printf("PLUS_ATTRIBUTION%s", char_at_end);}
 "-="                { printf("MINUS_ATTRIBUTION%s", char_at_end);}
-"=+"                { printf("MULTIPLY_ATTRIBUTION%s", char_at_end);}
-"=-"                { printf("DIVIDE_ATTRIBUTION%s", char_at_end);}
+"*="                { printf("MULTIPLY_ATTRIBUTION%s", char_at_end);}
+"/="                { printf("DIVIDE_ATTRIBUTION%s", char_at_end);}
 
 "+"                 { printf("PLUS%s", char_at_end);}
 "-"                 { printf("MINUS%s", char_at_end);}
