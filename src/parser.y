@@ -58,7 +58,14 @@ extern char * yytext;
 	
 	Statement: Assigment {}
 			 | FunctionCall SEMICOLON{}
+			 | Return {}
+			 | RepeatStructures {}
+			 | DecisionStructures {}
 			 ;
+
+	Return: RETURN SEMICOLON{}
+	      | RETURN Expression SEMICOLON{}
+		  ;
 
 	Assigment: LET VarTyped ATTRIBUTION Expression SEMICOLON {printf("Declaração com atribuição\n");}
 			 | CONST VarTyped ATTRIBUTION Expression SEMICOLON {printf("Declaração constante com atribuição\n");}
@@ -70,8 +77,14 @@ extern char * yytext;
 			 | ID MINUS_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de subtração\n");}
 			 | ID MULTIPLY_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de multiplicação\n");}
 			 | ID DIVIDE_ATTRIBUTION Expression SEMICOLON {printf("Atribuição de divisão\n");}
+			 | Array ATTRIBUTION Expression SEMICOLON{}
 			 ;
+	Array: ID AtomArray{}
+		 ;
 
+	AtomArray:LEFT_BRACKET Expression RIGHT_BRACKET AtomArray{}
+		|LEFT_BRACKET Expression RIGHT_BRACKET {}
+		;
 	Expression: Expression OR AuxExp1 {}
 		      | AuxExp1 {}
 			  ;
@@ -111,6 +124,7 @@ extern char * yytext;
 	AuxExp8: ID{}
 		   | Literal {}
 		   | LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS {}
+		   | Array {}
 		   | FunctionCall {}
 		   ;
 
@@ -119,11 +133,28 @@ extern char * yytext;
 				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS FunctionCall {}
 				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS {}
 				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS{}
+				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS FunctionCall {}
+				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS FunctionCall {}
+				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS {}
+				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS{}
 				;
 
 	ParamsToCall: Expression COMMA ParamsToCall{}
 				| Expression {}
 				;
+	
+	RepeatStructures:  WHILE LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope{}
+					|  FOR LEFT_PARENTHESIS ID IN Expression INTERVAL Expression RIGHT_PARENTHESIS Scope{}
+					|  FOR LEFT_PARENTHESIS ID IN Expression RIGHT_PARENTHESIS Scope{}
+					|  LOOP Scope{}
+					;
+	DecisionStructures: IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope{}
+					  | IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ELSE Scope{}
+					  | IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ElseIf{}
+					  ;
+	ElseIf: ELSE IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ElseIf{}
+		  | ELSE IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ELSE Scope{}
+		  ;
 	
 	Type: TIPO_BOOL | TIPO_S_INT8 | TIPO_S_INT32 | TIPO_S_SIZE | TIPO_S_INT16 | TIPO_U_INT8 | TIPO_U_INT16 | TIPO_U_INT32 | TIPO_U_SIZE | TIPO_FLOAT32 | TIPO_FLOAT64 | TIPO_CHAR | TIPO_STRING | TIPO_VEC | TIPO_SET | TIPO_MATRIX | TIPO_RESULT| LEFT_BRACKET Type RIGHT_BRACKET;
 

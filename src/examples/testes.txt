@@ -1,7 +1,7 @@
 
 let variavelLegal:bool=true;
 proced imprimeAlgo(algo:bool){
-
+    return 0;
 }
 
 func main()->s_int32{
@@ -9,6 +9,43 @@ func main()->s_int32{
     let oi:[s_int32]= A*(2+B);
     let asd:u_int32 = true; 
     let asd:u_int32 = funcaoLegal().metodo().amosmad(); 
-    imprimeAlgo(true,);
+    imprimeAlgo(2+2);
+    while(2==2){
+        let oi:[s_int32]= A*(2+B);
+    }
+    for(i in 0..10){
+        let oi:[s_int32]= A*(2+B);
+    }
+
+    for(i in oi){
+        let oi:[s_int32]= A*(2+B);
+    }
+    loop{
+        let oi:[s_int32]= A*(2+B);
+    }
+
+    if(122){
+        let oi:[s_int32]= A*(2+B);
+    }
+
+    if(true){
+        let oi:[s_int32]= A*(2+B);
+    }
+    else{
+        let oi:[s_int32]= A*(2+B);
+    }
+
+    if(true){
+        let oi:[s_int32]= A*(2+B);
+    }
+    else if(true){
+        let oi:[s_int32]= A*(2+B);
+    }
+    else if(2>3){
+        
+    }
+    else{
+        let oi:[s_int32]= A*(2+B);
+    }
 
 }
