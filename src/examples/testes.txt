@@ -1,0 +1,9 @@
+/*iuabusbias*/
+proced imprimeAlgo(algo:bool){
+
+}
+
+func main()->s_int32{
+    let oi:[s_int32]= A*(2+B);
+    let asd:u_int32 = A+20; 
+}

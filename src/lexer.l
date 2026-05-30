@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "y.tab.h"
 
 int column_counter = 0;
-int line_counter = 0;
-char char_at_end[] = " ";
+char char_at_end[] = "\n";
 
 extern int yyerror (char *msg); 
 %}
@@ -19,110 +19,123 @@ letter              [a-zA-Z\_]
 indentation         [ \t]
 whitespace          {indentation}+
 newline             [\n]+
-identificador       {letter}({letter}|{number})*
+id                  {letter}({letter}|{number})*
 
 %%
 
-
-"/*"([^}]|\n)*"*/"  {/* Ignora tudo entre "{" e "}" */}
-"//".*              {/* Ignora tudo após "--* até o final da linha */}
+"/*"(.|\n)*"*/" {/* Ignora tudo entre */}
+"//".*              {/* Ignora tudo após "//* até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0; printf("\n");}
-"bool"              { printf("TIPO_BOOL%s", char_at_end);}
+"bool"              { return TIPO_BOOL;}
 
-"s_int8"            { printf("TIPO_S_INT8%s", char_at_end);}
-"s_int16"           { printf("TIPO_S_INT16%s", char_at_end);}
-"s_int32"           { printf("TIPO_S_INT32%s", char_at_end);}
-"s_size"            { printf("TIPO_S_SIZE%s", char_at_end);}
-"u_int8"            { printf("TIPO_U_INT8%s", char_at_end);}
-"u_int16"           { printf("TIPO_U_INT16%s", char_at_end);}
-"u_int32"           { printf("TIPO_U_INT32%s", char_at_end);}
-"u_size"            { printf("TIPO_U_SIZE%s", char_at_end);}
+"s_int8"            { return TIPO_S_INT8;}
+"s_int16"           { return TIPO_S_INT16;}
+"s_int32"           { return TIPO_S_INT32;}
+"s_size"            { return TIPO_S_SIZE;}
+"u_int8"            { return TIPO_U_INT8;}
+"u_int16"           { return TIPO_U_INT16;}
+"u_int32"           { return TIPO_U_INT32;}
+"u_size"            { return TIPO_U_SIZE;}
 
-"float32"           { printf("TIPO_FLOAT32%s", char_at_end);}
-"float64"           { printf("TIPO_FLOAT64%s", char_at_end);}
+"float32"           { return TIPO_FLOAT32;}
+"float64"           { return TIPO_FLOAT64;}
 
-"char"              { printf("TIPO_CHAR%s", char_at_end);}
-"String"            { printf("TIPO_STRING%s", char_at_end);}
+"char"              { return TIPO_CHAR;}
+"String"            { return TIPO_STRING;}
 
-"Vec"               { printf("TIPO_VEC%s", char_at_end);}
-"Set"               { printf("TIPO_SET%s", char_at_end);}
-"Matrix"            { printf("TIPO_MATRIX%s", char_at_end);}
+"Vec"               { return TIPO_VEC;}
+"Set"               { return TIPO_SET;}
+"Matrix"            { return TIPO_MATRIX;}
 
-"Result"            { printf("TIPO_RESULT%s", char_at_end);}
+"Result"            { return TIPO_RESULT;}
 
-"="                 { printf("ATTRIBUTION%s", char_at_end);}
+"="                 { return ATTRIBUTION;}
 
-">"                 { printf("GREATER%s", char_at_end);}
-"<"                 { printf("LESS%s", char_at_end);}
-">="                { printf("GREATER_EQUAL%s", char_at_end);}
-"<="                { printf("LESS_EQUAL%s", char_at_end);}
-"=="                { printf("EQUAL%s", char_at_end);}
-"!="                { printf("NOT_EQUAL%s", char_at_end);}
+">"                 { return GREATER;}
+"<"                 { return LESS;}
+">="                { return GREATER_EQUAL;}
+"<="                { return LESS_EQUAL;}
+"=="                { return EQUAL;}
+"!="                { return NOT_EQUAL;}
 
-"+"                 { printf("PLUS%s", char_at_end);}
-"-"                 { printf("MINUS%s", char_at_end);}
-"*"                 { printf("MULTIPLY%s", char_at_end);}
-"/"                 { printf("DIVIDE%s", char_at_end);}
-"%"                 { printf("REMAINDER%s", char_at_end);}
+"++"                { return INCREMENT;}
+"--"                { return DECREMENT;}
+"+="                { return PLUS_ATTRIBUTION;}
+"-="                { return MINUS_ATTRIBUTION;}
+"=+"                { return MULTIPLY_ATTRIBUTION;}
+"=-"                { return DIVIDE_ATTRIBUTION;}
 
-"!"                 { printf("NOT%s", char_at_end);}
-"&&"                { printf("AND%s", char_at_end);}
-"||"                { printf("OR%s", char_at_end);}
+"+"                 { return PLUS;}
+"-"                 { return MINUS;}
+"*"                 { return MULTIPLY;}
+"/"                 { return DIVIDE;}
+"%"                 { return REMAINDER;}
+"^"                 { return EXPONENTIAL;}
 
-"("                 { printf("LEFT_PARENTHESIS%s", char_at_end);}
-")"                 { printf("RIGHT_PARENTHESIS%s", char_at_end);}
-"["                 { printf("LEFT_BRACKET%s", char_at_end);}
-"]"                 { printf("RIGHT_BRACKET%s", char_at_end);}
-"{"                 { printf("LEFT_BRACE%s", char_at_end);}
-"}"                 { printf("RIGHT_BRACE%s", char_at_end);}
+"!"                 { return NOT;}
+"&&"                { return AND;}
+"||"                { return OR;}
 
-"\.\."              { printf("INTERVAL%s", char_at_end);}
-"\."                { printf("DOT%s", char_at_end);}
-":"                 { printf("COLON%s", char_at_end);}
-";"                 { printf("SEMICOLON%s", char_at_end);}
-","                 { printf("COMMA%s", char_at_end);}
+"("                 { return LEFT_PARENTHESIS;}
+")"                 { return RIGHT_PARENTHESIS;}
+"["                 { return LEFT_BRACKET;}
+"]"                 { return RIGHT_BRACKET;}
+"{"                 { return LEFT_BRACE;}
+"}"                 { return RIGHT_BRACE;}
 
-"const"             { printf("CONST%s", char_at_end);}
-"let"               { printf("LET%s", char_at_end);}
-"&"                 { printf("REF%s", char_at_end);}
-"if"                { printf("IF%s", char_at_end);}
-"else"              { printf("ELSE%s", char_at_end);}
-"loop"              { printf("LOOP%s", char_at_end);}
-"while"             { printf("WHILE%s", char_at_end);}
-"for"               { printf("FOR%s", char_at_end);}
-"in"                { printf("IN%s", char_at_end);}
+"\.\."              { return INTERVAL;}
+"\."                { return DOT;}
+":"                 { return COLON;}
+";"                 { return SEMICOLON;}
+","                 { return COMMA;}
 
-"func"              { printf("FUNCTION%s", char_at_end);}
-"->"                { printf("ARROW%s", char_at_end);}
+"const"             { return CONST;}
+"let"               { return LET;}
+"mute"              { return MUTABLE;}
+"&"                 { return REF;}
+"if"                { return IF;}
+"else"              { return ELSE;}
+"match"             { return MATCH;}
+"loop"              { return LOOP;}
+"while"             { return WHILE;}
+"for"               { return FOR;}
+"in"                { return IN;}
 
-"return"            { printf("RETURN%s", char_at_end);}
-"break"             { printf("BREAK%s", char_at_end);}
-"continue"          { printf("CONTINUE%s", char_at_end);}
-"struct"            { printf("STRUCT%s", char_at_end);}
+"func"              { return FUNCTION;}
+"->"                { return ARROW;}
+"proced"            { return PROCEDURE;}
+"pure"              { return PURE;}
 
-"true"|"false"          {
-                            printf("VALOR_BOOL%s", char_at_end);
-                        }
+"return"            { return RETURN;}
+"break"             { return BREAK;}
+"continue"          { return CONTINUE;}
+"struct"            { return STRUCT;}
+"enum"              { return ENUM;}
+"main"              { return MAIN;}
 
-{number}+               {
-                            printf("VALOR_INT%s", char_at_end);
-                        }
+"true"|"false"                              {
+                                                return VALOR_BOOL;
+                                            }
 
-{number}+\.{number}+    {
-                            printf("VALOR_FLOAT%s", char_at_end);
-                        }
+{number}+(E[+-]?{number}+)?                 {
+                                                return VALOR_INT;
+                                            }
 
-\'.\'                   {
-                            printf("VALOR_CHAR%s", char_at_end);
-                        }
+{number}+\.{number}+(E[+-]?{number}+)?      {
+                                                return VALOR_FLOAT;
+                                            }
 
-\".*\"                  {
-                            printf("VALOR_STRING%s", char_at_end);
-                        }
+\'.\'                                       {
+                                                return VALOR_CHAR;
+                                            }
 
-[a-zA-Z][a-zA-Z0-9_]* { printf("ID(%s)%s", yytext, char_at_end);}
+\".*\"                                      {
+                                                return VALOR_STRING;
+                                            }
+
+{id}                    { return ID;}
 
 .                       { printf("Error_line_text(%d,%s)%s", yylineno, yytext, char_at_end) ;}
 
@@ -133,23 +146,3 @@ identificador       {letter}({letter}|{number})*
    int yywrap (void) {return 1;}
 #endif
 
-int main(int argc, char **argv)
-{
-    if (argc > 1)
-    {
-        yyin = fopen(argv[1], "r");
-
-        if (!yyin)
-        {
-            perror("Erro ao abrir arquivo");
-            return 1;
-        }
-    }
-
-    yylex();
-
-    if (yyin)
-        fclose(yyin);
-
-    return 0;
-}

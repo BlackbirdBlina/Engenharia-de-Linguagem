@@ -1,5 +1,5 @@
-func merge(left: &[u_int32], right: &[u_int32]) -> Vec<u_int32> {
-   let result : Vec<u_int32> = Vec::with_capacity(left.len() + right.len());
+func merge(left : &[u_int32], right : &[u_int32]) -> Vec<u_int32> {
+   let result: Vec<u_int32> = Vec::with_capacity(left.len() + right.len());
 
 
    let r : [u_int32; 5] = left;
@@ -44,5 +44,5 @@ func main() -> Result<(), String> {
        print("{}",i)
    }
    println();
-   return Ok(())
+   return Ok(());
 }
