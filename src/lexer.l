@@ -28,28 +28,28 @@ id                  {letter}({letter}|{number})*
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0; printf("\n");}
-"bool"              { printf("TIPO_BOOL%s", char_at_end);}
+"bool"              { printf("TYPE_BOOL%s", char_at_end);}
 
-"s_int8"            { printf("TIPO_S_INT8%s", char_at_end);}
-"s_int16"           { printf("TIPO_S_INT16%s", char_at_end);}
-"s_int32"           { printf("TIPO_S_INT32%s", char_at_end);}
-"s_size"            { printf("TIPO_S_SIZE%s", char_at_end);}
-"u_int8"            { printf("TIPO_U_INT8%s", char_at_end);}
-"u_int16"           { printf("TIPO_U_INT16%s", char_at_end);}
-"u_int32"           { printf("TIPO_U_INT32%s", char_at_end);}
-"u_size"            { printf("TIPO_U_SIZE%s", char_at_end);}
+"s_int8"            { printf("TYPE_S_INT8%s", char_at_end);}
+"s_int16"           { printf("TYPE_S_INT16%s", char_at_end);}
+"s_int32"           { printf("TYPE_S_INT32%s", char_at_end);}
+"s_size"            { printf("TYPE_S_SIZE%s", char_at_end);}
+"u_int8"            { printf("TYPE_U_INT8%s", char_at_end);}
+"u_int16"           { printf("TYPE_U_INT16%s", char_at_end);}
+"u_int32"           { printf("TYPE_U_INT32%s", char_at_end);}
+"u_size"            { printf("TYPE_U_SIZE%s", char_at_end);}
 
-"float32"           { printf("TIPO_FLOAT32%s", char_at_end);}
-"float64"           { printf("TIPO_FLOAT64%s", char_at_end);}
+"float32"           { printf("TYPE_FLOAT32%s", char_at_end);}
+"float64"           { printf("TYPE_FLOAT64%s", char_at_end);}
 
-"char"              { printf("TIPO_CHAR%s", char_at_end);}
-"String"            { printf("TIPO_STRING%s", char_at_end);}
+"char"              { printf("TYPE_CHAR%s", char_at_end);}
+"String"            { printf("TYPE_STRING%s", char_at_end);}
 
-"Vec"               { printf("TIPO_VEC%s", char_at_end);}
-"Set"               { printf("TIPO_SET%s", char_at_end);}
-"Matrix"            { printf("TIPO_MATRIX%s", char_at_end);}
+"Vec"               { printf("TYPE_VEC%s", char_at_end);}
+"Set"               { printf("TYPE_SET%s", char_at_end);}
+"Matrix"            { printf("TYPE_MATRIX%s", char_at_end);}
 
-"Result"            { printf("TIPO_RESULT%s", char_at_end);}
+"Result"            { printf("TYPE_RESULT%s", char_at_end);}
 
 "="                 { printf("ATTRIBUTION%s", char_at_end);}
 
@@ -114,23 +114,23 @@ id                  {letter}({letter}|{number})*
 "enum"              { printf("ENUM%s", char_at_end);}
 
 "true"|"false"                              {
-                                                printf("VALOR_BOOL%s", char_at_end);
+                                                printf("VALUE_BOOL%s", char_at_end);
                                             }
 
 {number}+(E[+-]?{number}+)?                 {
-                                                printf("VALOR_INT%s", char_at_end);
+                                                printf("VALUE_INT%s", char_at_end);
                                             }
 
 {number}+\.{number}+(E[+-]?{number}+)?      {
-                                                printf("VALOR_FLOAT%s", char_at_end);
+                                                printf("VALUE_FLOAT%s", char_at_end);
                                             }
 
 \'.\'                                       {
-                                                printf("VALOR_CHAR%s", char_at_end);
+                                                printf("VALUE_CHAR%s", char_at_end);
                                             }
 
 \".*\"                                      {
-                                                printf("VALOR_STRING%s", char_at_end);
+                                                printf("VALUE_STRING%s", char_at_end);
                                             }
 
 {id}                    { printf("ID(%s)%s", yytext, char_at_end);}
