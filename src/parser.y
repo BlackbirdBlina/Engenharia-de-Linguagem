@@ -53,12 +53,12 @@ extern char * yytext;
 
 	Statements: Statement Statements {}
 			  | Statement {}
-			  | Scope {}
 			  ;
 	
 	Statement: Assigment {}
 			 | FunctionCall SEMICOLON{}
 			 | Return {}
+			 | Scope {}
 			 | RepeatStructures {}
 			 | DecisionStructures {}
 			 ;

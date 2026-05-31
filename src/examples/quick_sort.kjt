@@ -33,5 +33,7 @@ func quick(arr: [u_int32], low: u_size, high: u_size)->u_size {
 }
 
 func main()->s_int32{
-
+    {}
+    {}
+    {}
 }
