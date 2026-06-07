@@ -93,7 +93,7 @@ id                  {letter}({letter}|{number})*
 
 "const"             { return CONST;}
 "let"               { return LET;}
-"mute"              { return MUTABLE;}
+"mut"               { return MUTABLE;}
 "&"                 { return REF;}
 "if"                { return IF;}
 "else"              { return ELSE;}
