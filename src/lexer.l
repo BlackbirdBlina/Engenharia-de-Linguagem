@@ -23,8 +23,8 @@ id                  {letter}({letter}|{number})*
 
 %%
 
-"/*"(.|\n)*"*/"     {/* Ignora tudo entre */}
-"//".*              {/* Ignora tudo após "//* até o final da linha */}
+"/*"(.|\n)*"*/"     {/* Ignora tudo entre "/ *" e "* /" */}
+"//".*              {/* Ignora tudo após "//" até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0; printf("\n");}
@@ -93,7 +93,7 @@ id                  {letter}({letter}|{number})*
 
 "const"             { return CONST;}
 "let"               { return LET;}
-"mute"              { return MUTABLE;}
+"mut"               { return MUTABLE;}
 "&"                 { return REF;}
 "if"                { return IF;}
 "else"              { return ELSE;}

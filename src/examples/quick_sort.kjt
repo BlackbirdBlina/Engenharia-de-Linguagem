@@ -20,7 +20,7 @@ func partition(arr: [u_int32], low: u_size, high: u_size) -> u_size {
     return i;
 }
 
-func quick(arr: [u_int32], low: u_size, high: u_size) {
+func quick(arr: [u_int32], low: u_size, high: u_size) -> u_size {
     if (low > high){
         let pivot_index: u_size = partition(arr, low, high);
         
@@ -30,4 +30,8 @@ func quick(arr: [u_int32], low: u_size, high: u_size) {
 
         quick(arr, pivot_index + 1, high);
     }
+}
+
+func main() -> s_int32{
+
 }

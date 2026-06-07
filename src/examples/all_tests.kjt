@@ -1,0 +1,117 @@
+func noFunc(u8 : u_int8, u16 : u_int16) -> char {
+    u8 = 3;
+    return 'c'; // This thing: ''
+}
+pure func pureNoFunc(u8 : u_int8, u16 : u_int16) -> char {
+    return 'f';
+}
+proced procedures(u8 : u_int8) {
+    u8 = 3;
+}
+
+func main() -> Result<(), String> {
+    let s8  : s_int8 = 8; // s_int8, COLON, SEMICOLON and LET
+    let s16 : s_int16 = 16; // s_int16
+    let s32 : s_int32 = 32; // s_int32
+    let s_size : s_size = 64; // s_size
+
+    let u8  : u_int8 = 8; // u_int8
+    let u16 : u_int16 = 16; // u_int16
+    let u32 : u_int32 = 32; // u_int32
+    let u_size : u_size = 32; // u_size
+
+    let float32 : float32 = 32; // float32
+    let float64 : float64 = 64; // float64
+
+    let char   : char = 'c'; // Char
+    let String : String = "String"; // String
+
+    let vec       : Vec<char> = merge_sort(&array); // Vec
+    // let set    : Set = ???; // Set
+    // let matrix : Matrix = ???; // Matrix
+
+    let res : Result<u_int8, String> = Ok(10); // Result
+    res = Err("erro."); // Attribution
+
+    3 > 2; // Greater than
+    2 < 3; // Less than
+    3 >= 2; // Greater than or equal to
+    2 <= 3; // Less than or equal to
+    3 == 3; // Equal
+    3 != 2; // Not equal
+
+    u_size++; // Increment
+    u_size--; // Decrement
+
+    u_size += 2; // Add equal
+    u_size -= 2; // Minus equal
+    u_size *= 2; // Multiply equal
+    u_size /= 2; // Divide equal
+
+    let add : s_int16 = 3 + 2; // Add
+    let minus : s_int16 = 3 - 2; // Minus
+    let multiply : s_int16 = 3 * 2; // Multiply
+    let divide : s_int16 = 3 / 2; // Divide
+    let remainder : s_int16 = 3 % 2; // Remainder
+    let exponent : s_int16 = 3 ^ 2; // Exponent
+
+    !true; // Logical Negation
+    true && true; // Logical AND
+    true || false; // Logical OR
+
+    let array : [s_int32; 5] = [1, 2, 3, 4, 5]; // Array
+    array[0]; // LEFT_BRACKET and RIGHT_BRACKET
+    (u_size == 3) // LEFT_PARENTHESIS and RIGHT_PARENTHESIS
+
+    { // RIGHT_BRACKET
+    } // LEFT_BRACKET
+
+    (1, 2) // COMMA
+
+    struct Things { // Struct
+        something: u_int8, // COMMA
+    }
+
+    let a : Things = Things {
+        something: 10,
+    }
+    a.something; // DOT
+
+    const constant  : u_int8 = 10; // CONSTANT
+    let mut mutable : u_int8 = 7; // MUTABLE
+    let ref : &u_int8 = &u_int8; // REF
+
+    if (true) {}
+    else if (true) {}
+    else {}
+
+    match (res) {
+        Ok(u) = {};
+        Erro(s) = {};
+    }
+
+    loop {
+        break;
+    };
+
+    while (true) {};
+
+    for (i in 0..9) {
+        continue;
+    }; // INTERVAL and IN
+
+    for (i in result) {
+        print("{}",i)
+    }
+
+    nofunc(u_int8, u_int16);
+    procedures(u_int8);
+
+    enum onetwo {
+        one,
+        two,
+    }
+
+    println();
+    return Ok(());
+}
