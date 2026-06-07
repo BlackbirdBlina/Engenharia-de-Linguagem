@@ -9,7 +9,7 @@ proced procedures(u8 : u_int8) {
     u8 = 3;
 }
 
-func main() -> Result<(), String> {
+func main() -> Result<(), String> { // FUNC, MAIN, ARROW, RESULT, UNIT, STRING
     let s8  : s_int8 = 8; // s_int8, COLON, SEMICOLON and LET
     let s16 : s_int16 = 16; // s_int16
     let s32 : s_int32 = 32; // s_int32
@@ -31,7 +31,7 @@ func main() -> Result<(), String> {
     // let matrix : Matrix = ???; // Matrix
 
     let res : Result<u_int8, String> = Ok(10); // Result
-    res = Err("erro."); // Attribution
+    res = Err("erro."); // Attribution, LEFT_PARENTHESIS and RIGHT_PARENTHESIS
 
     3 > 2; // Greater than
     2 < 3; // Less than
@@ -79,7 +79,10 @@ func main() -> Result<(), String> {
 
     const constant  : u_int8 = 10; // CONSTANT
     let mut mutable : u_int8 = 7; // MUTABLE
-    let ref : &u_int8 = &u_int8; // REF
+    let b : &bool = true; // REF
+    let array : [bool; 1] = [true]; // ARRAY
+    let arrays : [bool; 2] = [true, false]; // ARRAY and LIST
+    let ref_array : &[bool] = arrays; // REF and ARRAY
 
     if (true) {}
     else if (true) {}
