@@ -23,7 +23,7 @@ id                  {letter}({letter}|{number})*
 
 %%
 
-"/*"(.|\n)*"*/"     {/* Ignora tudo entre "/ *" e "* /" */}
+"/*"([^*]|\*+[^*/])*\*+"/" {/* Ignora tudo entre "/ *" e "* /" */}
 "//".*              {/* Ignora tudo após "//" até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
@@ -50,6 +50,12 @@ id                  {letter}({letter}|{number})*
 "Matrix"            { return TYPE_MATRIX;}
 
 "Result"            { return TYPE_RESULT;}
+"Ok"                { return OK;}
+"Error"             { return ERROR;}
+
+"Option"            { return TYPE_OPTION;}
+"Some"              { return SOME;}
+"None"              { return NONE;}
 
 "="                 { return ATTRIBUTION;}
 
@@ -135,7 +141,7 @@ id                  {letter}({letter}|{number})*
                                                 return VALUE_STRING;
                                             }
 
-{id}                    { return ID;}
+{id}                    { return ID; }
 
 .                       { printf("Error_line_text(%d,%s)%s", yylineno, yytext, char_at_end) ;}
 
