@@ -164,12 +164,9 @@ void p(const char string[]);
         | '[' ElementSequence ']' {}
         ;
 
-	SubprogramCall: ID MaybeParams SubprogramCallSequence {}
+	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
+                | ID '.' SubprogramCall {}
 				| ID MaybeParams {}
-                | ID SubprogramCallSequence {}
-				;
-
-	SubprogramCallSequence: '.' SubprogramCall {}
 				;
 
     MaybeParams: '(' ')' {}
