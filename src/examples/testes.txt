@@ -1,7 +1,19 @@
-
 let variavelLegal:bool=true;
 proced imprimeAlgo(algo:bool){
     return 0;
+}
+
+struct Pessoa {
+    nome: String,
+    idade: u_int8,
+    peso: float64,
+}
+
+enum Direction {
+    north,
+    east,
+    South,
+    West,
 }
 
 func main()->s_int32{

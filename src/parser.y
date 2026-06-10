@@ -14,7 +14,7 @@ extern char * yytext;
 	char * sValue;  
 	};
 
-%token CONST MUTABLE LET SEMICOLON OR AND NOT_EQUAL EQUAL LESS GREATER LESS_EQUAL GREATER_EQUAL NOT PLUS EXPONENTIAL MINUS MULTIPLY DIVIDE REMAINDER LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACKET RIGHT_BRACKET LEFT_BRACE RIGHT_BRACE DOT END COMMA COLON PROCEDURE FUNCTION PURE FOR TO LOOP CONTINUE BREAK IF IN THEN ELSE RETURN REF PRINT
+%token CONST MUTABLE LET SEMICOLON OR AND NOT_EQUAL EQUAL LESS GREATER LESS_EQUAL GREATER_EQUAL NOT PLUS EXPONENTIAL MINUS MULTIPLY DIVIDE REMAINDER LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACKET RIGHT_BRACKET LEFT_BRACE RIGHT_BRACE DOT COMMA COLON PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN REF
 %token ATTRIBUTION INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
 %token OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
 %token TYPE_BOOL TYPE_S_INT8 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT8 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
@@ -25,6 +25,8 @@ extern char * yytext;
 %%
     Program: SubProgram Program{}
 		| Assigment Program{}
+		| StructDecl Program{printf("Struct detectada\n");}
+		| EnumDecl Program{printf("Enum detectada\n");}
 		| Main {printf("Programa detectado\n");}
         ;
 
@@ -53,18 +55,20 @@ extern char * yytext;
 
 	Statements: Statement Statements {}
 			  | Statement {}
-			  | Scope {}
 			  ;
 	
 	Statement: Assigment {}
-			 | FunctionCall SEMICOLON{}
+			 | SubprogramCall SEMICOLON{}
 			 | Return {}
+			 | Scope {}
 			 | RepeatStructures {}
 			 | DecisionStructures {}
+			 | CONTINUE SEMICOLON {}
+			 | BREAK SEMICOLON {}
 			 ;
 
-	Return: RETURN SEMICOLON{}
-	      | RETURN Expression SEMICOLON{}
+	Return: RETURN SEMICOLON {}
+	      | RETURN Expression SEMICOLON {}
 		  ;
 
 	Assigment: LET VarTyped ATTRIBUTION Expression SEMICOLON { printf("Declaração com atribuição\n"); }
@@ -122,27 +126,31 @@ extern char * yytext;
 		   ;
 	
 	AuxExp8: ID {}
-           | REF ID {}
 		   | Literal {}
-		   | LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS {}
+		   | LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS{}
 		   | Array {}
-		   | FunctionCall {}
+		   | REF ID {}
+		   | SubprogramCall {}
            | List {}
 		   ;
+		   
     List: LEFT_BRACKET RIGHT_BRACKET {}
         | LEFT_BRACKET ElementSequence RIGHT_BRACKET {}
         ;
 
-	FunctionCall: ID FunctionCall {}
-				| ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS FunctionCall {}
-				| DOT ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS FunctionCall {}
-				| DOT ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS {}
-				| ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS{}
-				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS FunctionCall {}
-				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS FunctionCall {}
-				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS {}
+	SubprogramCall: ID SubprogramCall {}
+				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS SubprogramCall{}
+				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS SubprogramCall{}
+				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS{}
+				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS{}
+				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS SubprogramCall{}
+				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS SubprogramCall{}
+				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS{}
 				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS{}
 				;
+
+	ParamsToCall: Expression COMMA ParamsToCall{}
+				| Expression{}
     
 	ElementSequence: Expression COMMA ElementSequence{}
 				| Expression {}
@@ -156,7 +164,36 @@ extern char * yytext;
 	DecisionStructures: IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope{}
 					  | IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ELSE Scope{}
 					  | IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ElseIf{}
+					  | MATCH LEFT_PARENTHESIS Pattern RIGHT_PARENTHESIS LEFT_BRACE MatchStructures RIGHT_BRACE{}
 					  ;
+
+	Pattern: Expression{}
+		   ;
+
+	MatchStructures: MatchStructure COMMA MatchStructures{}
+				   |{}
+				   ;
+
+	MatchStructure: MaybeType ARROW Scope{}
+			  	  ;
+	MaybeType: Type LEFT_BRACKET ID RIGHT_BRACKET{}
+		     | Type{}
+		     ;
+
+	StructDecl: STRUCT ID LEFT_BRACE Atributes RIGHT_BRACE{}
+	          ;
+
+	Atributes: VarTyped COMMA Atributes{}
+		     | VarTyped COMMA{}
+		     ;
+
+	EnumDecl: ENUM ID LEFT_BRACE Variants RIGHT_BRACE{}
+			;
+
+	Variants: ID COMMA Variants{}
+			| ID COMMA{}
+			;
+
 	ElseIf: ELSE IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ElseIf{}
 		  | ELSE IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ELSE Scope{}
 		  ;
