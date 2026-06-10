@@ -1,3 +1,4 @@
-src/*.c
-src/*.h
-
+*a.out
+*.c
+compilador
+*.h
