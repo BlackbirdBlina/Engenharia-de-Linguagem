@@ -28,28 +28,28 @@ id                  {letter}({letter}|{number})*
 
 {whitespace}        {column_counter += strlen(yytext);}
 {newline}           {column_counter = 0; printf("\n");}
-"bool"              { return TIPO_BOOL;}
+"bool"              { return TYPE_BOOL;}
 
-"s_int8"            { return TIPO_S_INT8;}
-"s_int16"           { return TIPO_S_INT16;}
-"s_int32"           { return TIPO_S_INT32;}
-"s_size"            { return TIPO_S_SIZE;}
-"u_int8"            { return TIPO_U_INT8;}
-"u_int16"           { return TIPO_U_INT16;}
-"u_int32"           { return TIPO_U_INT32;}
-"u_size"            { return TIPO_U_SIZE;}
+"s_int8"            { return TYPE_S_INT8;}
+"s_int16"           { return TYPE_S_INT16;}
+"s_int32"           { return TYPE_S_INT32;}
+"s_size"            { return TYPE_S_SIZE;}
+"u_int8"            { return TYPE_U_INT8;}
+"u_int16"           { return TYPE_U_INT16;}
+"u_int32"           { return TYPE_U_INT32;}
+"u_size"            { return TYPE_U_SIZE;}
 
-"float32"           { return TIPO_FLOAT32;}
-"float64"           { return TIPO_FLOAT64;}
+"float32"           { return TYPE_FLOAT32;}
+"float64"           { return TYPE_FLOAT64;}
 
-"char"              { return TIPO_CHAR;}
-"String"            { return TIPO_STRING;}
+"char"              { return TYPE_CHAR;}
+"String"            { return TYPE_STRING;}
 
-"Vec"               { return TIPO_VEC;}
-"Set"               { return TIPO_SET;}
-"Matrix"            { return TIPO_MATRIX;}
+"Vec"               { return TYPE_VEC;}
+"Set"               { return TYPE_SET;}
+"Matrix"            { return TYPE_MATRIX;}
 
-"Result"            { return TIPO_RESULT;}
+"Result"            { return TYPE_RESULT;}
 
 "="                 { return ATTRIBUTION;}
 
@@ -116,23 +116,23 @@ id                  {letter}({letter}|{number})*
 "main"              { return MAIN;}
 
 "true"|"false"                              {
-                                                return VALOR_BOOL;
+                                                return VALUE_BOOL;
                                             }
 
 {number}+(E[+-]?{number}+)?                 {
-                                                return VALOR_INT;
+                                                return VALUE_INT;
                                             }
 
 {number}+\.{number}+(E[+-]?{number}+)?      {
-                                                return VALOR_FLOAT;
+                                                return VALUE_FLOAT;
                                             }
 
 \'.\'                                       {
-                                                return VALOR_CHAR;
+                                                return VALUE_CHAR;
                                             }
 
 \".*\"                                      {
-                                                return VALOR_STRING;
+                                                return VALUE_STRING;
                                             }
 
 {id}                    { return ID;}
