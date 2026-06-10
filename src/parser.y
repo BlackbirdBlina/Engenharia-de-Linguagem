@@ -97,9 +97,9 @@ void p(const char string[]);
 	      | RETURN Expression ';' {}
 		  ;
 
-	Assignment: LET VarTyped'='Expression ';' { p("NON-MUTABLE ASSIGNMENT"); }
-			 | CONST VarTyped'='Expression ';' { p("CONSTANT ASSIGNMENT"); }
-			 | MUTABLE VarTyped'='Expression ';' { p("MUTABLE ASSIGNMENT"); }
+	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT"); }
+			 | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
+			 | MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); }
 			 | ID '=' Expression ';' { p("ATTRIBUTION"); }
 			 | ID INCREMENT ';' { p("INCREMENT"); }
 			 | ID DECREMENT ';' { p("DECREMENT"); }
@@ -211,14 +211,14 @@ void p(const char string[]);
 	          ;
 
 	Atributes: VarTyped ',' Atributes{}
-		     | VarTyped ','{}
+		     | VarTyped ',' {}
 		     ;
 
 	EnumDecl: ENUM ID '{' Variants '}'{}
 			;
 
 	Variants: ID ',' Variants{}
-			| ID ','{}
+			| ID ',' {}
 			;
 
 	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf{}
