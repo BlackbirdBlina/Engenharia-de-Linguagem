@@ -31,6 +31,7 @@ void p(const char string[]);
         INCREMENT ID {}
         DECREMENT ID {}
 */
+
 %}
 
 %union {
@@ -39,8 +40,8 @@ void p(const char string[]);
 	char * sValue;  
 	};
 
-%token CONST MUTABLE LET SEMICOLON OR AND NOT_EQUAL EQUAL LESS GREATER LESS_EQUAL GREATER_EQUAL NOT PLUS EXPONENTIAL MINUS MULTIPLY DIVIDE REMAINDER LEFT_PARENTHESIS RIGHT_PARENTHESIS LEFT_BRACKET RIGHT_BRACKET LEFT_BRACE RIGHT_BRACE DOT COMMA COLON PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN REF
-%token ATTRIBUTION INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
+%token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
+%token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
 %token OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
 %token TYPE_BOOL TYPE_S_INT8 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT8 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
@@ -49,70 +50,70 @@ void p(const char string[]);
 
 %%
     Program: SubProgram Program{}
-		| Assigment Program{}
-		| StructDecl Program{printf("Struct detectada\n");}
-		| EnumDecl Program{printf("Enum detectada\n");}
-		| Main {printf("Programa detectado\n");}
+		| Assignment Program{}
+		| StructDecl Program{ p("STRUCT Detected"); }
+		| EnumDecl Program{ p("ENUM Detected"); }
+		| Main { p("PROGRAM Detected"); }
         ;
 
-	SubProgram: FUNCTION ID LEFT_PARENTHESIS Params RIGHT_PARENTHESIS ARROW Type Scope {}
-			  | PURE FUNCTION ID LEFT_PARENTHESIS Params RIGHT_PARENTHESIS ARROW Type Scope {}
-			  | PROCEDURE ID LEFT_PARENTHESIS Params RIGHT_PARENTHESIS Scope {}
+	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("FUNCTION"); }
+			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { p("PURE FUNCTION"); }
+			  | PROCEDURE ID '(' Params ')' Scope { p("PROCEDURE"); }
 			  ;
 
-	Main: FUNCTION MAIN LEFT_PARENTHESIS Params RIGHT_PARENTHESIS ARROW Type Scope {printf("função main detectada\n");}
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { p("MAIN");}
 		;
 
 	Params: VarTypedList {}
 		  | {}
 		  ;
 
-	VarTypedList: VarTyped COMMA VarTypedList {}
+	VarTypedList: VarTyped ',' VarTypedList {}
 				| VarTyped {}
 				;
 
-	VarTyped: ID COLON Type {}
+	VarTyped: ID ':' Type {}
 			;
 
-	Scope: LEFT_BRACE RIGHT_BRACE {printf("escopo vazio\n");}
-		 | LEFT_BRACE Statements RIGHT_BRACE {printf("escopo com algo dentro achado\n");}
+	Scope: '{' '}' { p("Empty SCOPE"); }
+		 | '{' Statements '}' { p("Used SCOPE"); }
 		 ;
 
 	Statements: Statement Statements {}
 			  | Statement {}
 			  ;
 	
-	Statement: Assigment {}
-			 | SubprogramCall SEMICOLON{}
+	Statement: Assignment {}
+			 | SubprogramCall ';'{}
 			 | Return {}
 			 | Scope {}
 			 | RepeatStructures {}
 			 | DecisionStructures {}
-			 | CONTINUE SEMICOLON {}
-			 | BREAK SEMICOLON {}
+			 | CONTINUE ';' {}
+			 | BREAK ';' {}
 			 ;
 
-	Return: RETURN SEMICOLON {}
-	      | RETURN Expression SEMICOLON {}
+	Return: RETURN ';' {}
+	      | RETURN Expression ';' {}
 		  ;
 
-	Assigment: LET VarTyped ATTRIBUTION Expression SEMICOLON { printf("Declaração com atribuição\n"); }
-			 | CONST VarTyped ATTRIBUTION Expression SEMICOLON { printf("Declaração constante com atribuição\n"); }
-			 | MUTABLE VarTyped ATTRIBUTION Expression SEMICOLON { printf("Declaração mutável com atribuição\n"); }
-			 | ID ATTRIBUTION Expression SEMICOLON { printf("Atribuição\n"); }
-			 | ID INCREMENT SEMICOLON { printf("Incremento\n"); }
-			 | ID DECREMENT SEMICOLON { printf("Decremento\n"); }
-			 | ID PLUS_ATTRIBUTION Expression SEMICOLON { printf("Atribuição de soma\n"); }
-			 | ID MINUS_ATTRIBUTION Expression SEMICOLON { printf("Atribuição de subtração\n"); }
-			 | ID MULTIPLY_ATTRIBUTION Expression SEMICOLON { printf("Atribuição de multiplicação\n"); }
-			 | ID DIVIDE_ATTRIBUTION Expression SEMICOLON { printf("Atribuição de divisão\n"); }
-			 | Array ATTRIBUTION Expression SEMICOLON {}
+	Assignment: LET VarTyped'='Expression ';' { p("NON-MUTABLE ASSIGNMENT"); }
+			 | CONST VarTyped'='Expression ';' { p("CONSTANT ASSIGNMENT"); }
+			 | MUTABLE VarTyped'='Expression ';' { p("MUTABLE ASSIGNMENT"); }
+			 | ID '=' Expression ';' { p("ATTRIBUTION"); }
+			 | ID INCREMENT ';' { p("INCREMENT"); }
+			 | ID DECREMENT ';' { p("DECREMENT"); }
+			 | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
+			 | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
+			 | ID MULTIPLY_ATTRIBUTION Expression ';' { p("MULTIPLICATION_ATTRIBUTION"); }
+			 | ID DIVIDE_ATTRIBUTION Expression ';' { p("DIVIDING_ATTRIBUTION"); }
+			 | Array '=' Expression ';' { p("ARRAY_ATTRIBUTION"); }
 			 ;
 	Array: ID AtomArray{}
 		 ;
 
-	AtomArray: LEFT_BRACKET Expression RIGHT_BRACKET AtomArray{}
-		| LEFT_BRACKET Expression RIGHT_BRACKET {}
+	AtomArray: '[' Expression ']' AtomArray{}
+		| '[' Expression ']' {}
 		;
 	Expression: Expression OR AuxExp1 {}
 		      | AuxExp1 {}
@@ -122,7 +123,7 @@ void p(const char string[]);
 		   | AuxExp2 {}
 		   ;
 	
-	AuxExp2: AuxExp2 EQUAL AuxExp3 {}
+	AuxExp2: AuxExp2 '=' AuxExp3 {}
            | AuxExp2 NOT_EQUAL AuxExp3{}
 	       | AuxExp3{}
 		   ;
@@ -131,18 +132,18 @@ void p(const char string[]);
 		   | AuxExp4{}
 		   ;
 	
-	AuxExp4: AuxExp4 PLUS AuxExp5{}
-	       | AuxExp4 MINUS AuxExp5{}
+	AuxExp4: AuxExp4 '+' AuxExp5{}
+	       | AuxExp4 '-' AuxExp5{}
 		   | AuxExp5{}
 		   ;
 	
-	AuxExp5: AuxExp5 MULTIPLY AuxExp6{}
-		   | AuxExp5 DIVIDE AuxExp6{}
-		   | AuxExp5 REMAINDER AuxExp6{}
+	AuxExp5: AuxExp5 '*' AuxExp6{}
+		   | AuxExp5 '/' AuxExp6{}
+		   | AuxExp5 '%' AuxExp6{}
 		   | AuxExp6{}
 		   ;
 	
-	AuxExp6: AuxExp7 EXPONENTIAL AuxExp6{}
+	AuxExp6: AuxExp7 '^' AuxExp6{}
 		   | AuxExp7{}
 		   ;
 	
@@ -152,75 +153,76 @@ void p(const char string[]);
 	
 	AuxExp8: ID {}
 		   | Literal {}
-		   | LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS{}
+		   | '(' Expression ')'{}
 		   | Array {}
-		   | REF ID {}
+		   | '&' ID {}
 		   | SubprogramCall {}
            | List {}
 		   ;
 		   
-    List: LEFT_BRACKET RIGHT_BRACKET {}
-        | LEFT_BRACKET ElementSequence RIGHT_BRACKET {}
+    List: '[' ']' {}
+        | '[' ElementSequence ']' {}
         ;
 
-	SubprogramCall: ID SubprogramCall {}
-				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS SubprogramCall{}
-				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS SubprogramCall{}
-				| DOT ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS{}
-				| ID LEFT_PARENTHESIS ParamsToCall RIGHT_PARENTHESIS{}
-				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS SubprogramCall{}
-				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS SubprogramCall{}
-				| DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS{}
-				| ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS{}
+	SubprogramCall: ID MaybeParams SubprogramCallSequence {}
+				| ID MaybeParams {}
+                | ID SubprogramCallSequence {}
 				;
 
-	ParamsToCall: Expression COMMA ParamsToCall{}
-				| Expression{}
+	SubprogramCallSequence: '.' SubprogramCall {}
+				;
+
+    MaybeParams: '(' ')' {}
+                | '(' ParamsToCall ')' {}
+                ;
+
+	ParamsToCall: Expression ',' ParamsToCall{}
+				| Expression {}
     
-	ElementSequence: Expression COMMA ElementSequence{}
+	ElementSequence: Expression ',' ElementSequence{}
 				| Expression {}
 				;
 	
-	RepeatStructures:  WHILE LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope{}
-					|  FOR LEFT_PARENTHESIS ID IN Expression INTERVAL Expression RIGHT_PARENTHESIS Scope{}
-					|  FOR LEFT_PARENTHESIS ID IN Expression RIGHT_PARENTHESIS Scope{}
+	RepeatStructures:  WHILE '(' Expression ')' Scope{}
+					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{}
+					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope{}
 					;
-	DecisionStructures: IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope{}
-					  | IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ELSE Scope{}
-					  | IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ElseIf{}
-					  | MATCH LEFT_PARENTHESIS Pattern RIGHT_PARENTHESIS LEFT_BRACE MatchStructures RIGHT_BRACE{}
+	DecisionStructures: IF '(' Expression ')' Scope{}
+					  | IF '(' Expression ')' Scope ELSE Scope{}
+					  | IF '(' Expression ')' Scope ElseIf{}
+					  | MATCH '(' Pattern ')' '{' MatchStructures '}'{}
 					  ;
 
 	Pattern: Expression{}
 		   ;
 
-	MatchStructures: MatchStructure COMMA MatchStructures{}
+	MatchStructures: MatchStructure ',' MatchStructures{}
 				   |{}
 				   ;
 
 	MatchStructure: MaybeType ARROW Scope{}
 			  	  ;
-	MaybeType: Type LEFT_BRACKET ID RIGHT_BRACKET{}
+	MaybeType: Type '[' ID ']'{}
 		     | Type{}
 		     ;
 
-	StructDecl: STRUCT ID LEFT_BRACE Atributes RIGHT_BRACE{}
+	StructDecl: STRUCT ID '{' Atributes '}'{}
 	          ;
 
-	Atributes: VarTyped COMMA Atributes{}
-		     | VarTyped COMMA{}
+	Atributes: VarTyped ',' Atributes{}
+		     | VarTyped ','{}
 		     ;
 
-	EnumDecl: ENUM ID LEFT_BRACE Variants RIGHT_BRACE{}
+	EnumDecl: ENUM ID '{' Variants '}'{}
 			;
 
-	Variants: ID COMMA Variants{}
-			| ID COMMA{}
+	Variants: ID ',' Variants{}
+			| ID ','{}
 			;
 
-	ElseIf: ELSE IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ElseIf{}
-		  | ELSE IF LEFT_PARENTHESIS Expression RIGHT_PARENTHESIS Scope ELSE Scope{}
+	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf{}
+		  | ELSE IF '(' Expression ')' Scope ELSE Scope{}
 		  ;
 	
 	Type: TYPE_BOOL
@@ -236,17 +238,17 @@ void p(const char string[]);
         | TYPE_FLOAT64 
         | TYPE_CHAR 
         | TYPE_STRING 
-        | TYPE_VEC LESS Type GREATER
-        | TYPE_SET LESS Type GREATER
-        | TYPE_MATRIX  LESS Type SEMICOLON VALUE_INT SEMICOLON VALUE_INT GREATER
-        | TYPE_RESULT LESS Type COMMA Type GREATER
-        | TYPE_OPTION LESS Type COMMA Type GREATER
-        | LEFT_BRACKET Type SEMICOLON VALUE_INT RIGHT_BRACKET
-        | REF LEFT_BRACKET Type RIGHT_BRACKET
-        | REF Type
+        | TYPE_VEC '<' Type '>'
+        | TYPE_SET '<' Type '>'
+        | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>'
+        | TYPE_RESULT '<' Type ',' Type '>'
+        | TYPE_OPTION '<' Type ',' Type '>'
+        | '[' Type ';' VALUE_INT ']'
+        | '&' '[' Type ']'
+        | '&' Type
         ;
 
-	Compare: LESS | GREATER | LESS_EQUAL | GREATER_EQUAL;
+	Compare: '<' | '>' | LESS_EQUAL | GREATER_EQUAL;
 
 	Literal: NONE | VALUE_INT | VALUE_FLOAT | VALUE_BOOL | VALUE_CHAR | VALUE_STRING ;
 %%
