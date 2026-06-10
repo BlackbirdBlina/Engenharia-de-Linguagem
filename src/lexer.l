@@ -27,7 +27,7 @@ id                  {letter}({letter}|{number})*
 "//".*              {/* Ignora tudo após "//" até o final da linha */}
 
 {whitespace}        {column_counter += strlen(yytext);}
-{newline}           {column_counter = 0; printf("\n");}
+{newline}           {column_counter = 0; }
 "bool"              { return TYPE_BOOL;}
 
 "s_int8"            { return TYPE_S_INT8;}
