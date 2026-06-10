@@ -6,6 +6,8 @@ int yyerror(char *s);
 extern int yylineno;
 extern char * yytext;
 
+/* Custom Functions */
+void p(const char string[]);
 
 /* OUR TODOs */
 /*
@@ -249,24 +251,12 @@ extern char * yytext;
 	Literal: NONE | VALUE_INT | VALUE_FLOAT | VALUE_BOOL | VALUE_CHAR | VALUE_STRING ;
 %%
 
+/* Custom Functions */
+void p(const char c[]) {
+    printf("%s\n", c);
+}
+
 int main (void) {
-    // TODO:
-        // OK(Type)
-        // ERROR(Type)
-        // SOME(Type)
-    // TODO:
-    // ModuleFunction: ID COLON COLON ModuleFunction {}
-				//             | ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS ModuleFunction {}
-				// | DOT ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS ModuleFunction {}
-				// | DOT ID LEFT_PARENTHESIS ElementSequence RIGHT_PARENTHESIS {}
-				// | DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS ModuleFunction {}
-				// | DOT ID LEFT_PARENTHESIS  RIGHT_PARENTHESIS {}
-				// | ID COLON COLON LEFT_PARENTHESIS  RIGHT_PARENTHESIS{}
-    // TODO:
-       // ID INCREMENT {}
-       // ID DECREMENT {}
-       // INCREMENT ID {}
-       // DECREMENT ID {}
 
 	return yyparse ( );
 }
