@@ -6,6 +6,29 @@ int yyerror(char *s);
 extern int yylineno;
 extern char * yytext;
 
+
+/* OUR TODOs */
+/*
+    -> Add support for these things:
+        OK(Type)
+        ERROR(Type)
+        SOME(Type)
+    
+    -> Add support for things like: Vec::foo()
+    ModuleFunction: ID ':' ':' ModuleFunction {}
+                  | ID '(' ElementSequence ')' ModuleFunction {}
+                  | '.' ID '(' ElementSequence ')' ModuleFunction {}
+	              | '.' ID '(' ElementSequence ')' {}
+	          	  | '.' ID '('  ')' ModuleFunction {}
+	          	  | '.' ID '('  ')' {}
+	          	  | ID ':' ':' '('  ')'{}
+
+    -> Add Incrementing and Decrementing
+        ID INCREMENT {}
+        ID DECREMENT {}
+        INCREMENT ID {}
+        DECREMENT ID {}
+*/
 %}
 
 %union {
