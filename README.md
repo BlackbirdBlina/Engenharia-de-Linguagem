@@ -140,18 +140,18 @@ retornado variáveis, usando a palavra chave procedure.
         West,
         South,
         East
-    };
+    }
 
     struct Aluno {
         String name;
         u_int16 age = 0;
-    };
+    }
 
     func main() {
         let aluno = Aluno {
             name: "Pedro",
             age: 20,
-        };
+        }
 
         let dir = Direction.North;
     }
