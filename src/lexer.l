@@ -57,10 +57,10 @@ id                  {letter}({letter}|{number})*
 "Some"              { return SOME;}
 "None"              { return NONE;}
 
-"="                 { return ATTRIBUTION;}
+"="                 { return '=';}
 
-">"                 { return GREATER;}
-"<"                 { return LESS;}
+">"                 { return '>';}
+"<"                 { return '<';}
 ">="                { return GREATER_EQUAL;}
 "<="                { return LESS_EQUAL;}
 "=="                { return EQUAL;}
@@ -73,34 +73,34 @@ id                  {letter}({letter}|{number})*
 "*="                { return MULTIPLY_ATTRIBUTION;}
 "/="                { return DIVIDE_ATTRIBUTION;}
 
-"+"                 { return PLUS;}
-"-"                 { return MINUS;}
-"*"                 { return MULTIPLY;}
-"/"                 { return DIVIDE;}
-"%"                 { return REMAINDER;}
-"^"                 { return EXPONENTIAL;}
+"+"                 { return '+';}
+"-"                 { return '-';}
+"*"                 { return '*';}
+"/"                 { return '/';}
+"%"                 { return '%';}
+"^"                 { return '^';}
 
 "!"                 { return NOT;}
 "&&"                { return AND;}
 "||"                { return OR;}
 
-"("                 { return LEFT_PARENTHESIS;}
-")"                 { return RIGHT_PARENTHESIS;}
-"["                 { return LEFT_BRACKET;}
-"]"                 { return RIGHT_BRACKET;}
-"{"                 { return LEFT_BRACE;}
-"}"                 { return RIGHT_BRACE;}
+"("                 { return '(';}
+")"                 { return ')';}
+"["                 { return '[';}
+"]"                 { return ']';}
+"{"                 { return '{';}
+"}"                 { return '}';}
 
 "\.\."              { return INTERVAL;}
-"\."                { return DOT;}
-":"                 { return COLON;}
-";"                 { return SEMICOLON;}
-","                 { return COMMA;}
+"\."                { return '.';}
+":"                 { return ':';}
+";"                 { return ';';}
+","                 { return ',';}
 
 "const"             { return CONST;}
 "let"               { return LET;}
 "mut"               { return MUTABLE;}
-"&"                 { return REF;}
+"&"                 { return '&';}
 "if"                { return IF;}
 "else"              { return ELSE;}
 "match"             { return MATCH;}
