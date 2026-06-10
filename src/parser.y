@@ -75,8 +75,8 @@ void p(const char string[]);
 	VarTyped: ID ':' Type {}
 			;
 
-	Scope: '{' '}' { p("Empty SCOPE"); }
-		 | '{' Statements '}' { p("Used SCOPE"); }
+	Scope: '{' '}' { p("SCOPE Inactive"); }
+		 | '{' Statements '}' { p("SCOPE Active"); }
 		 ;
 
 	Statements: Statement Statements {}
