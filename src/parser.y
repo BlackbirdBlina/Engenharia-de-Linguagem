@@ -22,6 +22,15 @@ void np(const char string[]);
         // Ou
         let t : struct = Thing { whatever : u_int8 = 10 };
     -> ENUM, match, union
+            | EnumDecl { p("ENUM Detected"); }
+            EnumDecl: ENUM ID '{' Variants '}'{}
+	Variants: ID ',' Variants{}
+	Variants: ID ',' Variants{}
+			| ID ',' {}
+			;
+			| ID ',' {}
+			;
+			;
     -> Print tá funcionando, mas a gnt quer ele nativo? Ou faz um macro futuramente (igual rust).
 */
 
@@ -45,6 +54,7 @@ void np(const char string[]);
 %%
     Program: SubProgram Program {}
 		| Assignment Program {}
+        | StructDecl Program {}
 		| Main { p("PROGRAM Detected"); }
         ;
 
@@ -77,8 +87,7 @@ void np(const char string[]);
 	
 	Statement: Assignment {}
              | Attribution {}
-             | StructDecl Program{ p("STRUCT Detected"); }
-             | EnumDecl Program{ p("ENUM Detected"); }
+             | StructDecl { p("STRUCT Detected"); }
 			 | SubprogramCall ';'{}
              | ModuleCall ';' {}
 			 | Return { np("RETURN"); }
@@ -97,8 +106,12 @@ void np(const char string[]);
 	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT"); }
 			 | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
 			 | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); }
+             | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
+             | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
 			 ;
+
     Attribution: ID '=' Expression ';' { p("ATTRIBUTION"); }
+             | ID '.' ID '=' Expression ';'{ p("STRUCT ATTRIBUTION"); }
 			 | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
 			 | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
 			 | ID MULTIPLY_ATTRIBUTION Expression ';' { p("MULTIPLICATION_ATTRIBUTION"); }
@@ -156,13 +169,13 @@ void np(const char string[]);
 		   | AuxExp8{}
 		   ;
 	
-	AuxExp8: ID {}
+	AuxExp8: IDs {}
 		   | Literal {}
-		   | '(' Expression ')'{}
+		   | '(' Expression ')' {}
 		   | Array {}
-		   | '&' ID {}
-           | '&' ID '[' INTERVAL ID ']' {}
-           | '&' ID '[' ID INTERVAL ']' {}
+		   | '&' ID {} // TALVEZ IDs?
+           | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
+           | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
            | '&' ID '[' INTERVAL VALUE_INT ']' {}
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
            | Print {}
@@ -170,6 +183,10 @@ void np(const char string[]);
 		   | SubprogramCall {}
            | List {}
 		   ;
+
+    IDs: ID '.' IDs {}
+        | ID {}
+        ;
 		   
     List: '[' ']' {}
         | '[' ElementSequence ']' {}
@@ -202,7 +219,7 @@ void np(const char string[]);
 	RepeatStructures:  WHILE '(' Expression ')' Scope{}
 					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{}
 					|  FOR '(' ID IN Expression ')' Scope{}
-					|  LOOP Scope{}
+					|  LOOP Scope {}
 					;
 	DecisionStructures: IF '(' Expression ')' Scope {}
 					  | IF '(' Expression ')' Scope ELSE Scope {}
@@ -234,12 +251,7 @@ void np(const char string[]);
 		     | VarTyped ',' {}
 		     ;
 
-	EnumDecl: ENUM ID '{' Variants '}'{}
-			;
 
-	Variants: ID ',' Variants{}
-			| ID ',' {}
-			;
 
     TypeCollection: TYPE_S_INT8
         | TYPE_S_INT32 

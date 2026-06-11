@@ -77,15 +77,14 @@ func main() -> Result<(), String> { // FUNC, MAIN, ARROW, RESULT, UNIT, STRING
     } // LEFT_BRACKET
 
 
-    /*struct Things { // Struct
-        something: u_int8, // COMMA
+    struct Things { // Struct
+        something: u_int8,
+        algo: u_int8,
     }
 
-    let a : Things = Things {
-        something: 10,
-    }
-    a.something; // DOT
-    */
+    let struct a = Things { 10, 8 };
+    let mut struct b = Things { 7, 6 };
+    let c : u_int8 = a.something; // DOT
 
     const constant  : u_int8 = 10; // CONSTANT
     let mut mutable : u_int8 = 7; // MUTABLE
