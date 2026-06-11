@@ -120,6 +120,7 @@ id                  {letter}({letter}|{number})*
 "struct"            { return STRUCT;}
 "enum"              { return ENUM;}
 "main"              { return MAIN;}
+"print"             { return PRINT;}
 
 "true"|"false"                              {
                                                 return VALUE_BOOL;

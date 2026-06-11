@@ -8,28 +8,21 @@ extern char * yytext;
 
 /* Custom Functions */
 void p(const char string[]);
+void np(const char string[]);
 
 /* OUR TODOs */
 /*
-    -> Add support for these things:
-        OK(Type)
-        ERROR(Type)
-        SOME(Type)
-    
-    -> Add support for things like: Vec::foo()
-    ModuleFunction: ID ':' ':' ModuleFunction {}
-                  | ID '(' ElementSequence ')' ModuleFunction {}
-                  | '.' ID '(' ElementSequence ')' ModuleFunction {}
-	              | '.' ID '(' ElementSequence ')' {}
-	          	  | '.' ID '('  ')' ModuleFunction {}
-	          	  | '.' ID '('  ')' {}
-	          	  | ID ':' ':' '('  ')'{}
-
-    -> Add Incrementing and Decrementing
-        ID INCREMENT {}
-        ID DECREMENT {}
-        INCREMENT ID {}
-        DECREMENT ID {}
+    -> Figure out the syntax for structs:
+        struct Thing {
+            whatever : u_int8 = u_int8::default,
+        }
+        // Na main:
+        let t : Thing = Thing { whatever = 10 };
+        // Ou
+        // Ou
+        let t : struct = Thing { whatever : u_int8 = 10 };
+    -> ENUM, match, union
+    -> Print tá funcionando, mas a gnt quer ele nativo? Ou faz um macro futuramente (igual rust).
 */
 
 %}
@@ -42,6 +35,7 @@ void p(const char string[]);
 
 %token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
 %token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
+%token PRINT
 %token OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
 %token TYPE_BOOL TYPE_S_INT8 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT8 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
@@ -49,14 +43,12 @@ void p(const char string[]);
 %start Program 
 
 %%
-    Program: SubProgram Program{}
-		| Assignment Program{}
-		| StructDecl Program{ p("STRUCT Detected"); }
-		| EnumDecl Program{ p("ENUM Detected"); }
+    Program: SubProgram Program {}
+		| Assignment Program {}
 		| Main { p("PROGRAM Detected"); }
         ;
 
-	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("FUNCTION"); }
+	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("REGULAR FUNCTION"); }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { p("PURE FUNCTION"); }
 			  | PROCEDURE ID '(' Params ')' Scope { p("PROCEDURE"); }
 			  ;
@@ -65,18 +57,18 @@ void p(const char string[]);
 		;
 
 	Params: VarTypedList {}
-		  | {}
+		  | { np("No PARAMS"); }
 		  ;
 
 	VarTypedList: VarTyped ',' VarTypedList {}
 				| VarTyped {}
 				;
 
-	VarTyped: ID ':' Type {}
+	VarTyped: ID ':' Type { np("PARAMS"); }
 			;
 
-	Scope: '{' '}' { p("SCOPE Inactive"); }
-		 | '{' Statements '}' { p("SCOPE Active"); }
+	Scope: '{' '}' { np("NoSCOPE"); }
+		 | '{' Statements '}' { np("SCOPE"); }
 		 ;
 
 	Statements: Statement Statements {}
@@ -84,13 +76,18 @@ void p(const char string[]);
 			  ;
 	
 	Statement: Assignment {}
+             | Attribution {}
+             | StructDecl Program{ p("STRUCT Detected"); }
+             | EnumDecl Program{ p("ENUM Detected"); }
 			 | SubprogramCall ';'{}
-			 | Return {}
+             | ModuleCall ';' {}
+			 | Return { np("RETURN"); }
 			 | Scope {}
 			 | RepeatStructures {}
 			 | DecisionStructures {}
 			 | CONTINUE ';' {}
 			 | BREAK ';' {}
+             | Print ';' {}
 			 ;
 
 	Return: RETURN ';' {}
@@ -99,22 +96,30 @@ void p(const char string[]);
 
 	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT"); }
 			 | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
-			 | MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); }
-			 | ID '=' Expression ';' { p("ATTRIBUTION"); }
-			 | ID INCREMENT ';' { p("INCREMENT"); }
-			 | ID DECREMENT ';' { p("DECREMENT"); }
+			 | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); }
+			 ;
+    Attribution: ID '=' Expression ';' { p("ATTRIBUTION"); }
 			 | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
 			 | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
 			 | ID MULTIPLY_ATTRIBUTION Expression ';' { p("MULTIPLICATION_ATTRIBUTION"); }
 			 | ID DIVIDE_ATTRIBUTION Expression ';' { p("DIVIDING_ATTRIBUTION"); }
 			 | Array '=' Expression ';' { p("ARRAY_ATTRIBUTION"); }
-			 ;
-	Array: ID AtomArray{}
+             | IncrOrDecr ';' {}
+             ;
+
+    IncrOrDecr: ID INCREMENT { p("EVAL->INCREMENT"); }
+			 | ID DECREMENT { p("EVAL->DECREMENT"); }
+			 | INCREMENT ID { p("INCREMENT->EVAL"); }
+			 | DECREMENT ID { p("DECREMENT->EVAL"); }
+             ;
+
+	Array: ID ArrayAccesses{}
 		 ;
 
-	AtomArray: '[' Expression ']' AtomArray{}
+	ArrayAccesses: '[' Expression ']' ArrayAccesses{}
 		| '[' Expression ']' {}
 		;
+
 	Expression: Expression OR AuxExp1 {}
 		      | AuxExp1 {}
 			  ;
@@ -156,6 +161,12 @@ void p(const char string[]);
 		   | '(' Expression ')'{}
 		   | Array {}
 		   | '&' ID {}
+           | '&' ID '[' INTERVAL ID ']' {}
+           | '&' ID '[' ID INTERVAL ']' {}
+           | '&' ID '[' INTERVAL VALUE_INT ']' {}
+           | '&' ID '[' VALUE_INT INTERVAL ']' {}
+           | Print {}
+           | ModuleCall {}
 		   | SubprogramCall {}
            | List {}
 		   ;
@@ -164,8 +175,12 @@ void p(const char string[]);
         | '[' ElementSequence ']' {}
         ;
 
+    Print: PRINT '(' VALUE_STRING ',' Expression ')' {}
+         | PRINT '(' VALUE_STRING ')' {}
+        ;
+
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
-                | ID '.' SubprogramCall {}
+                | ID '.' SubprogramCall {} // foo.poo()
 				| ID MaybeParams {}
 				;
 
@@ -176,6 +191,10 @@ void p(const char string[]);
 	ParamsToCall: Expression ',' ParamsToCall{}
 				| Expression {}
     
+    ModuleCall: ID ':' ':' SubprogramCall  {}
+                | TypeCollection ':' ':' SubprogramCall {}
+                ;
+
 	ElementSequence: Expression ',' ElementSequence{}
 				| Expression {}
 				;
@@ -185,17 +204,21 @@ void p(const char string[]);
 					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope{}
 					;
-	DecisionStructures: IF '(' Expression ')' Scope{}
-					  | IF '(' Expression ')' Scope ELSE Scope{}
-					  | IF '(' Expression ')' Scope ElseIf{}
-					  | MATCH '(' Pattern ')' '{' MatchStructures '}'{}
+	DecisionStructures: IF '(' Expression ')' Scope {}
+					  | IF '(' Expression ')' Scope ELSE Scope {}
+					  | IF '(' Expression ')' Scope ElseIf {}
+					  | MATCH '(' Pattern ')' '{' MatchStructures '}' {}
 					  ;
 
+	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {}
+		  | ELSE IF '(' Expression ')' Scope ELSE Scope{}
+		  ;
+	
 	Pattern: Expression{}
 		   ;
 
 	MatchStructures: MatchStructure ',' MatchStructures{}
-				   |{}
+				   | {}
 				   ;
 
 	MatchStructure: MaybeType ARROW Scope{}
@@ -204,10 +227,10 @@ void p(const char string[]);
 		     | Type{}
 		     ;
 
-	StructDecl: STRUCT ID '{' Atributes '}'{}
+	StructDecl: STRUCT ID '{' Attributes '}'{}
 	          ;
 
-	Atributes: VarTyped ',' Atributes{}
+	Attributes: VarTyped ',' Attributes {}
 		     | VarTyped ',' {}
 		     ;
 
@@ -218,12 +241,7 @@ void p(const char string[]);
 			| ID ',' {}
 			;
 
-	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf{}
-		  | ELSE IF '(' Expression ')' Scope ELSE Scope{}
-		  ;
-	
-	Type: TYPE_BOOL
-        | TYPE_S_INT8
+    TypeCollection: TYPE_S_INT8
         | TYPE_S_INT32 
         | TYPE_S_SIZE 
         | TYPE_S_INT16 
@@ -235,28 +253,61 @@ void p(const char string[]);
         | TYPE_FLOAT64 
         | TYPE_CHAR 
         | TYPE_STRING 
-        | TYPE_VEC '<' Type '>'
-        | TYPE_SET '<' Type '>'
-        | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>'
-        | TYPE_RESULT '<' Type ',' Type '>'
-        | TYPE_OPTION '<' Type ',' Type '>'
-        | '[' Type ';' VALUE_INT ']'
-        | '&' '[' Type ']'
-        | '&' Type
+        | TYPE_VEC
+        | TYPE_SET
+        | TYPE_MATRIX
+        | TYPE_RESULT {np("RESULT");}
+        | TYPE_OPTION
         ;
 
-	Compare: '<' | '>' | LESS_EQUAL | GREATER_EQUAL;
+	Type: TYPE_BOOL {np("BOOL");}
+        | TYPE_S_INT8 {np("S_INT8");}
+        | TYPE_S_INT32  {np("S_INT32");}
+        | TYPE_S_SIZE  {np("S_SIZE");}
+        | TYPE_S_INT16  {np("S_INT16");}
+        | TYPE_U_INT8  {np("U_INT8");}
+        | TYPE_U_INT16  {np("U_INT16");}
+        | TYPE_U_INT32  {np("U_INT32");}
+        | TYPE_U_SIZE  {np("U_SIZE");}
+        | TYPE_FLOAT32 {np("FLOAT32");}
+        | TYPE_FLOAT64  {np("FLOAT64");}
+        | TYPE_CHAR  {np("CHAR");}
+        | TYPE_STRING  {np("STRING");}
+        | TYPE_VEC '<' Type '>' {np("VEC");}
+        | TYPE_SET '<' Type '>' {np("SET");}
+        | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' { np("MATRIX"); }
+        | TYPE_RESULT '<' Type ',' Type '>' { np("RESULT W/ Types"); }
+        | TYPE_OPTION '<' Type ',' Type '>' { np("OPTION"); }
+        | '[' Type ';' VALUE_INT ']' { np("ARRAY"); }
+        | '&' '[' Type ']' { np("REFERENCE ARRAY"); }
+        | '&' Type { np("REFERENCE"); }
+        | '('')' { np("UNIT TYPE"); }
+        ;
 
-	Literal: NONE | VALUE_INT | VALUE_FLOAT | VALUE_BOOL | VALUE_CHAR | VALUE_STRING ;
+	Compare: '<' | '>' | LESS_EQUAL | GREATER_EQUAL | EQUAL;
+
+	Literal: VALUE_INT
+            | VALUE_FLOAT 
+            | VALUE_BOOL 
+            | VALUE_CHAR 
+            | VALUE_STRING
+            | OK '(' Expression ')' { np("OK"); }
+            | ERROR '(' Expression ')' { np("ERROR"); }
+            | SOME '(' Expression ')' { np("SOME"); }
+            | '(' ')' { np("UNIT"); }
+            | NONE {}
+            ;
 %%
 
 /* Custom Functions */
 void p(const char c[]) {
     printf("%s\n", c);
 }
+void np(const char c[]) {
+    printf("%s -> ", c);
+}
 
 int main (void) {
-
 	return yyparse ( );
 }
 

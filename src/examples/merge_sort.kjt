@@ -1,22 +1,27 @@
+/*
 func merge(left : &[u_int32], right : &[u_int32]) -> Vec<u_int32> {
-   let result: Vec<u_int32> = Vec::with_capacity(left.len() + right.len()); // TODO ::
+   let result: Vec<u_int32> = Vec::with_capacity(left.len() + right.len());
 
 
    let r : [u_int32; 5] = left;
    let i : u_int32 = 0;
    let j : u_int32 = 0;
-   while (i < left.len() && j < right.len()) {
+   while (i < left.len() && j < right.len()) { // Não reconhece o . para id.len()
        if (left[i] <= right[j]) {
-           result.push(left[i++]); // ++
+           result.push(left[i]);
+           i++;
        } else {
-           result.push(right[j++]);
+           result.push(right[j]);
+           j++;
        }
    }
    while (i < left.len()) {
-       result.push(left[i++]);
+       result.push(left[i]);
+       i++;
    }
    while (j < right.len()) {
-       result.push(right[j++])
+       result.push(right[j]);
+       j++;
    }
 
 
@@ -28,21 +33,25 @@ func merge_sort(arr: &[u_int32]) -> Vec<u_int32> {
    if (arr.len() <= 1) {
        return arr.to_vec();
    }
-   let mid : usize = arr.len() / 2;
+   let mid : u_size = arr.len() / 2;
    let left : u_int32 = merge_sort(&arr[..mid]); // ..mid
    let right : u_int32 = merge_sort(&arr[mid..]); // mid..
 
 
    return merge(&left, &right); //&left &right
 }
+*/
 
+func foo() -> s_int32 {
+    return s;
+}
 
-func main() -> Result<(), String> {
+func main(i:u_int8) -> Result<(), String> {
    let array : [s_int32; 5] = [5, 4, 3, 2, 1];
    let result : Vec<u_int32> = merge_sort(&array);
    for (i in result) {
-       print("{}",i) // Print
+       print("{}", i);
    }
-   println();
-   return Ok(()); // OK(())
+   print("\n");
+   return Ok(());
 }
