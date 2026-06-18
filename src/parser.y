@@ -207,6 +207,7 @@ void np(const char string[]);
 
 	ParamsToCall: Expression ',' ParamsToCall{}
 				| Expression {}
+				;
     
     ModuleCall: ID ':' ':' SubprogramCall  {}
               | TypeCollection ':' ':' SubprogramCall {}
@@ -221,6 +222,7 @@ void np(const char string[]);
 					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope {}
 					;
+					
 	DecisionStructures: IF '(' Expression ')' Scope {}
 					  | IF '(' Expression ')' Scope ELSE Scope {}
 					  | IF '(' Expression ')' Scope ElseIf {}
@@ -240,6 +242,7 @@ void np(const char string[]);
 
 	MatchStructure: MaybeType ARROW Scope{}
 			  	  ;
+				  
 	MaybeType: Type '[' ID ']'{}
 		     | Type{}
 		     ;
