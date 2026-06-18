@@ -53,10 +53,10 @@ void np(const char string[]);
 
 %%
     Program: SubProgram Program {}
-		| Assignment Program {}
-        | StructDecl Program {}
-		| Main { p("PROGRAM Detected"); }
-        ;
+		   | Assignment Program {}
+           | StructDecl Program {}
+		   | Main { p("PROGRAM Detected"); }
+           ;
 
 	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("REGULAR FUNCTION"); }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { p("PURE FUNCTION"); }
@@ -104,34 +104,34 @@ void np(const char string[]);
 		  ;
 
 	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT"); }
-			 | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
-			 | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); }
-             | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
-             | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
-			 ;
+			  | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
+			  | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); }
+              | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
+              | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
+			  ;
 
     Attribution: ID '=' Expression ';' { p("ATTRIBUTION"); }
-             | ID '.' ID '=' Expression ';'{ p("STRUCT ATTRIBUTION"); }
-			 | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
-			 | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
-			 | ID MULTIPLY_ATTRIBUTION Expression ';' { p("MULTIPLICATION_ATTRIBUTION"); }
-			 | ID DIVIDE_ATTRIBUTION Expression ';' { p("DIVIDING_ATTRIBUTION"); }
-			 | Array '=' Expression ';' { p("ARRAY_ATTRIBUTION"); }
-             | IncrOrDecr ';' {}
-             ;
+               | ID '.' ID '=' Expression ';'{ p("STRUCT ATTRIBUTION"); }
+			   | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
+			   | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
+			   | ID MULTIPLY_ATTRIBUTION Expression ';' { p("MULTIPLICATION_ATTRIBUTION"); }
+			   | ID DIVIDE_ATTRIBUTION Expression ';' { p("DIVIDING_ATTRIBUTION"); }
+			   | Array '=' Expression ';' { p("ARRAY_ATTRIBUTION"); }
+               | IncrOrDecr ';' {}
+               ;
 
     IncrOrDecr: ID INCREMENT { p("EVAL->INCREMENT"); }
-			 | ID DECREMENT { p("EVAL->DECREMENT"); }
-			 | INCREMENT ID { p("INCREMENT->EVAL"); }
-			 | DECREMENT ID { p("DECREMENT->EVAL"); }
-             ;
+			  | ID DECREMENT { p("EVAL->DECREMENT"); }
+			  | INCREMENT ID { p("INCREMENT->EVAL"); }
+			  | DECREMENT ID { p("DECREMENT->EVAL"); }
+              ;
 
 	Array: ID ArrayAccesses{}
 		 ;
 
 	ArrayAccesses: '[' Expression ']' ArrayAccesses{}
-		| '[' Expression ']' {}
-		;
+		         | '[' Expression ']' {}
+		         ;
 
 	Expression: Expression OR AuxExp1 {}
 		      | AuxExp1 {}
@@ -185,8 +185,8 @@ void np(const char string[]);
 		   ;
 
     IDs: ID '.' IDs {}
-        | ID {}
-        ;
+       | ID {}
+       ;
 		   
     List: '[' ']' {}
         | '[' ElementSequence ']' {}
@@ -194,27 +194,27 @@ void np(const char string[]);
 
     Print: PRINT '(' VALUE_STRING ',' Expression ')' {}
          | PRINT '(' VALUE_STRING ')' {}
-        ;
+         ;
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
-                | ID '.' SubprogramCall {} // foo.poo()
-				| ID MaybeParams {}
-				;
+                  | ID '.' SubprogramCall {} // foo.poo()
+				  | ID MaybeParams {}
+				  ;
 
     MaybeParams: '(' ')' {}
-                | '(' ParamsToCall ')' {}
-                ;
+               | '(' ParamsToCall ')' {}
+               ;
 
 	ParamsToCall: Expression ',' ParamsToCall{}
 				| Expression {}
     
     ModuleCall: ID ':' ':' SubprogramCall  {}
-                | TypeCollection ':' ':' SubprogramCall {}
-                ;
+              | TypeCollection ':' ':' SubprogramCall {}
+              ;
 
 	ElementSequence: Expression ',' ElementSequence{}
-				| Expression {}
-				;
+				   | Expression {}
+				   ;
 	
 	RepeatStructures:  WHILE '(' Expression ')' Scope{}
 					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{}
@@ -248,29 +248,35 @@ void np(const char string[]);
 	          ;
 
 	Attributes: VarTyped ',' Attributes {}
-		     | VarTyped ',' {}
-		     ;
+		      | VarTyped ',' {}
+		      ;
 
+	EnumDecl: ENUM ID '{' Variants '}' {}
+			;
+	
+	Variants: ID ',' Variants {}
+			| ID ',' {}
+			;
 
 
     TypeCollection: TYPE_S_INT8
-        | TYPE_S_INT32 
-        | TYPE_S_SIZE 
-        | TYPE_S_INT16 
-        | TYPE_U_INT8 
-        | TYPE_U_INT16 
-        | TYPE_U_INT32 
-        | TYPE_U_SIZE 
-        | TYPE_FLOAT32
-        | TYPE_FLOAT64 
-        | TYPE_CHAR 
-        | TYPE_STRING 
-        | TYPE_VEC
-        | TYPE_SET
-        | TYPE_MATRIX
-        | TYPE_RESULT {np("RESULT");}
-        | TYPE_OPTION
-        ;
+				  | TYPE_S_INT32 
+				  | TYPE_S_SIZE 
+				  | TYPE_S_INT16 
+				  | TYPE_U_INT8 
+				  | TYPE_U_INT16 
+				  | TYPE_U_INT32 
+				  | TYPE_U_SIZE 
+				  | TYPE_FLOAT32
+				  | TYPE_FLOAT64 
+				  | TYPE_CHAR 
+				  | TYPE_STRING 
+				  | TYPE_VEC
+				  | TYPE_SET
+				  | TYPE_MATRIX
+				  | TYPE_RESULT {np("RESULT");}
+				  | TYPE_OPTION
+				  ;
 
 	Type: TYPE_BOOL {np("BOOL");}
         | TYPE_S_INT8 {np("S_INT8");}
@@ -294,21 +300,22 @@ void np(const char string[]);
         | '&' '[' Type ']' { np("REFERENCE ARRAY"); }
         | '&' Type { np("REFERENCE"); }
         | '('')' { np("UNIT TYPE"); }
+		| ID
         ;
 
 	Compare: '<' | '>' | LESS_EQUAL | GREATER_EQUAL | EQUAL;
 
 	Literal: VALUE_INT
-            | VALUE_FLOAT 
-            | VALUE_BOOL 
-            | VALUE_CHAR 
-            | VALUE_STRING
-            | OK '(' Expression ')' { np("OK"); }
-            | ERROR '(' Expression ')' { np("ERROR"); }
-            | SOME '(' Expression ')' { np("SOME"); }
-            | '(' ')' { np("UNIT"); }
-            | NONE {}
-            ;
+           | VALUE_FLOAT 
+           | VALUE_BOOL 
+           | VALUE_CHAR 
+           | VALUE_STRING
+           | OK '(' Expression ')' { np("OK"); }
+           | ERROR '(' Expression ')' { np("ERROR"); }
+           | SOME '(' Expression ')' { np("SOME"); }
+           | '(' ')' { np("UNIT"); }
+           | NONE {}
+           ;
 %%
 
 /* Custom Functions */
