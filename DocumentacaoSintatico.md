@@ -125,7 +125,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>20</span>
+            <span>5</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 60px;">
             <span>
@@ -134,7 +134,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>20</span>
+            <span>6</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 60px;">
             <span>
@@ -143,7 +143,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>20</span>
+            <span>6</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 40px;">
             <span>
@@ -152,7 +152,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>20</span>
+            <span>6</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 60px;">
             <span>
@@ -161,7 +161,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>20</span>
+            <span>6</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 60px;">
             <span>
@@ -170,7 +170,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>20</span>
+            <span>6</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <span>
@@ -179,7 +179,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span><strong>15</strong></span>
+            <span><strong>7</strong></span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 20px;">
             <span>
@@ -188,7 +188,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>18</span>
+            <span>7</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 20px;">
             <span>
@@ -197,7 +197,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>18</span>
+            <span>8</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 20px;">
             <span>
@@ -206,7 +206,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>18</span>
+            <span>9</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <span>
@@ -215,7 +215,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span><strong>25</strong></span>
+            <span><strong>9</strong></span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 20px;">
             <span>
@@ -224,7 +224,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>18</span>
+            <span>9</span>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-left: 20px;">
             <span>
@@ -233,7 +233,7 @@
                 </a>
             </span>
             <span style="flex-grow: 1; border-bottom: 1px dotted #000000; margin: 0 10px; position: relative; top: -4px;"></span>
-            <span>18</span>
+            <span>10</span>
         </div>
     </div>
 </div>
@@ -516,36 +516,98 @@ match (res) {
 <div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
     <h1 id="AnalisadorSintatico" style="font-size: 12pt; font-family: 'Times New Roman', serif; margin-bottom: 24px; text-transform: uppercase;"> 2.2 Analisador Sintático: principais tarefas, decisões e dificuldades </h1>
     <p style="text-indent: 50px; margin-bottom: 12px;">
-        O analisador sintático foi desenvolvido utilizando o Bison e é responsável por validar a estrutura dos programas escritos em Kojito. Sua implementação baseia-se em uma gramática livre de contexto capaz de reconhecer os diferentes elementos da linguagem e verificar se eles foram utilizados de forma correta.
+        O analisador sintático foi desenvolvido utilizando o Bison e é responsável por validar a estrutura dos programas escritos em Kojito. Sua implementação baseia-se em uma gramática livre de contexto capaz de reconhecer os diferentes elementos da linguagem e verificar se eles foram utilizados de forma correta. 
+    </p>
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Dito isso, uma dificuldade que enfrentamos foi a de decidir como deveria ser a definição do símbolo de partida (Program), pois estávamos na dúvida de como deveria ser visto o programa e como, a partir dele seriam desencadeadas as demais partes que compõem um programa na nossa linguagem. Todavia, apesar dessa dificuldade, optamos por definir o programa como um conjunto de subprogramas, declarações de variáveis globais e uma main.
+    </p>
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Outra dificuldade que enfrentamos foi a de definir de maneira eficiente a estrutura sintática para a  chamada de Subprogramas, representado pelo SubprogramCall. Isso se deve ao fato de ter várias maneiras de chamar um subprograma, como por exemplo:
+    </p>
+</div>
+
+```c
+SubprogramCall: ID MaybeParams '.' SubprogramCall {}
+              | ID '.' SubprogramCall {} // foo.poo()
+			  | ID MaybeParams {}
+			  ;
+```
+``` rust 
+	foo();
+	foo(1,2);
+	foo().boo();
+```
+<div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Como pode ter uma função sem parâmetros, foi criado a estrutura sintática: MaybeParams, que inclui tanto a chamada de função sem parâmetros quanto a chamada com parâmetros que ocorre de maneira recursiva através da operação ParamsToCall.
+    </p>
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Dito isto, estas foram as principais dificuldades que enfrentamos nessa etapa do projeto. Porém, apesar de termos evidenciado apenas essas duas situações que consideramos as mais difíceis de elaborarmos suas estruturas sintáticas, nosso analisador sintático comporta outras regras de como deve ser estruturada a função principal (main), o escopo, as declarações, as atribuições, arrays, estruturas de decisão e de repetições, entre outras que podem ser localizadas no arquivo src/parser.y do projeto. Além disso, também incluimos uma pequena coleção de tipos que são aceitos em nossa linguagem.
+    </p>
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Por fim, apesar desses desafios fizemos o possível para manter nossa linguagem funcionando e dentro do contexto ao qual nos propomos a fazê-la, de modo que possa auxiliar no aprendizado da programação, especialmente para aqueles que já tiveram algum contato inicial com programação, mas ainda não têm um conhecimento robusto na área.
     </p>
 </div>
 
 <div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
     <h1 id="Limitacoes" style="font-size: 12pt; font-family: 'Times New Roman', serif; margin-bottom: 24px; text-transform: uppercase;"> 2.3 Limitações da implementação atual </h1>
     <p style="text-indent: 50px; margin-bottom: 12px;">
-        TEXTO
+        Até o momento ainda não pensamos como iremos incluir a estrutura sintática para o enum, tornando um aspecto limitador da implementação atual. Porém, estamos nos empenhando para que essa estrutura se concretize o mais rápido possível, pois estamos cientes que para a etapa seguinte (analisador semântico), todos os tokens precisam estar corretamente definidos, para que haja o bom funcionamento do analisador semântico.
     </p>
 </div>
-
-<div style="page-break-after: always;"></div>
 
 <div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
     <h1 id="Uso" style="font-size: 12pt; font-family: 'Times New Roman', serif; margin-bottom: 24px; text-transform: uppercase;"> 3. Uso do analisador sintático </h1>
     <p style="text-indent: 50px; margin-bottom: 12px;">
-        TEXTO
+        Para utilizar o analisador sintático definimos o seguinte comando:
+    </p>
+</div>
+
+```bash
+./compilador < examples/all_tests.kjt
+```
+<div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        De modo que, o ./compilador é o binário gerado capaz de ler arquivos e o all_tests.kjt é o arquivo que contém todos os testes que pensamos como experimento para saber se, de fato, todos os símbolos estão sendo devidamente identificados, bem como se cada token está ocupando seu devido lugar, ou seja, se a estrutura do programa escrito está casando com a estrutura sintática definida, além de identificar erros quando a escrita do programa não respeita a estrutura sintática estabelecida para a linguagem.
     </p>
 </div>
 
 <div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
     <h1 id="ComoGerar" style="font-size: 12pt; font-family: 'Times New Roman', serif; margin-bottom: 24px; text-transform: uppercase;"> 3.1 Como gerar o analisador sintático. </h1>
     <p style="text-indent: 50px; margin-bottom: 12px;">
-        TEXTO
+        Para gerar o analisador sintático é necessário realizar os seguintes comandos:
+    </p>
+</div>
+
+```bash
+# 1. flex lexer.l
+# 2. yacc -d -v parser.y
+# 3. gcc y.tab.c lex.yy.c -o compilador
+```
+<div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Assim, no primeiro comando é gerado um arquivo lex.yy.c contendo um programa em C a partir das especificações léxicas que definimos para a nossa linguagem, de modo que para cada token a ser analisado lexicalmente, a especificação contém uma expressão regular e uma ação.
+    </p>
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        No segundo comando é gerado um arquivo y.tab.c contendo outro programa em C onde os tokens fornecidos pelo analisador léxico estarão agrupados em estruturas sintáticas, de modo que seja possível construir uma árvore sintática correspondente a essas estruturas. Salientando que as flags -d e -v servem para gerar um cabeçalho de tokens e para gerar um relatório de estados, respectivamente, sendo uma boa prática para avaliar se o que foi gerado corresponde ao que se espera que seja.
+    </p>
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Por fim, no terceiro comando é gerado um arquivo binário do qual será possível encontrar a conexão entre os programas do lexico e do parser, sendo possível passar um programa na linguagem kojito para ser analisado em cima desse binário gerado. Cabe destacar ainda que a flag -o serve para nomear o arquivo de saída a.out que, no exemplo de comando utilizado, optamos por nomear de compilador, fazendo jus ao que ocorre nesta etapa.
     </p>
 </div>
 
 <div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
     <h1 id="Testes" style="font-size: 12pt; font-family: 'Times New Roman', serif; margin-bottom: 24px; text-transform: uppercase;"> 3.2 Programas de Teste e resultados esperados </h1>
     <p style="text-indent: 50px; margin-bottom: 12px;">
-        TEXTO
+        Os programas de teste podem ser encontrados seguindo o caminho src/examples. Nesse diretório terão quatro arquivos de testes com progamas escritos na nossa linguagem (Kojito). Assim, para executar os testes basta dar o seguinte comando:
+    </p>
+</div>
+
+```bash
+./compilador < examples/[nome_do_arquivo_de_teste]
+```
+<div style="font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', serif; text-align: justify;">
+    <p style="text-indent: 50px; margin-bottom: 12px;">
+        Ao realizar esse comando, é esperado que tudo o que está escrito nesses arquivos seja devidamente identificado, não havendo erros de símbolos, nem de estrutura sintática, de modo que, caso seja utilizado algum símbolo ou estrutura que não faz parte do universo da nossa linguagem seja devidamente detectado e indicado o problema lexical ou sintático.
     </p>
 </div>
