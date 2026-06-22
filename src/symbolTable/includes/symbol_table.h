@@ -27,7 +27,7 @@ typedef struct SymbolNode {
 } SymbolNode;
 
 typedef struct {
-    SymbolNode* bucket[TABLE_SIZE];
+    SymbolNode* buckets[TABLE_SIZE];
 } SymbolTable;
 
 extern int global_counter;

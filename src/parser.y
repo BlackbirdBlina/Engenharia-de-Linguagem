@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include "symbol_table.h"
 
 int yylex(void);
 int yyerror(char *s);
@@ -10,6 +11,7 @@ extern char * yytext;
 void p(const char string[]);
 void np(const char string[]);
 
+SymbolTable* createTable_Program = NULL;
 /* OUR TODOs */
 /*
     -> Figure out the syntax for structs:
@@ -330,7 +332,12 @@ void np(const char c[]) {
 }
 
 int main (void) {
-	return yyparse ( );
+	createTable_Program = create_table();
+	yyparse ( );
+	
+	printf("Tabela de símbolos criada no endereço: %p\n", createTable_Program);
+	return 0;
+	
 }
 
 int yyerror (char *msg) {
