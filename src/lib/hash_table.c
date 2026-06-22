@@ -161,43 +161,43 @@ void ht_print(ht * ht) {
 
 #endif
 
-int main(void) {
-    ht *table = ht_create();
-
-    // Hash table successfully created (reserved in memory):
-    assert(table != NULL);
-    // Check if the default fields are correct:
-    assert(table->capacity == HASHTABLE_SIZE);
-    assert(table->length == 0);
-
-    // Entries was also reserved, so it should not be NULL anymore:
-    assert(table->entries != NULL);
-    assert(table->entries[0].key == NULL);
-
-    const char * key1 = "test#var1";
-    const char * key2 = "test#var2";
-    const char * key3 = "test#var10";
-    const char * type = "u_int32";
-
-    // Successfully add:
-    assert(ht_add(table, key1, (void *)type) != NULL);
-    assert(ht_add(table, key3, (void *)type) != NULL);
-
-    assert(ht_get(table, key1) != NULL);
-    assert(ht_get(table, key3) != NULL);
-
-    assert(ht_remove(table, key1));
-    assert(ht_remove(table, key3));
-
-
-    // Key2 shouldn't show up
-    assert(ht_get(table, key2) == NULL);
-
-    // A 0 in strcmp means the strings are equal
-    assert(ht_add(table, key1, (void *)type) != NULL);
-    assert(strcmp((const char *)ht_get(table, key1)->value, type) == 0);
-
-    ht_print(table);
-
-    return 0;
-}
+// int main(void) {
+//     ht *table = ht_create();
+//
+//     // Hash table successfully created (reserved in memory):
+//     assert(table != NULL);
+//     // Check if the default fields are correct:
+//     assert(table->capacity == HASHTABLE_SIZE);
+//     assert(table->length == 0);
+//
+//     // Entries was also reserved, so it should not be NULL anymore:
+//     assert(table->entries != NULL);
+//     assert(table->entries[0].key == NULL);
+//
+//     const char * key1 = "test#var1";
+//     const char * key2 = "test#var2";
+//     const char * key3 = "test#var10";
+//     const char * type = "u_int32";
+//
+//     // Successfully add:
+//     assert(ht_add(table, key1, (void *)type) != NULL);
+//     assert(ht_add(table, key3, (void *)type) != NULL);
+//
+//     assert(ht_get(table, key1) != NULL);
+//     assert(ht_get(table, key3) != NULL);
+//
+//     assert(ht_remove(table, key1));
+//     assert(ht_remove(table, key3));
+//
+//
+//     // Key2 shouldn't show up
+//     assert(ht_get(table, key2) == NULL);
+//
+//     // A 0 in strcmp means the strings are equal
+//     assert(ht_add(table, key1, (void *)type) != NULL);
+//     assert(strcmp((const char *)ht_get(table, key1)->value, type) == 0);
+//
+//     ht_print(table);
+//
+//     return 0;
+// }
