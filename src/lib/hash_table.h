@@ -1,24 +1,22 @@
 #ifndef HASHTABLE
 #define HASHTABLE
-#define SET_SIZE 16
-#include <stddef.h>
 
-struct ht_entry {
-    const char * key;
-    void * value;
-};
+#include <cstddef>
 
-struct ht {
-    ht_entry * entries;
-    size_t capacity;
-    size_t length;
-};
-
+typedef struct ht_entry ht_entry;
 typedef struct ht ht;
 
-ht * ht_create(void);
-ht * ht_get(ht *);
-ht * ht_add(ht *);
-ht * ht_destroy(void);
+ht* ht_create();
+
+unsigned long ht_hash(const char * key);
+
+ht_entry * ht_get(ht * ht, const char * key);
+
+ht_entry * ht_add(ht * ht, const char * key, void * value);
+
+bool ht_destroy(ht * ht);
+
+bool ht_remove(ht * ht, const char * key);
+void ht_print(ht * ht);
 
 #endif
