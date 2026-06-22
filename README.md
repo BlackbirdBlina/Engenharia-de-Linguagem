@@ -10,24 +10,20 @@
 # 1. Clone o repositório
 git clone https://github.com/BlackbirdBlina/Engenharia-de-Linguagem.git
 cd EngenhariaLinguagem
-cd src
 
 # 2. Instale o Fast Lexical Analyzer Generator (Flex)
 sudo apt-get install flex
 
-# 3. Gere o código C
-flex arquivo.l
+# 3. Use o makefile para gerar os binários
+make
 
-# 4. Compile o arquivo lex.yy.c
-gcc -o lex lex.yy.c -ll
-
-# 5. Execute o ./lex gerado passando o fluxo de entrada para ele
-./lex < nomePrograma.kjt
+# 4. Execute os binários gerados
+make run
 ```
 
 - Nome da linguagem: Kojito
 
-![Kojito](LogoKojito.png)
+![Kojito](documentations/LogoKojito.png)
 
 - Proposta:
 
