@@ -9,15 +9,9 @@ struct Pessoa {
     peso: float64,
 }
 
-enum Direction {
-    north,
-    east,
-    South,
-    West,
-}
+
 
 func main()->s_int32{
-
     let oi:[s_int32]= A*(2+B);
     let asd:u_int32 = true; 
     let asd:u_int32 = funcaoLegal().metodo().amosmad(); 

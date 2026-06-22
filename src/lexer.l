@@ -142,7 +142,8 @@ id                  {letter}({letter}|{number})*
                                                 return VALUE_STRING;
                                             }
 
-{id}                    { return ID; }
+{id}                    { yylval.sValue = strdup(yytext); 
+                          return ID; }
 
 .                       { printf("Error_line_text(%d,%s)%s", yylineno, yytext, char_at_end) ;}
 

@@ -1,14 +1,19 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "./lib/record.h"
 
 int yylex(void);
 int yyerror(char *s);
 extern int yylineno;
 extern char * yytext;
+extern FILE * yyin, * yyout;
 
 /* Custom Functions */
 void p(const char string[]);
 void np(const char string[]);
+char * cat(char **, int);
 
 /* OUR TODOs */
 /*
@@ -39,31 +44,49 @@ void np(const char string[]);
 %union {
 	int    iValue; 	
 	char   cValue; 	
-	char * sValue;  
+	char * sValue;
+	struct Record * rec;  
 	};
 
 %token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
 %token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
 %token PRINT
-%token OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
+%token <sValue> OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
 %token TYPE_BOOL TYPE_S_INT8 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT8 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
 
+%type <rec> SubProgram Main Params VarTypedList VarTyped Scope Statements Statement Return Assignment Attribution IncrOrDecr
+%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print
+%type <rec> SubprogramCall MaybeParams ParamsToCall ModuleCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
+%type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants TypeCollection Type Compare Literal
+%type <rec> Decls
 %start Program 
 
 %%
-    Program: SubProgram Program {}
-		   | Assignment Program {}
-           | StructDecl Program {}
-		   | Main { p("PROGRAM Detected"); }
+    Program:  Decls  { p("PROGRAM Detected");
+					   fprintf(yyout,"%s", $1->code);} 
            ;
-
+	Decls: SubProgram Decls{
+							char* temp[]={$1->code,$2->code};
+							$$=CreateRecord(cat(temp,2));}
+		 | Assignment Decls{char* temp[]={$1->code,$2->code};
+							$$=CreateRecord(cat(temp,2));}
+		 | StructDecl Decls{char* temp[]={$1->code,$2->code};
+							$$=CreateRecord(cat(temp,2));}
+		 | EnumDecl Decls{char* temp[]={$1->code,$2->code};
+							$$=CreateRecord(cat(temp,2));}	
+		 | Main {
+				$$=CreateRecord($1->code);
+		 }
+		 ;
+	
 	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("REGULAR FUNCTION"); }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { p("PURE FUNCTION"); }
 			  | PROCEDURE ID '(' Params ')' Scope { p("PROCEDURE"); }
 			  ;
 
-	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { p("MAIN");}
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main()", $8->code};
+														 $$=CreateRecord(cat(temp,2));}
 		;
 
 	Params: VarTypedList {}
@@ -77,7 +100,7 @@ void np(const char string[]);
 	VarTyped: ID ':' Type { np("PARAMS"); }
 			;
 
-	Scope: '{' '}' { np("NoSCOPE"); }
+	Scope: '{' '}' { $$=CreateRecord("{}"); }
 		 | '{' Statements '}' { np("SCOPE"); }
 		 ;
 
@@ -185,7 +208,9 @@ void np(const char string[]);
 		   ;
 
     IDs: ID '.' IDs {}
-       | ID {}
+       | ID {
+			char* pieces[]={"Bom","Dia"};
+			fprintf(yyout, "%s",cat(pieces,1));}
        ;
 		   
     List: '[' ']' {}
@@ -262,23 +287,23 @@ void np(const char string[]);
 			;
 
 
-    TypeCollection: TYPE_S_INT8
-				  | TYPE_S_INT32 
-				  | TYPE_S_SIZE 
-				  | TYPE_S_INT16 
-				  | TYPE_U_INT8 
-				  | TYPE_U_INT16 
-				  | TYPE_U_INT32 
-				  | TYPE_U_SIZE 
-				  | TYPE_FLOAT32
-				  | TYPE_FLOAT64 
-				  | TYPE_CHAR 
-				  | TYPE_STRING 
-				  | TYPE_VEC
-				  | TYPE_SET
-				  | TYPE_MATRIX
+    TypeCollection: TYPE_S_INT8 {}
+				  | TYPE_S_INT32 {}
+				  | TYPE_S_SIZE {}
+				  | TYPE_S_INT16 {}
+				  | TYPE_U_INT8 {}
+				  | TYPE_U_INT16 {}
+				  | TYPE_U_INT32 {}
+				  | TYPE_U_SIZE {}
+				  | TYPE_FLOAT32 {}
+				  | TYPE_FLOAT64 {}
+				  | TYPE_CHAR {}
+				  | TYPE_STRING {}
+				  | TYPE_VEC {}
+				  | TYPE_SET {}
+				  | TYPE_MATRIX {}
 				  | TYPE_RESULT {np("RESULT");}
-				  | TYPE_OPTION
+				  | TYPE_OPTION {}
 				  ;
 
 	Type: TYPE_BOOL {np("BOOL");}
@@ -303,16 +328,21 @@ void np(const char string[]);
         | '&' '[' Type ']' { np("REFERENCE ARRAY"); }
         | '&' Type { np("REFERENCE"); }
         | '('')' { np("UNIT TYPE"); }
-		| ID
+		| ID {}
         ;
 
-	Compare: '<' | '>' | LESS_EQUAL | GREATER_EQUAL | EQUAL;
+	Compare: '<' {}
+		   | '>' {}
+		   | LESS_EQUAL {}
+		   | GREATER_EQUAL {}
+		   | EQUAL {}
+		   ;
 
-	Literal: VALUE_INT
-           | VALUE_FLOAT 
-           | VALUE_BOOL 
-           | VALUE_CHAR 
-           | VALUE_STRING
+	Literal: VALUE_INT {}
+           | VALUE_FLOAT {}
+           | VALUE_BOOL {}
+           | VALUE_CHAR {}
+           | VALUE_STRING {}
            | OK '(' Expression ')' { np("OK"); }
            | ERROR '(' Expression ')' { np("ERROR"); }
            | SOME '(' Expression ')' { np("SOME"); }
@@ -329,11 +359,44 @@ void np(const char c[]) {
     printf("%s -> ", c);
 }
 
-int main (void) {
-	return yyparse ( );
+
+int main (int argc, char ** argv) {
+ 	int codigo;
+
+    if (argc != 3) {
+       printf("Usage: $./compiler input.txt output.txt\nClosing application...\n");
+       exit(0);
+    }
+    
+    yyin = fopen(argv[1], "r");
+    yyout = fopen(argv[2], "w");
+
+    codigo = yyparse();
+
+    fclose(yyin);
+    fclose(yyout);
+
+	return codigo;
 }
 
 int yyerror (char *msg) {
 	fprintf (stderr, "%d: %s at '%s'\n", yylineno, msg, yytext);
 	return 0;
+}
+char* cat(char** strings, int qnt){
+	int tam=0;
+	for(int i=0;i<qnt;i++){
+		tam+=strlen(strings[i]);
+	}
+	tam++;
+	char * output=(char*) malloc(tam*sizeof(char));
+	if (!output){
+		printf("Allocation problem. Closing application...\n");
+		exit(0);
+  	}
+	output[0]='\0';
+	for(int i=0;i<qnt;i++){
+		strcat(output,strings[i]);
+	}
+	return output;
 }
