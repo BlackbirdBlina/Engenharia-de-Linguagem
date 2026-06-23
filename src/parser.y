@@ -333,17 +333,24 @@ void np(const char c[]) {
 
 int main (void) {
 	createTable_Program = create_table();
-	insert_symbol(createTable_Program, "x", "global",create_primitive_type(KIND_BOOL));
+	insert_symbol(createTable_Program, "x", "global", alloc_type_info(KIND_BOOL));
+	insert_symbol(createTable_Program, "f", "global", alloc_type_info(KIND_FLOAT32));
 	
 	yyparse ( );
 	
 	printf("Tabela de símbolos criada no endereço: %p\n", createTable_Program);
 
-    unsigned int slot = hash("x#global#0");
-	SymbolNode* node = createTable_Program->buckets[slot];
-	printf("node: %p\n", node);
+	SymbolNode* node = lookup_symbol(createTable_Program, "x#global#0");
 	printf("name: %s\n", node->name);
+	printf("node: %p\n", node);
 	printf("key: %s\n", node->key);
+	printf("kind: %d\n", node->type->kind);
+
+	node = lookup_symbol(createTable_Program, "f#global#1");
+	printf("name: %s\n", node->name);
+	printf("node: %p\n", node);
+	printf("key: %s\n", node->key);
+	printf("kind: %d\n", node->type->kind);
 	return 0;
 	
 }

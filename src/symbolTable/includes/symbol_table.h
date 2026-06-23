@@ -72,16 +72,17 @@ typedef struct Unit {
 } Unit;
 
 typedef struct User_struct {
+    char* user_type_name;
 
 } User_struct;
 
 typedef struct User_enum {
+    char* user_type_name;
 
 } User_enum;
 
 typedef struct TypeInfo {
     TypeKind kind;
-    char* user_type_name;
     union SpecificType {
         bool bool_infos;
         int8_t s_int8_infos;
@@ -123,8 +124,7 @@ typedef struct {
 
 extern int global_counter;
 
-TypeInfo* create_primitive_type(TypeKind kind);
-TypeInfo* create_user_type(const char* name, TypeKind kind);
+TypeInfo* alloc_type_info(TypeKind kind);
 void free_type_info(TypeInfo* type);
 
 SymbolTable* create_table(void);

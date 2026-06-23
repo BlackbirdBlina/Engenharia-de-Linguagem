@@ -5,19 +5,10 @@
 
 int global_counter = 0;
 
-TypeInfo* create_primitive_type(TypeKind kind) {
+TypeInfo* alloc_type_info(TypeKind kind) {
     TypeInfo* typeInfo = (TypeInfo*)malloc(sizeof(TypeInfo));
     if (!typeInfo) return NULL;
     typeInfo->kind = kind;
-    typeInfo->user_type_name = NULL;
-    return typeInfo;
-}
-
-TypeInfo* create_user_type(const char* name, TypeKind kind) {
-    TypeInfo* typeInfo = create_primitive_type(kind);
-    if(typeInfo && name) {
-        typeInfo->user_type_name = strdup(name);
-    }
     return typeInfo;
 }
 
@@ -57,14 +48,39 @@ void insert_symbol(SymbolTable* table, const char* id, const char* scope, TypeIn
     SymbolNode* new_node = (SymbolNode*)malloc(sizeof(SymbolNode));
     if (!new_node) {
         free(unique_key);
-        printf("Não foi possível gerar um novo nó para armazenar a informação.");
+        printf("Não foi possível gerar um novo nó para armazenar a informação.\n");
         return;
     }
 
     new_node->key = unique_key;
     new_node->name = strdup(id);
     new_node->type = type;
+    if (table->buckets[slot] != NULL) {
+        SymbolNode* current = table->buckets[slot];
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = new_node;
+    } else {
+        table->buckets[slot] = new_node;
+    }
+}
 
-    new_node->next = table->buckets[slot];
-    table->buckets[slot] = new_node;
+SymbolNode* lookup_symbol(SymbolTable* table, const char* unique_key) {
+    if (!table || !unique_key) {
+        printf("Tabela não inicializada ou chave não informada.\n");
+        return NULL;
+    }
+
+    unsigned int slot = hash(unique_key);
+    SymbolNode* current = table->buckets[slot];
+
+    while(current != NULL) {
+        if (strcmp(current->key, unique_key) == 0) {
+            return current;
+        }
+        current = current->next;
+    }
+    printf("Informação buscada não encontrada.\n");
+    return NULL;
 }
