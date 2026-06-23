@@ -48,3 +48,27 @@ SymbolTable* create_table(void) {
     }
     return table;
 }
+
+void insert_symbol(SymbolTable* table, const char* id, const char* scope, TypeInfo* type) {
+    if (!table || !id || !scope) {
+        printf("Não foi possível realizar a inserção, pois houve um problema na tabela, no id ou no escopo.\n");
+        return;
+    }
+
+    char* unique_key = generate_key(id, scope);
+    unsigned int slot = hash(unique_key);
+
+    SymbolNode* new_node = (SymbolNode*)malloc(sizeof(SymbolNode));
+    if (!new_node) {
+        free(unique_key);
+        printf("Não foi possível gerar um novo nó para armazenar a informação.");
+        return;
+    }
+
+    new_node->key = unique_key;
+    new_node->name = strdup(id);
+    new_node->type = type;
+
+    new_node->next = table->buckets[slot];
+    table->buckets[slot] = new_node;
+}
