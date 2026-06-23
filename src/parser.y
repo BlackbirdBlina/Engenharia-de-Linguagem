@@ -14,6 +14,8 @@ extern FILE * yyin, * yyout;
 void p(const char string[]);
 void np(const char string[]);
 char * cat(char **, int);
+char * whileCount();
+char * forCount();
 
 /* OUR TODOs */
 /*
@@ -124,19 +126,21 @@ char * cat(char **, int);
 	Statement: Assignment {$$=CreateRecord($1->code);}
              | Attribution {$$=CreateRecord($1->code);}
              | StructDecl { p("STRUCT Detected"); }
-			 | SubprogramCall ';'{}
+			 | SubprogramCall ';'{char* temp[]={$1->code,";"};
+								  $$=CreateRecord(cat(temp,2));}
              | ModuleCall ';' {}
-			 | Return { np("RETURN"); }
-			 | Scope {}
-			 | RepeatStructures {}
-			 | DecisionStructures {}
-			 | CONTINUE ';' {}
-			 | BREAK ';' {}
+			 | Return { np("RETURN");$$=CreateRecord($1->code); }
+			 | Scope {$$=CreateRecord($1->code);}
+			 | RepeatStructures {$$=CreateRecord($1->code);}
+			 | DecisionStructures {$$=CreateRecord($1->code);}
+			 | CONTINUE ';' {$$=CreateRecord("break");}
+			 | BREAK ';' {$$=CreateRecord("continue");}
              | Print ';' {}
 			 ;
 
-	Return: RETURN ';' {}
-	      | RETURN Expression ';' {}
+	Return: RETURN ';' {$$=CreateRecord("return;");}
+	      | RETURN Expression ';' {char* temp[]={"return",$2->code,";"};
+								  $$=CreateRecord(cat(temp,3));}
 		  ;
 
 	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT");
@@ -223,7 +227,7 @@ char * cat(char **, int);
 		   | AuxExp8{$$=CreateRecord($1->code);}
 		   ;
 	
-	AuxExp8: IDs {}
+	AuxExp8: IDs {$$=CreateRecord($1->code);}
 		   | Literal {$$=CreateRecord($1->code);}
 		   | '(' Expression ')' {$$=CreateRecord($2->code);}
 		   | Array {}
@@ -234,7 +238,7 @@ char * cat(char **, int);
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
            | Print {}
            | ModuleCall {}
-		   | SubprogramCall {}
+		   | SubprogramCall {$$=CreateRecord($1->code);}
            | List {}
 		   ;
 
@@ -253,15 +257,18 @@ char * cat(char **, int);
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
                   | ID '.' SubprogramCall {} // foo.poo()
-				  | ID MaybeParams {}
+				  | ID MaybeParams {char* temp[]={$1,$2->code};
+									$$=CreateRecord(cat(temp,2));}
 				  ;
 
-    MaybeParams: '(' ')' {}
-               | '(' ParamsToCall ')' {}
+    MaybeParams: '(' ')' {$$=CreateRecord("()");}
+               | '(' ParamsToCall ')' {char* temp[]={"(",$2->code,")"};
+									   $$=CreateRecord(cat(temp,3));}
                ;
 
-	ParamsToCall: Expression ',' ParamsToCall{}
-				| Expression {}
+	ParamsToCall: Expression ',' ParamsToCall{char* temp[]={$1->code,",",$3->code};
+									   		  $$=CreateRecord(cat(temp,3));}
+				| Expression {$$=CreateRecord($1->code);}
 				;
     
     ModuleCall: ID ':' ':' SubprogramCall  {}
@@ -272,20 +279,33 @@ char * cat(char **, int);
 				   | Expression {}
 				   ;
 	
-	RepeatStructures:  WHILE '(' Expression ')' Scope{}
-					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{}
+	RepeatStructures:  WHILE '(' Expression ')' Scope{
+														char* tempw[]={"WHILE_",whileCount()};
+														char* whileLabel=cat(tempw,2);
+														char* temp[]={"{",whileLabel,":if(",$3->code,"){",$5->code,"goto ",whileLabel,"}}"};
+														$$=CreateRecord(cat(temp,9));}
+					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{
+																			char* tempf[]={"FOR_",forCount()};
+																			char* forLabel=cat(tempf,2);
+																			char* temp[]={"{ int",$3,"=",$5->code,";",forLabel,":if(",$3,"!=",$7->code,"){",$9->code,"if(",$3,"<",$7->code,"){",$3,"++;}","else{",$3,"--;} goto ",forLabel,"}}"};
+																			$$=CreateRecord(cat(temp,24));}
 					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope {}
 					;
 					
-	DecisionStructures: IF '(' Expression ')' Scope {}
-					  | IF '(' Expression ')' Scope ELSE Scope {}
-					  | IF '(' Expression ')' Scope ElseIf {}
+	DecisionStructures: IF '(' Expression ')' Scope {char* temp[]={"if(",$3->code,")",$5->code};
+									   		  		$$=CreateRecord(cat(temp,4));}
+					  | IF '(' Expression ')' Scope ELSE Scope {char* temp[]={"if(",$3->code,")",$5->code,"else",$7->code};
+									   		  					$$=CreateRecord(cat(temp,6));}
+					  | IF '(' Expression ')' Scope ElseIf {char* temp[]={"if(",$3->code,")",$5->code,$6->code};
+									   		  				$$=CreateRecord(cat(temp,5));}
 					  | MATCH '(' Pattern ')' '{' MatchStructures '}' {}
 					  ;
 
-	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {}
-		  | ELSE IF '(' Expression ')' Scope ELSE Scope{}
+	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {char* temp[]={"else{ if(",$4->code,")",$6->code,$7->code,"}"};
+									   		  $$=CreateRecord(cat(temp,6));}
+		  | ELSE IF '(' Expression ')' Scope ELSE Scope{char* temp[]={"else{ if(",$4->code,")",$6->code,"else",$8->code,"}"};
+		  												$$=CreateRecord(cat(temp,7));}
 		  ;
 	
 	Pattern: Expression{}
@@ -361,11 +381,11 @@ char * cat(char **, int);
 		| ID {}
         ;
 
-	Compare: '<' {}
-		   | '>' {}
-		   | LESS_EQUAL {}
-		   | GREATER_EQUAL {}
-		   | EQUAL {}
+	Compare: '<' {$$=CreateRecord("<");}
+		   | '>' {$$=CreateRecord(">");}
+		   | LESS_EQUAL {$$=CreateRecord("<=");}
+		   | GREATER_EQUAL {$$=CreateRecord(">=");}
+		   | EQUAL {$$=CreateRecord("==");}
 		   ;
 
 	Literal: VALUE_INT {$$=CreateRecord($1);}
@@ -430,4 +450,16 @@ char* cat(char** strings, int qnt){
 		strcat(output,strings[i]);
 	}
 	return output;
+}
+char* forCount(){
+	static int forCounts=0;
+	char* text=malloc(sizeof(char)*12);
+	snprintf(text,sizeof(text),"%d",forCounts++);
+	return text;
+}
+char* whileCount(){
+	static int whileCounts=0;
+	char* text=malloc(sizeof(char)*12);
+	snprintf(text,sizeof(text),"%d",whileCounts++);
+	return text;
 }
