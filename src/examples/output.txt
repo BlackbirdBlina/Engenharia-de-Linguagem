@@ -1,1 +1,2 @@
-int main()
+void coisa(int legal,bool outra_coisa){}
+int main(){const unsigned int i=0;}

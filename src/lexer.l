@@ -123,22 +123,27 @@ id                  {letter}({letter}|{number})*
 "print"             { return PRINT;}
 
 "true"|"false"                              {
+                                                yylval.sValue = strdup(yytext);
                                                 return VALUE_BOOL;
                                             }
 
 {number}+(E[+-]?{number}+)?                 {
+                                                yylval.sValue = strdup(yytext);
                                                 return VALUE_INT;
                                             }
 
 {number}+\.{number}+(E[+-]?{number}+)?      {
+                                                yylval.sValue = strdup(yytext);
                                                 return VALUE_FLOAT;
                                             }
 
 \'.\'                                       {
+                                                yylval.sValue = strdup(yytext);
                                                 return VALUE_CHAR;
                                             }
 
 \".*\"                                      {
+                                                yylval.sValue = strdup(yytext);
                                                 return VALUE_STRING;
                                             }
 
