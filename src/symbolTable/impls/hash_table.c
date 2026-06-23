@@ -9,16 +9,12 @@ TypeInfo* create_primitive_type(TypeKind kind) {
     TypeInfo* typeInfo = (TypeInfo*)malloc(sizeof(TypeInfo));
     if (!typeInfo) return NULL;
     typeInfo->kind = kind;
-    typeInfo->element_type = NULL;
-    typeInfo->secondary_type = NULL;
     typeInfo->user_type_name = NULL;
-    typeInfo->dimensions[0] = 0;
-    typeInfo->dimensions[1] = 0;
     return typeInfo;
 }
 
-TypeInfo* create_user_type(const char* name) {
-    TypeInfo* typeInfo = create_primitive_type(KIND_USER_DEFINED);
+TypeInfo* create_user_type(const char* name, TypeKind kind) {
+    TypeInfo* typeInfo = create_primitive_type(kind);
     if(typeInfo && name) {
         typeInfo->user_type_name = strdup(name);
     }
