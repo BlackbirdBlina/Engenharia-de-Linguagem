@@ -1,4 +1,3 @@
-src/*.c
-src/*.h
-src/*.output
-
+lex.*
+compilador
+y.*
