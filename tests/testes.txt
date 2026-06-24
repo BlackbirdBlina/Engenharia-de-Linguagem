@@ -1,63 +1,10 @@
-let variavelLegal:bool=true;
-proced imprimeAlgo(algo:bool){
-    return 0;
+proced coisa(legal:s_int32,outra_coisa:bool){
+    return ;
 }
-
-struct Pessoa {
-    nome: String,
-    idade: u_int8,
-    peso: float64,
-}
-
-enum Direction {
-    north,
-    east,
-    South,
-    West,
-}
-
 func main()->s_int32{
-
-    let oi:[s_int32]= A*(2+B);
-    let asd:u_int32 = true; 
-    let asd:u_int32 = funcaoLegal().metodo().amosmad(); 
-    imprimeAlgo(2+2);
-    while(2==2){
-        let oi:[s_int32]= A*(2+B);
+    coisalegal(a,b,c,3);
+    let i : u_int32 = coisalegal(a,b,c,3);
+    for(i in 1..3){
+        i=1;
     }
-    for(i in 0..10){
-        let oi:[s_int32]= A*(2+B);
-    }
-
-    for(i in oi){
-        let oi:[s_int32]= A*(2+B);
-    }
-    loop{
-        let oi:[s_int32]= A*(2+B);
-    }
-
-    if(122){
-        let oi:[s_int32]= A*(2+B);
-    }
-
-    if(true){
-        let oi:[s_int32]= A*(2+B);
-    }
-    else{
-        let oi:[s_int32]= A*(2+B);
-    }
-
-    if(true){
-        let oi:[s_int32]= A*(2+B);
-    }
-    else if(true){
-        let oi:[s_int32]= A*(2+B);
-    }
-    else if(2>3){
-        
-    }
-    else{
-        let oi:[s_int32]= A*(2+B);
-    }
-
 }
