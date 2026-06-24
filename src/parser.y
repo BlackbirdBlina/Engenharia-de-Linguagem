@@ -3,7 +3,7 @@
 #include "symbol_table.h"
 #include <stdlib.h>
 #include <string.h>
-#include "./lib/record.h"
+#include "record.h"
 
 int yylex(void);
 int yyerror(char *s);
@@ -95,8 +95,8 @@ SymbolTable* createTable_Program = NULL;
 													$$=CreateRecord(cat(temp,7));}
 			  ;
 
-	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main()", $8->code};
-														  $$=CreateRecord(cat(temp,2));}
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"#include <stdio.h>\n#include <math.h>\n","\nint main()", $8->code};
+														  $$=CreateRecord(cat(temp,3));}
 		;
 
 	Params: VarTypedList {$$=CreateRecord($1->code);}
@@ -128,7 +128,7 @@ SymbolTable* createTable_Program = NULL;
 	Statement: Assignment {$$=CreateRecord($1->code);}
              | Attribution {$$=CreateRecord($1->code);}
              | StructDecl { p("STRUCT Detected"); }
-			 | SubprogramCall ';'{char* temp[]={$1->code,";"};
+			 | SubprogramCall ';'{char* temp[]={$1->code,";\n"};
 								  $$=CreateRecord(cat(temp,2));}
              | ModuleCall ';' {}
 			 | Return { np("RETURN");$$=CreateRecord($1->code); }
@@ -138,26 +138,36 @@ SymbolTable* createTable_Program = NULL;
 			 | CONTINUE ';' {$$=CreateRecord("break");}
 			 | BREAK ';' {$$=CreateRecord("continue");}
              | Print ';' {}
+
+			 
 			 ;
 
 	Return: RETURN ';' {$$=CreateRecord("return;");}
-	      | RETURN Expression ';' {char* temp[]={"return",$2->code,";"};
+	      | RETURN Expression ';' {char* temp[]={"return ",$2->code,";\n"};
 								  $$=CreateRecord(cat(temp,3));}
 		  ;
 
-	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT");
-												  char* temp[]={"const ",$2->code,"=",$4->code,";"};
-												  $$=CreateRecord(cat(temp,5));}
+	Assignment: LET VarTyped '=' Expression ';' { 
+		
+		p("NON-MUTABLE ASSIGNMENT");
+		char* temp[]={"const ",$2->code,"=",$4->code,";\n"};
+		$$=CreateRecord(cat(temp,5));
+
+		// insert_symbol(createTable_Program, "x", "global", alloc_type_info(KIND_BOOL));
+												  
+												 
+												 
+												 }
 			  | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
 			  | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); 
-			  											  char* temp[]={$3->code,"=",$5->code,";"};
+			  											  char* temp[]={$3->code,"=",$5->code,";\n"};
 														  $$=CreateRecord(cat(temp,4));}
               | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
 			  ;
 
     Attribution: ID '=' Expression ';' { p("ATTRIBUTION");
-										 char* temp[]={$1,"=",$3->code,";"};
+										 char* temp[]={$1,"=",$3->code,";\n"};
 										 $$=CreateRecord(cat(temp,4)); }
                | ID '.' ID '=' Expression ';'{ p("STRUCT ATTRIBUTION"); }
 			   | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
@@ -219,8 +229,8 @@ SymbolTable* createTable_Program = NULL;
 		   | AuxExp6{$$=CreateRecord($1->code);}
 		   ;
 	
-	AuxExp6: AuxExp7 '^' AuxExp6{char* temp[]={$1->code,"^",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
+	AuxExp6: AuxExp7 '^' AuxExp6{char* temp[]={"pow(",$1->code,",",$3->code,")"};
+									   $$=CreateRecord(cat(temp,5));}
 		   | AuxExp7{$$=CreateRecord($1->code);}
 		   ;
 	
@@ -253,8 +263,14 @@ SymbolTable* createTable_Program = NULL;
         | '[' ElementSequence ']' {}
         ;
 
-    Print: PRINT '(' VALUE_STRING ',' Expression ')' {}
-         | PRINT '(' VALUE_STRING ')' {}
+    Print: PRINT '(' VALUE_STRING ',' Expression ')' {
+		char* temp[]={"printf(",$3,",",$5->code,");\n"};
+		$$=CreateRecord(cat(temp,5));
+	}
+         | PRINT '(' VALUE_STRING ')' {
+			char* temp[]={"printf(",$3,");\n"};
+			$$=CreateRecord(cat(temp,3));
+		 }
          ;
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
@@ -358,8 +374,11 @@ SymbolTable* createTable_Program = NULL;
 				  | TYPE_OPTION {}
 				  ;
 
-	Type: TYPE_BOOL {np("BOOL"); $$=CreateRecord("bool");}
-        | TYPE_S_INT8 {np("S_INT8");}
+	Type: TYPE_BOOL {
+			np("BOOL"); 
+			$$ = CreateTypedRecord("bool", KIND_BOOL);
+		}
+        | TYPE_S_INT8 {np("S_INT8"); }
         | TYPE_S_INT32  {np("S_INT32");$$=CreateRecord("int");}
         | TYPE_S_SIZE  {np("S_SIZE");}
         | TYPE_S_INT16  {np("S_INT16");$$=CreateRecord("short int");}
@@ -422,14 +441,11 @@ int main (int argc, char ** argv) {
     yyin = fopen(argv[1], "r");
     yyout = fopen(argv[2], "w");
 
-    fclose(yyin);
-    fclose(yyout);
-
 	createTable_Program = create_table();
 
 	codigo = yyparse();
 
-	insert_symbol(createTable_Program, "x", "global", alloc_type_info(KIND_BOOL));
+	/* insert_symbol(createTable_Program, "x", "global", alloc_type_info(KIND_BOOL));
 	insert_symbol(createTable_Program, "f", "global", alloc_type_info(KIND_FLOAT32));
 	
 	printf("Tabela de símbolos criada no endereço: %p\n", createTable_Program);
@@ -444,8 +460,11 @@ int main (int argc, char ** argv) {
 	printf("name: %s\n", node->name);
 	printf("node: %p\n", node);
 	printf("key: %s\n", node->key);
-	printf("kind: %d\n", node->type->kind);
-	
+	printf("kind: %d\n", node->type->kind); */
+
+	fclose(yyin);
+    fclose(yyout);
+
 	return codigo;
 }
 

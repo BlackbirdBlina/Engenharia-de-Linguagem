@@ -1,41 +1,11 @@
-void coisa(int legal,bool outra_coisa){return;}
-int main(){coisalegal(a,b,c,3);
-const unsigned int i=coisalegal(a,b,c,3);
-    { 
-        inti=1;FOR_0:
-        if(i!=3){
-                {
-                    
-                }
-                if(i<3){
-                    i++;
-                }
-                else{
-                    i--;
-                } 
-                goto FOR_0
-        }
-    }
-    
-    {
-        WHILE_0:
-        if(1<3){
-            {i=1;}
-            goto WHILE_0
-        }
-    }
-    {
-        int i=1; FOR_0:{
-            if(i!=3){
-                {}
-                if(i<3){
-                    i++;
-                }
-                else{
-                    i--;
-                } 
-                goto FOR_0
-            }
-        }
-    }
+#include <stdio.h>
+#include <math.h>
+
+int main(){
+    const float x=2.5;
+    const float y=7.5;
+    const unsigned int c=10;
+    const float result=pow(x,2)-y+c;
+    printf("%f", &result);
+    return 0;
 }

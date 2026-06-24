@@ -1,9 +1,8 @@
-int main() -> s_int32 {
+func main() -> s_int32 {
     let x : float32 = 2.5;
     let y : float32 = 7.5;
     let c : u_int32 = 10;
 
     let result : float32 = x^2 - y + c;
-
     print("{}", result);
 }
