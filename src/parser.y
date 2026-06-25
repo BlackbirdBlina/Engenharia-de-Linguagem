@@ -2,72 +2,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "./lib/record.h"
-#include "./lib/symbol_table.h"
-#include "./lib/scope_stack.h"
-
-#define bool_ "bool"
-#define s_int16 "s_int16"
-#define s_int32 "s_int16"
-#define s_int64 "s_int64"
-#define s_size "s_size"
-#define u_int16 "u_int16"
-#define u_int32 "u_int16"
-#define u_int64 "u_int64"
-#define u_size "u_size"
-#define float32 "float32"
-#define float64 "float64"
-#define char_ "char"
-#define literal_int "literal_int"
-#define literal_float "literal_float"
+#include "lib/record.h"
+#include "lib/symbol_table.h"
+#include "lib/scope_stack.h"
+#include "lib/parser/semantics.h"
+#include "lib/parser/grammar/assignments.c"
 
 int yylex(void);
 int yyerror(char *s);
 extern int yylineno;
 extern char * yytext;
 extern FILE * yyin, * yyout;
-
-/* */
-ScopeStack* scopeStack;
-SymbolTable* varTable;
-SymbolTable* typeTable;
-SymbolTable* funcTable;
-
-/* Custom Functions */
-void p(const char string[]);
-void np(const char string[]);
-void InitializeTypeTable();
-ScopeNode* GenerateScope();
-char * cat(char **, int);
-char * whileCount();
-char * forCount();
-char * checkTypeCompatibility();
-void checkVarScope(char*);
-char* getVarType(char*);
-
-/* OUR TODOs */
-/*
-    -> Figure out the syntax for structs:
-        struct Thing {
-            whatever : u_int8 = u_int8::default,
-        }
-        // Na main:
-        let t : Thing = Thing { whatever = 10 };
-        // Ou
-        // Ou
-        let t : struct = Thing { whatever : u_int8 = 10 };
-    -> ENUM, match, union
-            | EnumDecl { p("ENUM Detected"); }
-            EnumDecl: ENUM ID '{' Variants '}'{}
-	Variants: ID ',' Variants{}
-	Variants: ID ',' Variants{}
-			| ID ',' {}
-			;
-			| ID ',' {}
-			;
-			;
-    -> Print tá funcionando, mas a gnt quer ele nativo? Ou faz um macro futuramente (igual rust).
-*/
 
 %}
 
@@ -93,125 +38,148 @@ char* getVarType(char*);
 %start Program 
 
 %%
-    Program:  Decls  {
-					   fprintf(yyout,"%s", $1->code);} 
-           ;
+    Program:
+        Decls  {
+            fprintf(yyout,"%s", $1->code);
+        }
+        ;
 	Decls: SubProgram Decls{
 							char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}
+							$$=CreateRecord(cat(temp,3));
+                            }
 		 | Assignment Decls{char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}
+							$$=CreateRecord(cat(temp,3));
+                            }
 		 | StructDecl Decls{char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}
+							$$=CreateRecord(cat(temp,3));
+                            }
 		 | EnumDecl Decls{char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}	
+							$$=CreateRecord(cat(temp,3));
+                            }	
 		 | Main {
 				$$=CreateRecord($1->code);
 		 }
 		 ;
-	
 	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope {
 															char* temp[]={$7->code," ",$2,"(",$4->code,")",$8->code};
-															$$=CreateRecord(cat(temp,7));}
+															$$=CreateRecord(cat(temp,7));
+                                                            }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope {
 			  													   char* temp[]={$8->code," ",$3,"(",$5->code,")",$9->code};
-																   $$=CreateRecord(cat(temp,7));}
+																   $$=CreateRecord(cat(temp,7));
+                                                                   }
 			  | PROCEDURE ID '(' Params ')' Scope {
 			  										char* temp[]={"void"," ",$2,"(",$4->code,")",$6->code};
-													$$=CreateRecord(cat(temp,7));}
+													$$=CreateRecord(cat(temp,7));
+                                                    }
 			  ;
-
 	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main()", $8->code};
-														  $$=CreateRecord(cat(temp,2));}
+														  $$=CreateRecord(cat(temp,2));
+                                                          }
 		;
-
-	Params: VarTypedList {$$=CreateRecord($1->code);}
-		  | {$$=CreateRecord("");}
+	Params: VarTypedList {
+    $$=CreateRecord($1->code);
+    }
+		  | {
+          $$=CreateRecord("");
+          }
 		  ;
-
 	VarTypedList: VarTyped ',' VarTypedList { char* temp[]={$1->code,",",$3->code};
 											  $$=CreateRecord(cat(temp,3));
 											}
-				| VarTyped {$$=CreateRecord($1->code);}
+				| VarTyped {
+                $$=CreateRecord($1->code);
+                }
 				;
-
 	VarTyped: ID ':' Type {
 							char* temp[]={$3->code," ",$1};
 							$$=CreateRecordVarTyped(cat(temp,3),$3->type,$1); }
 			;
-
-	Scope: '{'{PushScope(scopeStack,GenerateScope());} '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
-		 | '{' {PushScope(scopeStack,GenerateScope());} Statements '}' {
+	Scope: '{'{PushScope(scopeStack,GenerateScope());
+    } '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
+		 | '{' {PushScope(scopeStack,GenerateScope());
+         } Statements '}' {
 		 						char* temp[]={"{",$3->code,"}"};
 								$$=CreateRecord(cat(temp,3));
-								PopScope(scopeStack);}
+								PopScope(scopeStack);
+                                }
 		 ;
-
 	Statements: Statement Statements {char* temp[]={$1->code,"\n",$2->code};
-									  $$=CreateRecord(cat(temp,3));}
-			  | Statement {$$=CreateRecord($1->code);}
+									  $$=CreateRecord(cat(temp,3));
+                                      }
+			  | Statement {
+              $$=CreateRecord($1->code);
+              }
 			  ;
-	
-	Statement: Assignment {$$=CreateRecord($1->code);}
-             | Attribution {$$=CreateRecord($1->code);}
+	Statement: Assignment {
+    $$=CreateRecord($1->code);
+    }
+             | Attribution {
+             $$=CreateRecord($1->code);
+             }
              | StructDecl {}
 			 | SubprogramCall ';'{char* temp[]={$1->code,";"};
-								$$=CreateRecord(cat(temp,2));}
+								$$=CreateRecord(cat(temp,2));
+                                }
              | ModuleCall ';' {}
-			 | Return {$$=CreateRecord($1->code); }
-			 | Scope {$$=CreateRecord($1->code);}
-			 | RepeatStructures {$$=CreateRecord($1->code);}
-			 | DecisionStructures {$$=CreateRecord($1->code);}
-			 | CONTINUE ';' {$$=CreateRecord("break");}
-			 | BREAK ';' {$$=CreateRecord("continue");}
+			 | Return {
+             $$=CreateRecord($1->code); }
+			 | Scope {
+             $$=CreateRecord($1->code);
+             }
+			 | RepeatStructures {
+             $$=CreateRecord($1->code);
+             }
+			 | DecisionStructures {
+             $$=CreateRecord($1->code);
+             }
+			 | CONTINUE ';' {
+             $$=CreateRecord("break");
+             }
+			 | BREAK ';' {
+             $$=CreateRecord("continue");
+             }
              | Print ';' {}
 			 ;
-
-	Return: RETURN ';' {$$=CreateRecord("return;");}
+	Return: RETURN ';' {
+    $$=CreateRecord("return;");
+    }
 	      | RETURN Expression ';' {char* temp[]={"return",$2->code,";"};
-								  $$=CreateRecord(cat(temp,3));}
+								  $$=CreateRecord(cat(temp,3));
+                                  }
 		  ;
+	Assignment:
+        LET VarTyped '=' Expression ';' {
+            char* temp[] = { "const ", $2->code, "=", $4->code, ";" };
+            $$ = CreateRecord(cat(temp,5));
+            check_let_equal($$,$2,$4);
 
-	Assignment: LET VarTyped '=' Expression ';' { 
-												  
-												  char* temp[]={"const ",$2->code,"=",$4->code,";"};
-												  $$=CreateRecord(cat(temp,5));
-												  char* tempVarExpTypeCmp=checkTypeCompatibility($2->type,$4->type);
-												  if(tempVarExpTypeCmp){
-													if(strcmp(tempVarExpTypeCmp,$2->type)!=0){
-														printf("a variável %s espera receber algo do tipo %s",$2->id,$2->type);
-														exit(1);
-													}
-												  }
-												  else{
-														printf("a variável \"%s\" espera receber algo do tipo \"%s\"",$2->id,$2->type);
-														exit(1);
-												  }
-												  
-												  insert_symbol(varTable,$2->id,alloc_type_var($2->type,scopeStack->top->scopeName));}
-			  | CONST VarTyped '=' Expression ';' {}
-			  | LET MUTABLE VarTyped '=' Expression ';' {
-			  											  char* temp[]={$3->code,"=",$5->code,";"};
-														  $$=CreateRecord(cat(temp,4));}
-              | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
-              | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
-			  ;
-
-    Attribution: ID '=' Expression ';' {
-										char* temp[]={$1,"=",$3->code,";"};
-										checkVarScope($1);
-										char* tempVarExpTypeCmp=checkTypeCompatibility(getVarType($1),$3->type);
-										if(tempVarExpTypeCmp){
-											if(strcmp(tempVarExpTypeCmp,$3->type)!=0){
-												printf("a variável %s espera receber algo do tipo %s",$1,getVarType($1));
-												exit(1);
-											}
-										}
-										else{
-											printf("a variável \"%s\" espera receber algo do tipo \"%s\"",$1,getVarType($1));
-											exit(1);
-										}
-										$$=CreateRecord(cat(temp,4));}
+            insert_symbol(varTable,$2->id,alloc_type_var($2->type,scopeStack->top->scopeName));
+        }
+        | CONST VarTyped '=' Expression ';' {}
+        | LET MUTABLE VarTyped '=' Expression ';' {
+            char* temp[]={$3->code,"=",$5->code,";"};
+            $$=CreateRecord(cat(temp,4));
+        }
+        | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
+        | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
+;
+Attribution: ID '=' Expression ';' {
+char* temp[]={$1,"=",$3->code,";"};
+checkVarScope($1);
+char* tempVarExpTypeCmp=checkTypeCompatibility(getVarType($1),$3->type);
+if(tempVarExpTypeCmp){
+            if(strcmp(tempVarExpTypeCmp,getVarType($1))!=0){
+                        printf("ERROR: variável %s espera receber algo do tipo %s",$1,getVarType($1));
+                        exit(1);
+                    }
+                }
+                else{
+                    printf("ERROR: variável \"%s\" espera receber algo do tipo \"%s\"",$1,getVarType($1));
+                    exit(1);
+                }
+                $$=CreateRecord(cat(temp,4));
+                }
                | ID '.' ID '=' Expression ';'{ }
 			   | ID PLUS_ATTRIBUTION Expression ';' { }
 			   | ID MINUS_ATTRIBUTION Expression ';' {  }
@@ -220,27 +188,26 @@ char* getVarType(char*);
 			   | Array '=' Expression ';' { }
                | IncrOrDecr ';' {}
                ;
-
     IncrOrDecr: ID INCREMENT {}
 			  | ID DECREMENT {}
 			  | INCREMENT ID {}
 			  | DECREMENT ID {}
               ;
-
 	Array: ID ArrayAccesses{}
 		 ;
-
 	ArrayAccesses: '[' Expression ']' ArrayAccesses{}
 		         | '[' Expression ']' {}
 		         ;
-
 	Expression: Expression OR AuxExp1 {char* temp[]={$1->code,"||",$3->code};
 										if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
 											printf("Tipos incompatíveis com o operador '||' ");
 											exit(0);
 										}	
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-		      | AuxExp1 {$$=CreateRecordType($1->code,$1->type);}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
+                                       }
+		      | AuxExp1 {
+              $$=CreateRecordType($1->code,$1->type);
+              }
 			  ;
 
 	AuxExp1: AuxExp1 AND AuxExp2 {char* temp[]={$1->code,"&&",$3->code};
@@ -248,8 +215,11 @@ char* getVarType(char*);
 											printf("Tipos incompatíveis com o operador '&&' ");
 											exit(0);
 									}	
-								  $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-		   | AuxExp2 {$$=CreateRecordType($1->code,$1->type);}
+								  $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
+                                  }
+		   | AuxExp2 {
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
 	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{char* temp[]={$1->code,"!=",$3->code};
@@ -257,8 +227,11 @@ char* getVarType(char*);
 											printf("Tipos incompatíveis com o operador '!=' ");
 											exit(0);
 										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
+                                       }
+	       | AuxExp3{
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
 	AuxExp3: AuxExp3 Compare AuxExp4{char* temp[]={$1->code,$2->code,$3->code};
@@ -266,23 +239,50 @@ char* getVarType(char*);
 											printf("Tipos incompatíveis com o operador '%s' ",$2->code);
 											exit(0);
 										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-		   | AuxExp4{$$=CreateRecordType($1->code,$1->type);}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
+                                       }
+		   | AuxExp4{
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
-	AuxExp4: AuxExp4 '+' AuxExp5{char* temp[]={$1->code,"+",$3->code};
-										if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
-											printf("Tipos incompatíveis com o operador '+' ");
-											exit(0);
-										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+	AuxExp4: AuxExp4 '+' AuxExp5 {
+        char* temp[]={$1->code,"+",$3->code};
+
+        if (!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)) {
+            printf("Tipos incompatíveis com o operador '+' ");
+            exit(0);
+        }
+
+        char * temp2 = checkTypeCompatibility($1->type,$3->type);
+        if (temp2) {
+            $$=CreateRecordType(cat(temp,3),temp2);
+        }
+        else {
+            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
+            exit(1);
+        }
+
+        $$ = CreateRecordType(cat(temp, 3), checkTypeCompatibility($1->type, $3->type));
+
+        }
 	       | AuxExp4 '-' AuxExp5{char* temp[]={$1->code,"-",$3->code};
 		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
 											printf("Tipos incompatíveis com o operador '-' ");
 											exit(0);
 										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-		   | AuxExp5{$$=CreateRecordType($1->code,$1->type);}
+        char * temp2 = checkTypeCompatibility($1->type,$3->type);
+        if (temp2) {
+            $$=CreateRecordType(cat(temp,3),temp2);
+        }
+        else {
+            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
+            exit(1);
+        }
+           }
+		   | AuxExp5{
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
 	AuxExp5: AuxExp5 '*' AuxExp6{char* temp[]={$1->code,"*",$3->code};
@@ -290,20 +290,49 @@ char* getVarType(char*);
 											printf("Tipos incompatíveis com o operador '*' ");
 											exit(0);
 										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+                                                char * temp2 = checkTypeCompatibility($1->type,$3->type);
+        if (temp2) {
+            $$=CreateRecordType(cat(temp,3),temp2);
+        }
+        else {
+            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
+            exit(1);
+        }
+
+                                       }
 		   | AuxExp5 '/' AuxExp6{char* temp[]={$1->code,"/",$3->code};
 		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
 											printf("Tipos incompatíveis com o operador '/' ");
 											exit(0);
 										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+                                                char * temp2 = checkTypeCompatibility($1->type,$3->type);
+        if (temp2) {
+            $$=CreateRecordType(cat(temp,3),temp2);
+        }
+        else {
+            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
+            exit(1);
+        }
+
+                                       }
 		   | AuxExp5 '%' AuxExp6{char* temp[]={$1->code,"\%",$3->code};
 		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+                                            // TODO: -V
 											printf("Tipos incompatíveis com o operador  ");
 											exit(0);
 										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-		   | AuxExp6{$$=CreateRecordType($1->code,$1->type);}
+                                        char * temp2 = checkTypeCompatibility($1->type,$3->type);
+        if (temp2) {
+            $$=CreateRecordType(cat(temp,3),temp2);
+        }
+        else {
+            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
+            exit(1);
+        }
+        }
+		   | AuxExp6{
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
 	AuxExp6: AuxExp7 '^' AuxExp6{char* temp[]={$1->code,"^",$3->code};
@@ -311,19 +340,38 @@ char* getVarType(char*);
 									printf("Tipos incompatíveis com o operador '^' ");
 									exit(0);
 								}
-								$$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
-		   | AuxExp7{$$=CreateRecordType($1->code,$1->type);}
+                                        char * temp2 = checkTypeCompatibility($1->type,$3->type);
+        if (temp2) {
+            $$=CreateRecordType(cat(temp,3),temp2);
+        }
+        else {
+            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
+            exit(1);
+        }
+
+                                }
+		   | AuxExp7{
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
 	AuxExp7: NOT AuxExp7{char* temp[]={"!",$2->code};
-						 $$=CreateRecordType(cat(temp,2),$2->type);}
-		   | AuxExp8{$$=CreateRecordType($1->code,$1->type);}
+						 $$=CreateRecordType(cat(temp,2),$2->type);
+                         }
+		   | AuxExp8{
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   ;
 	
-	AuxExp8: IDs {$$=CreateRecordType($1->code,$1->type);}
-		   | Literal {$$=CreateRecordType($1->code,$1->type);}
+	AuxExp8: IDs {
+    $$=CreateRecordType($1->code,$1->type);
+    }
+		   | Literal {
+           $$=CreateRecordType($1->code,$1->type);
+           }
 		   | '(' Expression ')' {char* temp[]={"(",$2->code,")"};
-								$$=CreateRecordType(cat(temp,3),$2->type);}
+								$$=CreateRecordType(cat(temp,3),$2->type);
+                                }
 		   | Array {}
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
@@ -332,40 +380,53 @@ char* getVarType(char*);
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
            | Print {}
            | ModuleCall {}
-		   | SubprogramCall {$$=CreateRecord($1->code);}
+		   | SubprogramCall {
+           $$=CreateRecord($1->code);
+           }
            | List {}
 		   ;
 
-    IDs: ID '.' IDs {char* temp[]={$1,".",$3->code};
-					 $$=CreateRecord(cat(temp,3));}
-       | ID {SymbolNode* id=lookup_symbol(varTable,$1);
+    IDs:
+        ID '.' IDs {
+            char* temp[] = {$1, ".", $3->code};
+            $$ = CreateRecord(cat(temp, 3));
+        }
+        | ID {
+            SymbolNode* id = lookup_symbol(varTable, $1);
 	   		checkVarScope($1);
 			$$=CreateRecordType($1,getVarType($1));
-			}
-       ;
+        }
+        ;
 		   
     List: '[' ']' {}
         | '[' ElementSequence ']' {}
         ;
 
-    Print: PRINT '(' VALUE_STRING ',' Expression ')' {}
-         | PRINT '(' VALUE_STRING ')' {}
+    Print: PRINT '(' VALUE_STRING ',' Expression ')' {  }
+         | PRINT '(' VALUE_STRING ')' {  }
          ;
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
                   | ID '.' SubprogramCall {} // foo.poo()
 				  | ID MaybeParams {char* temp[]={$1,$2->code};
-									$$=CreateRecord(cat(temp,2));}
+									$$=CreateRecord(cat(temp,2));
+                                    }
 				  ;
 
-    MaybeParams: '(' ')' {$$=CreateRecord("()");}
+    MaybeParams: '(' ')' {
+    $$=CreateRecord("()");
+    }
                | '(' ParamsToCall ')' {char* temp[]={"(",$2->code,")"};
-									   $$=CreateRecord(cat(temp,3));}
+									   $$=CreateRecord(cat(temp,3));
+                                       }
                ;
 
 	ParamsToCall: Expression ',' ParamsToCall{char* temp[]={$1->code,",",$3->code};
-									   		  $$=CreateRecord(cat(temp,3));}
-				| Expression {$$=CreateRecord($1->code);}
+									   		  $$=CreateRecord(cat(temp,3));
+                                              }
+				| Expression {
+                $$=CreateRecord($1->code);
+                }
 				;
     
     ModuleCall: ID ':' ':' SubprogramCall  {}
@@ -376,33 +437,41 @@ char* getVarType(char*);
 				   | Expression {}
 				   ;
 	
-	RepeatStructures:  WHILE '(' Expression ')' Scope{
+	RepeatStructures:
+        WHILE '(' Expression ')' Scope {
 														char* tempw[]={"WHILE_",whileCount()};
 														char* whileLabel=cat(tempw,2);
 														char* temp[]={"{",whileLabel,":if(",$3->code,"){",$5->code,"goto ",whileLabel,"}}"};
-														$$=CreateRecord(cat(temp,9));}
+														$$=CreateRecord(cat(temp,9));
+                                                        }
 					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{
 																			char* tempf[]={"FOR_",forCount()};
 																			char* forLabel=cat(tempf,2);
 																			char* temp[]={"{ int",$3,"=",$5->code,";",forLabel,":if(",$3,"!=",$7->code,"){",$9->code,"if(",$3,"<",$7->code,"){",$3,"++;}","else{",$3,"--;} goto ",forLabel,"}}"};
-																			$$=CreateRecord(cat(temp,24));}
+																			$$=CreateRecord(cat(temp,24));
+                                                                            }
 					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope {}
 					;
 					
 	DecisionStructures: IF '(' Expression ')' Scope {char* temp[]={"if(",$3->code,")",$5->code};
-									   		  		$$=CreateRecord(cat(temp,4));}
+									   		  		$$=CreateRecord(cat(temp,4));
+                                                    }
 					  | IF '(' Expression ')' Scope ELSE Scope {char* temp[]={"if(",$3->code,")",$5->code,"else",$7->code};
-									   		  					$$=CreateRecord(cat(temp,6));}
+									   		  					$$=CreateRecord(cat(temp,6));
+                                                                }
 					  | IF '(' Expression ')' Scope ElseIf {char* temp[]={"if(",$3->code,")",$5->code,$6->code};
-									   		  				$$=CreateRecord(cat(temp,5));}
+									   		  				$$=CreateRecord(cat(temp,5));
+                                                            }
 					  | MATCH '(' Pattern ')' '{' MatchStructures '}' {}
 					  ;
 
 	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {char* temp[]={"else{ if(",$4->code,")",$6->code,$7->code,"}"};
-									   		  $$=CreateRecord(cat(temp,6));}
+									   		  $$=CreateRecord(cat(temp,6));
+                                              }
 		  | ELSE IF '(' Expression ')' Scope ELSE Scope{char* temp[]={"else{ if(",$4->code,")",$6->code,"else",$8->code,"}"};
-		  												$$=CreateRecord(cat(temp,7));}
+		  												$$=CreateRecord(cat(temp,7));
+                                                        }
 		  ;
 	
 	Pattern: Expression{}
@@ -433,7 +502,6 @@ char* getVarType(char*);
 			| ID ',' {}
 			;
 
-
     TypeCollection: TYPE_S_INT64 {}
 				  | TYPE_S_INT32 {}
 				  | TYPE_S_SIZE {}
@@ -453,19 +521,40 @@ char* getVarType(char*);
 				  | TYPE_OPTION {}
 				  ;
 
-	Type: TYPE_BOOL { $$=CreateRecordType("bool",bool_);}
-        | TYPE_S_INT16  {$$=CreateRecordType("short int",s_int16);}
-        | TYPE_S_INT32  {$$=CreateRecordType("int",s_int32);}
-        | TYPE_S_INT64 {$$=CreateRecordType("long long int",s_int64);}
+	Type: TYPE_BOOL { $$=CreateRecordType("bool",bool_);
+    }
+        | TYPE_S_INT16  {
+        $$=CreateRecordType("short int",s_int16);
+        }
+        | TYPE_S_INT32  {
+        $$=CreateRecordType("int",s_int32);
+        }
+        | TYPE_S_INT64 {
+        $$=CreateRecordType("long long int",s_int64);
+        }
         | TYPE_S_SIZE  {}
-        | TYPE_U_INT16  {$$=CreateRecordType("unsigned short int",u_int16);}
-        | TYPE_U_INT32  {$$=CreateRecordType("unsigned int",u_int32);}
-        | TYPE_U_INT64  {$$=CreateRecordType("unsigned long long int",u_int64);}
+        | TYPE_U_INT16  {
+        $$=CreateRecordType("unsigned short int",u_int16);
+        }
+        | TYPE_U_INT32  {
+        $$=CreateRecordType("unsigned int",u_int32);
+        }
+        | TYPE_U_INT64  {
+        $$=CreateRecordType("unsigned long long int",u_int64);
+        }
         | TYPE_U_SIZE  {}
-        | TYPE_FLOAT32 {$$=CreateRecordType("float",float32);}
-        | TYPE_FLOAT64  {$$=CreateRecordType("double",float64);}
-        | TYPE_CHAR  {$$=CreateRecordType("char",char_);}
-        | TYPE_STRING  {$$=CreateRecordType("char*","string");}
+        | TYPE_FLOAT32 {
+        $$=CreateRecordType("float",float32);
+        }
+        | TYPE_FLOAT64  {
+        $$=CreateRecordType("double",float64);
+        }
+        | TYPE_CHAR  {
+        $$=CreateRecordType("char",char_);
+        }
+        | TYPE_STRING  {
+        $$=CreateRecordType("char*","string");
+        }
         | TYPE_VEC '<' Type '>' {}
         | TYPE_SET '<' Type '>' {}
         | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' {}
@@ -478,169 +567,50 @@ char* getVarType(char*);
 		| ID {}
         ;
 
-	Compare: '<' {$$=CreateRecord("<");}
-		   | '>' {$$=CreateRecord(">");}
-		   | LESS_EQUAL {$$=CreateRecord("<=");}
-		   | GREATER_EQUAL {$$=CreateRecord(">=");}
-		   | EQUAL {$$=CreateRecord("==");}
+	Compare: '<' {
+    $$=CreateRecord("<");
+    }
+		   | '>' {
+           $$=CreateRecord(">");
+           }
+		   | LESS_EQUAL {
+           $$=CreateRecord("<=");
+           }
+		   | GREATER_EQUAL {
+           $$=CreateRecord(">=");
+           }
+		   | EQUAL {
+           $$=CreateRecord("==");
+           }
 		   ;
 
-	Literal: VALUE_INT {$$=CreateRecordType($1,literal_int);}
-           | VALUE_FLOAT {$$=CreateRecordType($1,literal_float);}
-           | VALUE_BOOL {$$=CreateRecordType($1,bool_);}
-           | VALUE_CHAR {$$=CreateRecordType($1,char_);}
-           | VALUE_STRING {$$=CreateRecord($1);}
+	Literal: VALUE_INT {
+    $$=CreateRecordType($1,literal_int);
+    }
+           | VALUE_FLOAT {
+           $$=CreateRecordType($1,literal_float);
+           }
+           | VALUE_BOOL {
+           $$=CreateRecordType($1,bool_);
+           }
+           | VALUE_CHAR {
+           $$=CreateRecordType($1,char_);
+           }
+           | VALUE_STRING {
+           $$=CreateRecord($1);
+           }
            | OK '(' Expression ')' {}
            | ERROR '(' Expression ')' {}
            | SOME '(' Expression ')' {}
            | '(' ')' {}
            | NONE {}
            ;
+
 %%
-
-/* Custom Functions */
-void p(const char c[]) {
-    printf("%s\n", c);
-}
-void np(const char c[]) {
-    printf("%s -> ", c);
-}
-
 
 int yyerror (char *msg) {
 	fprintf (stderr, "%d: %s at '%s'\n", yylineno, msg, yytext);
 	return 0;
-}
-
-char* cat(char** strings, int qnt){
-	int tam=0;
-	for(int i=0;i<qnt;i++){
-		if(strings[i]!=NULL){
-			tam+=strlen(strings[i]);
-		}
-	}
-	tam++;
-	char * output= malloc(tam*sizeof(char));
-	if (!output){
-		exit(0);
-  	}
-	output[0]='\0';
-	for(int i=0;i<qnt;i++){
-		strcat(output,strings[i]);
-	}
-	return output;
-}
-
-char* forCount(){
-	static int forCounts=0;
-	char* text=malloc(sizeof(char)*12);
-	snprintf(text,sizeof(text),"%d",forCounts++);
-	return text;
-}
-
-char* whileCount(){
-	static int whileCounts=0;
-	char* text=malloc(sizeof(char)*12);
-	snprintf(text,sizeof(text),"%d",whileCounts++);
-	return text;
-}
-
-ScopeNode* GenerateScope(){
-	static int scopeCount=1;
-	char* scopeName=malloc(sizeof(char)*14);
-	snprintf(scopeName,sizeof(scopeName),"S#%d",scopeCount++);
-	return CreateScope(scopeName);
-}
-
-void InitializeTypeTable(){
-	typeTable=create_table();
-
-	const char* conversions_s_bool[]={};
-	insert_symbol(typeTable,bool_,alloc_type_type(bool_,conversions_s_bool,0));
-
-	const char* conversions_s_int16[]={s_int32,s_int64,float32,float64};
-	insert_symbol(typeTable,s_int16,alloc_type_type(s_int16,conversions_s_int16,4));
-
-	const char* conversions_s_int32[]={s_int64,float64};
-	insert_symbol(typeTable,s_int32,alloc_type_type(s_int32,conversions_s_int32,2));
-
-	const char* conversions_s_int64[]={};
-	insert_symbol(typeTable,s_int64,alloc_type_type(s_int64,conversions_s_int64,0));
-
-	const char* conversions_u_int16[]={u_int32,u_int64,s_int32,float64};
-	insert_symbol(typeTable,u_int16,alloc_type_type(u_int16,conversions_u_int16,4));
-
-	const char* conversions_u_int32[]={u_int64,s_int64};
-	insert_symbol(typeTable,u_int32,alloc_type_type(u_int32,conversions_u_int32,2));
-
-	const char* conversions_u_int64[]={};
-	insert_symbol(typeTable,u_int64,alloc_type_type(u_int64,conversions_u_int64,0));
-
-	const char* conversions_float32[]={float64};
-	insert_symbol(typeTable,float32,alloc_type_type(float32,conversions_float32,1));
-
-	const char* conversions_float64[]={};
-	insert_symbol(typeTable,float64,alloc_type_type(float64,conversions_float64,0));
-
-	const char* conversions_char[]={};
-	insert_symbol(typeTable,char_,alloc_type_type(char_,conversions_char,0));
-
-	const char* conversions_literal_int[]={u_int16,u_int32,u_int64,s_int16,s_int32,s_int64,float32,float64};
-	insert_symbol(typeTable,literal_int,alloc_type_type(literal_int,conversions_literal_int,8));
-
-	const char* conversions_literal_float[]={float32,float64};
-	insert_symbol(typeTable,literal_float,alloc_type_type(literal_float,conversions_literal_float,2));
-	
-}
-
-char* checkTypeCompatibility(char* type1,char* type2){
-	if(!type1 || !type2){
-		return NULL;
-	}
-	if(strcmp(type1,type2)==0){
-		return type1;
-	}
-	SymbolNode* type1Node=lookup_symbol(typeTable,type1);
-	SymbolNode* type2Node=lookup_symbol(typeTable,type2);
-	if(!type1Node || !type2Node){
-		return NULL;
-	}
-
-	for(int i=0;i<type1Node->info->conversionsQnt;i++){
-		if(strcmp(type1Node->info->conversions[i],type2)==0){
-			return type2;
-		}
-	}
-	for(int i=0;i<type2Node->info->conversionsQnt;i++){
-		if(strcmp(type2Node->info->conversions[i],type1)==0){
-			return type1;
-		}
-	}
-
-	return NULL;
-}
-
-void checkVarScope(char* varName){
-	SymbolNode* var=lookup_symbol(varTable,varName);
-	if(var){
-		if(!FindScope(scopeStack,var->info->scope)){
-			printf("Variavel %s Fora de escopo\n",varName);
-			exit(1);
-		}
-	}
-	else{
-		printf("Variável \"%s\" não declarada\n",varName);
-		exit(1);
-	}
-}
-char* getVarType(char* varName){
-	SymbolNode* var=lookup_symbol(varTable,varName);
-	if(var){
-		return var->info->type;
-	}
-	else{
-		return NULL;
-	}
 }
 
 int main (int argc, char ** argv) {
@@ -661,5 +631,6 @@ int main (int argc, char ** argv) {
     fclose(yyin);
     fclose(yyout);
 
+    
 	return codigo;
 }

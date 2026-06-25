@@ -1,3 +1,0 @@
-void coisa(int legal,bool outra_coisa){return;}
-int main(){const bool i=true||true;
-i=false;}

@@ -1,9 +1,8 @@
-proced coisa(legal:s_int32,outra_coisa:bool){
+func main() -> s_int32 {
+    let i : bool = true;
+    let i : bool = false;
+    
+    let mut i : bool = 1;
 
-    return ;
-
-}
-func main()->s_int32{
-    let i : bool= true || true;
-    i=false;
+    let
 }
