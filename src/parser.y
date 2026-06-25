@@ -3,6 +3,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "./lib/record.h"
+#include "./lib/symbol_table.h"
+#include "./lib/scope_stack.h"
+
+#define bool_ "bool"
+#define s_int16 "s_int16"
+#define s_int32 "s_int16"
+#define s_int64 "s_int64"
+#define s_size "s_size"
+#define u_int16 "u_int16"
+#define u_int32 "u_int16"
+#define u_int64 "u_int64"
+#define u_size "u_size"
+#define float32 "float32"
+#define float64 "float64"
+#define char_ "char"
+#define literal_int "literal_int"
+#define literal_float "literal_float"
 
 int yylex(void);
 int yyerror(char *s);
@@ -10,12 +27,23 @@ extern int yylineno;
 extern char * yytext;
 extern FILE * yyin, * yyout;
 
+/* */
+ScopeStack* scopeStack;
+SymbolTable* varTable;
+SymbolTable* typeTable;
+SymbolTable* funcTable;
+
 /* Custom Functions */
 void p(const char string[]);
 void np(const char string[]);
+void InitializeTypeTable();
+ScopeNode* GenerateScope();
 char * cat(char **, int);
 char * whileCount();
 char * forCount();
+char * checkTypeCompatibility();
+void checkVarScope(char*);
+char* getVarType(char*);
 
 /* OUR TODOs */
 /*
@@ -54,7 +82,7 @@ char * forCount();
 %token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
 %token PRINT
 %token <sValue> OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
-%token TYPE_BOOL TYPE_S_INT8 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT8 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
+%token TYPE_BOOL TYPE_S_INT64 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT64 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
@@ -65,7 +93,7 @@ char * forCount();
 %start Program 
 
 %%
-    Program:  Decls  { p("PROGRAM Detected");
+    Program:  Decls  {
 					   fprintf(yyout,"%s", $1->code);} 
            ;
 	Decls: SubProgram Decls{
@@ -82,13 +110,13 @@ char * forCount();
 		 }
 		 ;
 	
-	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("REGULAR FUNCTION");
+	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope {
 															char* temp[]={$7->code," ",$2,"(",$4->code,")",$8->code};
 															$$=CreateRecord(cat(temp,7));}
-			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { p("PURE FUNCTION");
+			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope {
 			  													   char* temp[]={$8->code," ",$3,"(",$5->code,")",$9->code};
 																   $$=CreateRecord(cat(temp,7));}
-			  | PROCEDURE ID '(' Params ')' Scope { p("PROCEDURE");
+			  | PROCEDURE ID '(' Params ')' Scope {
 			  										char* temp[]={"void"," ",$2,"(",$4->code,")",$6->code};
 													$$=CreateRecord(cat(temp,7));}
 			  ;
@@ -98,7 +126,7 @@ char * forCount();
 		;
 
 	Params: VarTypedList {$$=CreateRecord($1->code);}
-		  | { np("No PARAMS"); $$=CreateRecord("");}
+		  | {$$=CreateRecord("");}
 		  ;
 
 	VarTypedList: VarTyped ',' VarTypedList { char* temp[]={$1->code,",",$3->code};
@@ -107,15 +135,16 @@ char * forCount();
 				| VarTyped {$$=CreateRecord($1->code);}
 				;
 
-	VarTyped: ID ':' Type { np("PARAMS");
+	VarTyped: ID ':' Type {
 							char* temp[]={$3->code," ",$1};
-							$$=CreateRecord(cat(temp,3)); }
+							$$=CreateRecordVarTyped(cat(temp,3),$3->type,$1); }
 			;
 
-	Scope: '{' '}' { $$=CreateRecord("{}"); }
-		 | '{' Statements '}' { np("SCOPE");
-		 						char* temp[]={"{",$2->code,"}"};
-								$$=CreateRecord(cat(temp,3)); }
+	Scope: '{'{PushScope(scopeStack,GenerateScope());} '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
+		 | '{' {PushScope(scopeStack,GenerateScope());} Statements '}' {
+		 						char* temp[]={"{",$3->code,"}"};
+								$$=CreateRecord(cat(temp,3));
+								PopScope(scopeStack);}
 		 ;
 
 	Statements: Statement Statements {char* temp[]={$1->code,"\n",$2->code};
@@ -125,11 +154,11 @@ char * forCount();
 	
 	Statement: Assignment {$$=CreateRecord($1->code);}
              | Attribution {$$=CreateRecord($1->code);}
-             | StructDecl { p("STRUCT Detected"); }
+             | StructDecl {}
 			 | SubprogramCall ';'{char* temp[]={$1->code,";"};
-								  $$=CreateRecord(cat(temp,2));}
+								$$=CreateRecord(cat(temp,2));}
              | ModuleCall ';' {}
-			 | Return { np("RETURN");$$=CreateRecord($1->code); }
+			 | Return {$$=CreateRecord($1->code); }
 			 | Scope {$$=CreateRecord($1->code);}
 			 | RepeatStructures {$$=CreateRecord($1->code);}
 			 | DecisionStructures {$$=CreateRecord($1->code);}
@@ -143,33 +172,59 @@ char * forCount();
 								  $$=CreateRecord(cat(temp,3));}
 		  ;
 
-	Assignment: LET VarTyped '=' Expression ';' { p("NON-MUTABLE ASSIGNMENT");
+	Assignment: LET VarTyped '=' Expression ';' { 
+												  
 												  char* temp[]={"const ",$2->code,"=",$4->code,";"};
-												  $$=CreateRecord(cat(temp,5));}
-			  | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
-			  | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); 
+												  $$=CreateRecord(cat(temp,5));
+												  char* tempVarExpTypeCmp=checkTypeCompatibility($2->type,$4->type);
+												  if(tempVarExpTypeCmp){
+													if(strcmp(tempVarExpTypeCmp,$2->type)!=0){
+														printf("a variável %s espera receber algo do tipo %s",$2->id,$2->type);
+														exit(1);
+													}
+												  }
+												  else{
+														printf("a variável \"%s\" espera receber algo do tipo \"%s\"",$2->id,$2->type);
+														exit(1);
+												  }
+												  
+												  insert_symbol(varTable,$2->id,alloc_type_var($2->type,scopeStack->top->scopeName));}
+			  | CONST VarTyped '=' Expression ';' {}
+			  | LET MUTABLE VarTyped '=' Expression ';' {
 			  											  char* temp[]={$3->code,"=",$5->code,";"};
 														  $$=CreateRecord(cat(temp,4));}
               | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
 			  ;
 
-    Attribution: ID '=' Expression ';' { p("ATTRIBUTION");
-										 char* temp[]={$1,"=",$3->code,";"};
-										 $$=CreateRecord(cat(temp,4)); }
-               | ID '.' ID '=' Expression ';'{ p("STRUCT ATTRIBUTION"); }
-			   | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
-			   | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
-			   | ID MULTIPLY_ATTRIBUTION Expression ';' { p("MULTIPLICATION_ATTRIBUTION"); }
-			   | ID DIVIDE_ATTRIBUTION Expression ';' { p("DIVIDING_ATTRIBUTION"); }
-			   | Array '=' Expression ';' { p("ARRAY_ATTRIBUTION"); }
+    Attribution: ID '=' Expression ';' {
+										char* temp[]={$1,"=",$3->code,";"};
+										checkVarScope($1);
+										char* tempVarExpTypeCmp=checkTypeCompatibility(getVarType($1),$3->type);
+										if(tempVarExpTypeCmp){
+											if(strcmp(tempVarExpTypeCmp,$3->type)!=0){
+												printf("a variável %s espera receber algo do tipo %s",$1,getVarType($1));
+												exit(1);
+											}
+										}
+										else{
+											printf("a variável \"%s\" espera receber algo do tipo \"%s\"",$1,getVarType($1));
+											exit(1);
+										}
+										$$=CreateRecord(cat(temp,4));}
+               | ID '.' ID '=' Expression ';'{ }
+			   | ID PLUS_ATTRIBUTION Expression ';' { }
+			   | ID MINUS_ATTRIBUTION Expression ';' {  }
+			   | ID MULTIPLY_ATTRIBUTION Expression ';' {  }
+			   | ID DIVIDE_ATTRIBUTION Expression ';' {  }
+			   | Array '=' Expression ';' { }
                | IncrOrDecr ';' {}
                ;
 
-    IncrOrDecr: ID INCREMENT { p("EVAL->INCREMENT"); }
-			  | ID DECREMENT { p("EVAL->DECREMENT"); }
-			  | INCREMENT ID { p("INCREMENT->EVAL"); }
-			  | DECREMENT ID { p("DECREMENT->EVAL"); }
+    IncrOrDecr: ID INCREMENT {}
+			  | ID DECREMENT {}
+			  | INCREMENT ID {}
+			  | DECREMENT ID {}
               ;
 
 	Array: ID ArrayAccesses{}
@@ -180,56 +235,95 @@ char * forCount();
 		         ;
 
 	Expression: Expression OR AuxExp1 {char* temp[]={$1->code,"||",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		      | AuxExp1 {$$=CreateRecord($1->code);}
+										if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
+											printf("Tipos incompatíveis com o operador '||' ");
+											exit(0);
+										}	
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+		      | AuxExp1 {$$=CreateRecordType($1->code,$1->type);}
 			  ;
 
 	AuxExp1: AuxExp1 AND AuxExp2 {char* temp[]={$1->code,"&&",$3->code};
-								  $$=CreateRecord(cat(temp,3));}
-		   | AuxExp2 {$$=CreateRecord($1->code);}
+									if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
+											printf("Tipos incompatíveis com o operador '&&' ");
+											exit(0);
+									}	
+								  $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+		   | AuxExp2 {$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp2: AuxExp2 '=' AuxExp3 {char* temp[]={$1->code,"==",$3->code};
-								  $$=CreateRecord(cat(temp,3));}
-           | AuxExp2 NOT_EQUAL AuxExp3{char* temp[]={$1->code,"!=",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-	       | AuxExp3{$$=CreateRecord($1->code);}
+	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{char* temp[]={$1->code,"!=",$3->code};
+		   								if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
+											printf("Tipos incompatíveis com o operador '!=' ");
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
 	AuxExp3: AuxExp3 Compare AuxExp4{char* temp[]={$1->code,$2->code,$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp4{$$=CreateRecord($1->code);}
+										if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
+											printf("Tipos incompatíveis com o operador '%s' ",$2->code);
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+		   | AuxExp4{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
 	AuxExp4: AuxExp4 '+' AuxExp5{char* temp[]={$1->code,"+",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
+										if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+											printf("Tipos incompatíveis com o operador '+' ");
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
 	       | AuxExp4 '-' AuxExp5{char* temp[]={$1->code,"-",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp5{$$=CreateRecord($1->code);}
+		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+											printf("Tipos incompatíveis com o operador '-' ");
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+		   | AuxExp5{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
 	AuxExp5: AuxExp5 '*' AuxExp6{char* temp[]={$1->code,"*",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
+										if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+											printf("Tipos incompatíveis com o operador '*' ");
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
 		   | AuxExp5 '/' AuxExp6{char* temp[]={$1->code,"/",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
+		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+											printf("Tipos incompatíveis com o operador '/' ");
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
 		   | AuxExp5 '%' AuxExp6{char* temp[]={$1->code,"\%",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp6{$$=CreateRecord($1->code);}
+		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+											printf("Tipos incompatíveis com o operador  ");
+											exit(0);
+										}
+									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+		   | AuxExp6{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
 	AuxExp6: AuxExp7 '^' AuxExp6{char* temp[]={$1->code,"^",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp7{$$=CreateRecord($1->code);}
+								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
+									printf("Tipos incompatíveis com o operador '^' ");
+									exit(0);
+								}
+								$$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));}
+		   | AuxExp7{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
 	AuxExp7: NOT AuxExp7{char* temp[]={"!",$2->code};
-									   $$=CreateRecord(cat(temp,2));}
-		   | AuxExp8{$$=CreateRecord($1->code);}
+						 $$=CreateRecordType(cat(temp,2),$2->type);}
+		   | AuxExp8{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp8: IDs {$$=CreateRecord($1->code);}
-		   | Literal {$$=CreateRecord($1->code);}
-		   | '(' Expression ')' {$$=CreateRecord($2->code);}
+	AuxExp8: IDs {$$=CreateRecordType($1->code,$1->type);}
+		   | Literal {$$=CreateRecordType($1->code,$1->type);}
+		   | '(' Expression ')' {char* temp[]={"(",$2->code,")"};
+								$$=CreateRecordType(cat(temp,3),$2->type);}
 		   | Array {}
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
@@ -244,7 +338,10 @@ char * forCount();
 
     IDs: ID '.' IDs {char* temp[]={$1,".",$3->code};
 					 $$=CreateRecord(cat(temp,3));}
-       | ID {$$=CreateRecord($1);}
+       | ID {SymbolNode* id=lookup_symbol(varTable,$1);
+	   		checkVarScope($1);
+			$$=CreateRecordType($1,getVarType($1));
+			}
        ;
 		   
     List: '[' ']' {}
@@ -337,11 +434,11 @@ char * forCount();
 			;
 
 
-    TypeCollection: TYPE_S_INT8 {}
+    TypeCollection: TYPE_S_INT64 {}
 				  | TYPE_S_INT32 {}
 				  | TYPE_S_SIZE {}
 				  | TYPE_S_INT16 {}
-				  | TYPE_U_INT8 {}
+				  | TYPE_U_INT64 {}
 				  | TYPE_U_INT16 {}
 				  | TYPE_U_INT32 {}
 				  | TYPE_U_SIZE {}
@@ -352,32 +449,32 @@ char * forCount();
 				  | TYPE_VEC {}
 				  | TYPE_SET {}
 				  | TYPE_MATRIX {}
-				  | TYPE_RESULT {np("RESULT");}
+				  | TYPE_RESULT {}
 				  | TYPE_OPTION {}
 				  ;
 
-	Type: TYPE_BOOL {np("BOOL"); $$=CreateRecord("bool");}
-        | TYPE_S_INT8 {np("S_INT8");}
-        | TYPE_S_INT32  {np("S_INT32");$$=CreateRecord("int");}
-        | TYPE_S_SIZE  {np("S_SIZE");}
-        | TYPE_S_INT16  {np("S_INT16");$$=CreateRecord("short int");}
-        | TYPE_U_INT8  {np("U_INT8");}
-        | TYPE_U_INT16  {np("U_INT16");$$=CreateRecord("unsigned short int");}
-        | TYPE_U_INT32  {np("U_INT32");$$=CreateRecord("unsigned int");}
-        | TYPE_U_SIZE  {np("U_SIZE");}
-        | TYPE_FLOAT32 {np("FLOAT32");$$=CreateRecord("float");}
-        | TYPE_FLOAT64  {np("FLOAT64");$$=CreateRecord("double");}
-        | TYPE_CHAR  {np("CHAR");$$=CreateRecord("char");}
-        | TYPE_STRING  {np("STRING");$$=CreateRecord("char*");}
-        | TYPE_VEC '<' Type '>' {np("VEC");}
-        | TYPE_SET '<' Type '>' {np("SET");}
-        | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' { np("MATRIX"); }
-        | TYPE_RESULT '<' Type ',' Type '>' { np("RESULT W/ Types"); }
-        | TYPE_OPTION '<' Type ',' Type '>' { np("OPTION"); }
-        | '[' Type ';' VALUE_INT ']' { np("ARRAY"); }
-        | '&' '[' Type ']' { np("REFERENCE ARRAY"); }
-        | '&' Type { np("REFERENCE"); }
-        | '('')' { np("UNIT TYPE"); }
+	Type: TYPE_BOOL { $$=CreateRecordType("bool",bool_);}
+        | TYPE_S_INT16  {$$=CreateRecordType("short int",s_int16);}
+        | TYPE_S_INT32  {$$=CreateRecordType("int",s_int32);}
+        | TYPE_S_INT64 {$$=CreateRecordType("long long int",s_int64);}
+        | TYPE_S_SIZE  {}
+        | TYPE_U_INT16  {$$=CreateRecordType("unsigned short int",u_int16);}
+        | TYPE_U_INT32  {$$=CreateRecordType("unsigned int",u_int32);}
+        | TYPE_U_INT64  {$$=CreateRecordType("unsigned long long int",u_int64);}
+        | TYPE_U_SIZE  {}
+        | TYPE_FLOAT32 {$$=CreateRecordType("float",float32);}
+        | TYPE_FLOAT64  {$$=CreateRecordType("double",float64);}
+        | TYPE_CHAR  {$$=CreateRecordType("char",char_);}
+        | TYPE_STRING  {$$=CreateRecordType("char*","string");}
+        | TYPE_VEC '<' Type '>' {}
+        | TYPE_SET '<' Type '>' {}
+        | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' {}
+        | TYPE_RESULT '<' Type ',' Type '>' {}
+        | TYPE_OPTION '<' Type ',' Type '>' {}
+        | '[' Type ';' VALUE_INT ']' {}
+        | '&' '[' Type ']' {}
+        | '&' Type {}
+        | '('')' {}
 		| ID {}
         ;
 
@@ -388,15 +485,15 @@ char * forCount();
 		   | EQUAL {$$=CreateRecord("==");}
 		   ;
 
-	Literal: VALUE_INT {$$=CreateRecord($1);}
-           | VALUE_FLOAT {$$=CreateRecord($1);}
-           | VALUE_BOOL {$$=CreateRecord($1);}
-           | VALUE_CHAR {$$=CreateRecord($1);}
+	Literal: VALUE_INT {$$=CreateRecordType($1,literal_int);}
+           | VALUE_FLOAT {$$=CreateRecordType($1,literal_float);}
+           | VALUE_BOOL {$$=CreateRecordType($1,bool_);}
+           | VALUE_CHAR {$$=CreateRecordType($1,char_);}
            | VALUE_STRING {$$=CreateRecord($1);}
-           | OK '(' Expression ')' { np("OK"); }
-           | ERROR '(' Expression ')' { np("ERROR"); }
-           | SOME '(' Expression ')' { np("SOME"); }
-           | '(' ')' { np("UNIT"); }
+           | OK '(' Expression ')' {}
+           | ERROR '(' Expression ')' {}
+           | SOME '(' Expression ')' {}
+           | '(' ')' {}
            | NONE {}
            ;
 %%
@@ -410,29 +507,11 @@ void np(const char c[]) {
 }
 
 
-int main (int argc, char ** argv) {
- 	int codigo;
-
-    if (argc != 3) {
-       printf("Usage: $./compiler input.txt output.txt\nClosing application...\n");
-       exit(0);
-    }
-    
-    yyin = fopen(argv[1], "r");
-    yyout = fopen(argv[2], "w");
-
-    codigo = yyparse();
-
-    fclose(yyin);
-    fclose(yyout);
-
-	return codigo;
-}
-
 int yyerror (char *msg) {
 	fprintf (stderr, "%d: %s at '%s'\n", yylineno, msg, yytext);
 	return 0;
 }
+
 char* cat(char** strings, int qnt){
 	int tam=0;
 	for(int i=0;i<qnt;i++){
@@ -451,15 +530,136 @@ char* cat(char** strings, int qnt){
 	}
 	return output;
 }
+
 char* forCount(){
 	static int forCounts=0;
 	char* text=malloc(sizeof(char)*12);
 	snprintf(text,sizeof(text),"%d",forCounts++);
 	return text;
 }
+
 char* whileCount(){
 	static int whileCounts=0;
 	char* text=malloc(sizeof(char)*12);
 	snprintf(text,sizeof(text),"%d",whileCounts++);
 	return text;
+}
+
+ScopeNode* GenerateScope(){
+	static int scopeCount=1;
+	char* scopeName=malloc(sizeof(char)*14);
+	snprintf(scopeName,sizeof(scopeName),"S#%d",scopeCount++);
+	return CreateScope(scopeName);
+}
+
+void InitializeTypeTable(){
+	typeTable=create_table();
+
+	const char* conversions_s_bool[]={};
+	insert_symbol(typeTable,bool_,alloc_type_type(bool_,conversions_s_bool,0));
+
+	const char* conversions_s_int16[]={s_int32,s_int64,float32,float64};
+	insert_symbol(typeTable,s_int16,alloc_type_type(s_int16,conversions_s_int16,4));
+
+	const char* conversions_s_int32[]={s_int64,float64};
+	insert_symbol(typeTable,s_int32,alloc_type_type(s_int32,conversions_s_int32,2));
+
+	const char* conversions_s_int64[]={};
+	insert_symbol(typeTable,s_int64,alloc_type_type(s_int64,conversions_s_int64,0));
+
+	const char* conversions_u_int16[]={u_int32,u_int64,s_int32,float64};
+	insert_symbol(typeTable,u_int16,alloc_type_type(u_int16,conversions_u_int16,4));
+
+	const char* conversions_u_int32[]={u_int64,s_int64};
+	insert_symbol(typeTable,u_int32,alloc_type_type(u_int32,conversions_u_int32,2));
+
+	const char* conversions_u_int64[]={};
+	insert_symbol(typeTable,u_int64,alloc_type_type(u_int64,conversions_u_int64,0));
+
+	const char* conversions_float32[]={float64};
+	insert_symbol(typeTable,float32,alloc_type_type(float32,conversions_float32,1));
+
+	const char* conversions_float64[]={};
+	insert_symbol(typeTable,float64,alloc_type_type(float64,conversions_float64,0));
+
+	const char* conversions_char[]={};
+	insert_symbol(typeTable,char_,alloc_type_type(char_,conversions_char,0));
+
+	const char* conversions_literal_int[]={u_int16,u_int32,u_int64,s_int16,s_int32,s_int64,float32,float64};
+	insert_symbol(typeTable,literal_int,alloc_type_type(literal_int,conversions_literal_int,8));
+
+	const char* conversions_literal_float[]={float32,float64};
+	insert_symbol(typeTable,literal_float,alloc_type_type(literal_float,conversions_literal_float,2));
+	
+}
+
+char* checkTypeCompatibility(char* type1,char* type2){
+	if(!type1 || !type2){
+		return NULL;
+	}
+	if(strcmp(type1,type2)==0){
+		return type1;
+	}
+	SymbolNode* type1Node=lookup_symbol(typeTable,type1);
+	SymbolNode* type2Node=lookup_symbol(typeTable,type2);
+	if(!type1Node || !type2Node){
+		return NULL;
+	}
+
+	for(int i=0;i<type1Node->info->conversionsQnt;i++){
+		if(strcmp(type1Node->info->conversions[i],type2)==0){
+			return type2;
+		}
+	}
+	for(int i=0;i<type2Node->info->conversionsQnt;i++){
+		if(strcmp(type2Node->info->conversions[i],type1)==0){
+			return type1;
+		}
+	}
+
+	return NULL;
+}
+
+void checkVarScope(char* varName){
+	SymbolNode* var=lookup_symbol(varTable,varName);
+	if(var){
+		if(!FindScope(scopeStack,var->info->scope)){
+			printf("Variavel %s Fora de escopo\n",varName);
+			exit(1);
+		}
+	}
+	else{
+		printf("Variável \"%s\" não declarada\n",varName);
+		exit(1);
+	}
+}
+char* getVarType(char* varName){
+	SymbolNode* var=lookup_symbol(varTable,varName);
+	if(var){
+		return var->info->type;
+	}
+	else{
+		return NULL;
+	}
+}
+
+int main (int argc, char ** argv) {
+ 	int codigo;
+    if (argc != 3) {
+       printf("Usage: $./compiler input.txt output.txt\nClosing application...\n");
+       exit(0);
+    }
+	scopeStack=CreateStack();
+	varTable=create_table();
+	funcTable=create_table();
+	InitializeTypeTable();
+	PushScope(scopeStack,CreateScope("GLOBAL"));
+    yyin = fopen(argv[1], "r");
+    yyout = fopen(argv[2], "w");
+    codigo = yyparse();
+
+    fclose(yyin);
+    fclose(yyout);
+
+	return codigo;
 }

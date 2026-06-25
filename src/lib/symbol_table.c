@@ -1,0 +1,96 @@
+#include "symbol_table.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+SymbolInfo* alloc_type_var(char* type, char* scope){
+    SymbolInfo* symbolInfo= (SymbolInfo*)malloc(sizeof(SymbolInfo));
+    if(!symbolInfo){
+        return NULL;
+    }
+    symbolInfo->type=type;
+    symbolInfo->scope=scope;
+    return symbolInfo;
+}
+SymbolInfo* alloc_type_type(char* type, const char** conversions,int conversionsQnt){
+    SymbolInfo* symbolInfo= (SymbolInfo*)malloc(sizeof(SymbolInfo));
+    if(!symbolInfo){
+        return NULL;
+    }
+    symbolInfo->type=type;
+    symbolInfo->conversionsQnt=conversionsQnt;
+    if (conversionsQnt > 0) {
+        symbolInfo->conversions = (const char**)malloc(conversionsQnt * sizeof(const char*));
+        for(int i = 0; i < conversionsQnt; i++) {
+            symbolInfo->conversions[i] = conversions[i];
+        }
+    } else {
+        symbolInfo->conversions = NULL;
+    }
+    return symbolInfo;
+}
+unsigned int hash(const char* key) {
+    unsigned long hash = 5381;
+    int character;
+    while ((character = (unsigned char)*key++)) {
+        hash = ((hash << 5) + hash) + character;
+    }
+    return hash % TABLE_SIZE;
+}
+
+SymbolTable* create_table() {
+    SymbolTable* table = (SymbolTable*)malloc(sizeof(SymbolTable));
+    if (!table) return NULL;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        table->buckets[i] = NULL;
+    }
+    return table;
+}
+
+void insert_symbol(SymbolTable* table, const char* id,SymbolInfo* info) {
+    if (!table || !id) {
+        printf("Não foi possível realizar a inserção, pois houve um problema na tabela, no id ou no escopo.\n");
+        return;
+    }
+    char* unique_key = strdup(id);
+    unsigned int slot = hash(unique_key);
+
+    SymbolNode* new_node = (SymbolNode*)malloc(sizeof(SymbolNode));
+    if (!new_node) {
+        free(unique_key);
+        printf("Não foi possível gerar um novo nó para armazenar a informação.\n");
+        return;
+    }
+
+    new_node->key = unique_key;
+    new_node->name = strdup(id);
+    new_node->info = info;
+    if (table->buckets[slot] != NULL) {
+        SymbolNode* current = table->buckets[slot];
+        while (current->next != NULL) {
+            current = current->next;
+        }
+        current->next = new_node;
+    } else {
+        table->buckets[slot] = new_node;
+    }
+}
+
+SymbolNode* lookup_symbol(SymbolTable* table, const char* unique_key) {
+    if (!table || !unique_key) {
+        printf("Tabela não inicializada ou chave não informada.\n");
+        return NULL;
+    }
+
+    unsigned int slot = hash(unique_key);
+    SymbolNode* current = table->buckets[slot];
+
+    while(current != NULL) {
+        if (strcmp(current->key, unique_key) == 0) {
+            return current;
+        }
+        current = current->next;
+    }
+    printf("Informação buscada não encontrada.\n");
+    return NULL;
+}

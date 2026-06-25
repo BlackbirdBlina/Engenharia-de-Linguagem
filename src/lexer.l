@@ -30,13 +30,13 @@ id                  {letter}({letter}|{number})*
 {newline}           {column_counter = 0; }
 "bool"              { return TYPE_BOOL;}
 
-"s_int8"            { return TYPE_S_INT8;}
 "s_int16"           { return TYPE_S_INT16;}
 "s_int32"           { return TYPE_S_INT32;}
+"s_int64"           { return TYPE_S_INT64;}
 "s_size"            { return TYPE_S_SIZE;}
-"u_int8"            { return TYPE_U_INT8;}
 "u_int16"           { return TYPE_U_INT16;}
 "u_int32"           { return TYPE_U_INT32;}
+"u_int64"            { return TYPE_U_INT64;}
 "u_size"            { return TYPE_U_SIZE;}
 
 "float32"           { return TYPE_FLOAT32;}
