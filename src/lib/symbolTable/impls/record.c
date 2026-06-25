@@ -9,7 +9,7 @@ Record* CreateRecord(char* code){
     return record;
 }
 
-Record* CreateTypeRecord(char* code, TypeKind kind) {
+Record* CreateTypedRecord(char* code, TypeKind kind) {
     Record* record = (Record*)malloc(sizeof(Record));
     record->code = strdup(code);
     record->kind = kind;

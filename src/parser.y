@@ -19,6 +19,7 @@ char * whileCount();
 char * forCount();
 
 SymbolTable* createTable_Program = NULL;
+char* scope = NULL;
 /* OUR TODOs */
 /*
     -> Figure out the syntax for structs:
@@ -64,11 +65,13 @@ SymbolTable* createTable_Program = NULL;
 %type <rec> SubprogramCall MaybeParams ParamsToCall ModuleCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
 %type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type TypeCollection Compare Literal
 %type <rec> Decls 
+
+
 %start Program 
 
 %%
-    Program:  Decls  { p("PROGRAM Detected");
-					   fprintf(yyout,"%s", $1->code);} 
+    Program:  {scope = "global";} Decls  { p("PROGRAM Detected");
+					   fprintf(yyout,"%s", $2->code);} 
            ;
 	Decls: SubProgram Decls{
 							char* temp[]={$1->code,"\n",$2->code};
@@ -80,7 +83,8 @@ SymbolTable* createTable_Program = NULL;
 		 | EnumDecl Decls{char* temp[]={$1->code,"\n",$2->code};
 							$$=CreateRecord(cat(temp,3));}	
 		 | Main {
-				$$=CreateRecord($1->code);
+			
+			$$=CreateRecord($1->code);
 		 }
 		 ;
 	
@@ -95,23 +99,29 @@ SymbolTable* createTable_Program = NULL;
 													$$=CreateRecord(cat(temp,7));}
 			  ;
 
-	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"#include <stdio.h>\n#include <math.h>\n","\nint main()", $8->code};
-														  $$=CreateRecord(cat(temp,3));}
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type {scope = "main";} Scope { 
+			char* temp[]={"#include <stdio.h>\n#include <math.h>\n","\nint main()", $9->code};
+			$$=CreateRecord(cat(temp,3));
+		}
 		;
 
 	Params: VarTypedList {$$=CreateRecord($1->code);}
 		  | { np("No PARAMS"); $$=CreateRecord("");}
 		  ;
 
-	VarTypedList: VarTyped ',' VarTypedList { char* temp[]={$1->code,",",$3->code};
-											  $$=CreateRecord(cat(temp,3));
+	VarTypedList: VarTyped ',' VarTypedList { char* temp[] = {$1->code, ",", $3->code};
+											  $$ = CreateRecord(cat(temp,3));
 											}
 				| VarTyped {$$=CreateRecord($1->code);}
 				;
 
-	VarTyped: ID ':' Type { np("PARAMS");
-							char* temp[]={$3->code," ",$1};
-							$$=CreateRecord(cat(temp,3)); }
+	VarTyped: ID ':' Type { 
+			np("PARAMS");
+			char* temp[] = {$3->code, " ", $1};
+			Record* record = CreateTypedRecord(cat(temp,3), $3->kind); 
+			record->id = strdup($1);
+			$$ = record;
+			}
 			;
 
 	Scope: '{' '}' { $$=CreateRecord("{}"); }
@@ -148,16 +158,12 @@ SymbolTable* createTable_Program = NULL;
 		  ;
 
 	Assignment: LET VarTyped '=' Expression ';' { 
-		
-		p("NON-MUTABLE ASSIGNMENT");
-		char* temp[]={"const ",$2->code,"=",$4->code,";\n"};
-		$$=CreateRecord(cat(temp,5));
+				p("NON-MUTABLE ASSIGNMENT");
+				char* temp[]={"const ", $2->code, "=", $4->code, ";\n"};
+				$$ = CreateTypedRecord(cat(temp,5), $2->kind);
 
-		// insert_symbol(createTable_Program, "x", "global", alloc_type_info(KIND_BOOL));
-												  
-												 
-												 
-												 }
+				insert_symbol(createTable_Program, $2->id, scope, alloc_type_info($2->kind));
+			  }
 			  | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
 			  | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); 
 			  											  char* temp[]={$3->code,"=",$5->code,";\n"};
@@ -191,55 +197,67 @@ SymbolTable* createTable_Program = NULL;
 		         | '[' Expression ']' {}
 		         ;
 
-	Expression: Expression OR AuxExp1 {char* temp[]={$1->code,"||",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		      | AuxExp1 {$$=CreateRecord($1->code);}
+	Expression: Expression OR AuxExp1 {
+				char* temp[]={$1->code,"||",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), KIND_BOOL);}
+		      | AuxExp1 {$$ = $1;}
 			  ;
 
-	AuxExp1: AuxExp1 AND AuxExp2 {char* temp[]={$1->code,"&&",$3->code};
-								  $$=CreateRecord(cat(temp,3));}
-		   | AuxExp2 {$$=CreateRecord($1->code);}
+	AuxExp1: AuxExp1 AND AuxExp2 {
+				char* temp[]={$1->code,"&&",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), KIND_BOOL);}
+		   | AuxExp2 {$$ = $1;}
 		   ;
 	
-	AuxExp2: AuxExp2 '=' AuxExp3 {char* temp[]={$1->code,"==",$3->code};
-								  $$=CreateRecord(cat(temp,3));}
-           | AuxExp2 NOT_EQUAL AuxExp3{char* temp[]={$1->code,"!=",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-	       | AuxExp3{$$=CreateRecord($1->code);}
+	AuxExp2: AuxExp3{$$ = $1;}
 		   ;
 	
-	AuxExp3: AuxExp3 Compare AuxExp4{char* temp[]={$1->code,$2->code,$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp4{$$=CreateRecord($1->code);}
+	AuxExp3: AuxExp3 Compare AuxExp4{
+				char* temp[]={$1->code, $2->code, $3->code};
+				$$ = CreateTypedRecord(cat(temp,3), KIND_BOOL);}
+		   | AuxExp4{$$ = $1;}
 		   ;
 	
-	AuxExp4: AuxExp4 '+' AuxExp5{char* temp[]={$1->code,"+",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-	       | AuxExp4 '-' AuxExp5{char* temp[]={$1->code,"-",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp5{$$=CreateRecord($1->code);}
+	AuxExp4: AuxExp4 '+' AuxExp5{
+				char* temp[]={$1->code,"+",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+			}
+	       | AuxExp4 '-' AuxExp5{
+				char* temp[]={$1->code,"-",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+			}
+		   | AuxExp5{$$ = $1;}
 		   ;
 	
-	AuxExp5: AuxExp5 '*' AuxExp6{char* temp[]={$1->code,"*",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp5 '/' AuxExp6{char* temp[]={$1->code,"/",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp5 '%' AuxExp6{char* temp[]={$1->code,"\%",$3->code};
-									   $$=CreateRecord(cat(temp,3));}
-		   | AuxExp6{$$=CreateRecord($1->code);}
+	AuxExp5: AuxExp5 '*' AuxExp6{
+				char* temp[]={$1->code,"*",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+			}
+		   | AuxExp5 '/' AuxExp6{
+				char* temp[]={$1->code,"/",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+			}
+		   | AuxExp5 '%' AuxExp6{
+				char* temp[]={$1->code,"\%",$3->code};
+				$$ = CreateTypedRecord(cat(temp,3), $1->kind); 
+			}
+		   | AuxExp6{$$ = $1;}
 		   ;
 	
-	AuxExp6: AuxExp7 '^' AuxExp6{char* temp[]={"pow(",$1->code,",",$3->code,")"};
-									   $$=CreateRecord(cat(temp,5));}
-		   | AuxExp7{$$=CreateRecord($1->code);}
+	AuxExp6: AuxExp7 '^' AuxExp6{
+				char* temp[]={"pow(",$1->code,",",$3->code,")"};
+				$$ = CreateTypedRecord(cat(temp,5), $1->kind);
+			}
+		   | AuxExp7{$$ = $1;}
 		   ;
 	
-	AuxExp7: NOT AuxExp7{char* temp[]={"!",$2->code};
-									   $$=CreateRecord(cat(temp,2));}
-		   | AuxExp8{$$=CreateRecord($1->code);}
+	AuxExp7: NOT AuxExp7{
+				char* temp[]={"!",$2->code};
+				$$ = CreateTypedRecord(cat(temp,2), $2->kind);}
+		   | AuxExp8{$$ = $1;}
 		   ;
 	
-	AuxExp8: IDs {$$=CreateRecord($1->code);}
+	AuxExp8: IDs {$$ = $1;}
 		   | Literal {$$=CreateRecord($1->code);}
 		   | '(' Expression ')' {$$=CreateRecord($2->code);}
 		   | Array {}
@@ -256,7 +274,14 @@ SymbolTable* createTable_Program = NULL;
 
     IDs: ID '.' IDs {char* temp[]={$1,".",$3->code};
 					 $$=CreateRecord(cat(temp,3));}
-       | ID {$$=CreateRecord($1);}
+       | ID {
+			char global_counter_str[20]; 
+			snprintf(global_counter_str, sizeof(global_counter_str), "%d", global_counter);
+			char* temp[] = {$1, "#", scope, "#", global_counter_str};
+			char* key = cat(temp, 5);
+			SymbolNode* node = lookup_symbol(createTable_Program, key);
+			$$ = CreateTypedRecord($1, node->type->kind);
+		}
        ;
 		   
     List: '[' ']' {}
@@ -264,8 +289,19 @@ SymbolTable* createTable_Program = NULL;
         ;
 
     Print: PRINT '(' VALUE_STRING ',' Expression ')' {
-		char* temp[]={"printf(",$3,",",$5->code,");\n"};
-		$$=CreateRecord(cat(temp,5));
+		TypeKind kind = $5->kind;
+		char formatter[4];
+		switch (kind) {
+			case KIND_FLOAT32:
+				strcpy(formatter, "%f");
+				break;
+			default:
+				printf("Tipo não encontrado.\n");
+				break;
+		}
+
+		char* temp[] = {"printf(", formatter, ",", $5->code, ");\n"};
+		$$ = CreateRecord(cat(temp,5));
 	}
          | PRINT '(' VALUE_STRING ')' {
 			char* temp[]={"printf(",$3,");\n"};
@@ -378,18 +414,52 @@ SymbolTable* createTable_Program = NULL;
 			np("BOOL"); 
 			$$ = CreateTypedRecord("bool", KIND_BOOL);
 		}
-        | TYPE_S_INT8 {np("S_INT8"); }
-        | TYPE_S_INT32  {np("S_INT32");$$=CreateRecord("int");}
-        | TYPE_S_SIZE  {np("S_SIZE");}
-        | TYPE_S_INT16  {np("S_INT16");$$=CreateRecord("short int");}
-        | TYPE_U_INT8  {np("U_INT8");}
-        | TYPE_U_INT16  {np("U_INT16");$$=CreateRecord("unsigned short int");}
-        | TYPE_U_INT32  {np("U_INT32");$$=CreateRecord("unsigned int");}
-        | TYPE_U_SIZE  {np("U_SIZE");}
-        | TYPE_FLOAT32 {np("FLOAT32");$$=CreateRecord("float");}
-        | TYPE_FLOAT64  {np("FLOAT64");$$=CreateRecord("double");}
-        | TYPE_CHAR  {np("CHAR");$$=CreateRecord("char");}
-        | TYPE_STRING  {np("STRING");$$=CreateRecord("char*");}
+        | TYPE_S_INT8 {
+			np("S_INT8"); 
+			$$ = CreateTypedRecord("s_int8", KIND_S_INT8);
+		}
+		| TYPE_S_INT16  {
+			np("S_INT16");
+			$$ = CreateTypedRecord("s_int16", KIND_S_INT16);
+		}
+        | TYPE_S_INT32  {
+			np("S_INT32");
+			$$ = CreateTypedRecord("s_int32", KIND_S_INT32);
+		}
+        | TYPE_S_SIZE  {
+			np("S_SIZE");
+			$$ = CreateTypedRecord("s_size", KIND_S_SIZE);
+		}
+        | TYPE_U_INT8  {
+			np("U_INT8");
+			$$ = CreateTypedRecord("s_size", KIND_U_INT8);
+		}
+        | TYPE_U_INT16  {
+			np("U_INT16");
+			$$ = CreateTypedRecord("u_int16", KIND_U_INT16);
+		}
+        | TYPE_U_INT32  {
+			np("U_INT32");
+			$$ = CreateTypedRecord("u_int32", KIND_U_INT32);
+		}
+        | TYPE_U_SIZE  {
+			np("U_SIZE");
+			$$ = CreateTypedRecord("u_size", KIND_U_SIZE);
+		}
+        | TYPE_FLOAT32 {
+			np("FLOAT32");
+			$$ = CreateTypedRecord("float32", KIND_FLOAT32);
+		}
+        | TYPE_FLOAT64  {
+			np("FLOAT64");
+			$$ = CreateTypedRecord("float64", KIND_FLOAT64);
+		}
+        | TYPE_CHAR  {
+			np("CHAR");
+			$$ = CreateTypedRecord("char", KIND_CHAR);}
+        | TYPE_STRING  {
+			np("STRING");
+			$$ = CreateTypedRecord("char*", KIND_STRING);}
         | TYPE_VEC '<' Type '>' {np("VEC");}
         | TYPE_SET '<' Type '>' {np("SET");}
         | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' { np("MATRIX"); }
@@ -407,6 +477,7 @@ SymbolTable* createTable_Program = NULL;
 		   | LESS_EQUAL {$$=CreateRecord("<=");}
 		   | GREATER_EQUAL {$$=CreateRecord(">=");}
 		   | EQUAL {$$=CreateRecord("==");}
+		   | NOT_EQUAL {$$=CreateRecord("!=");}
 		   ;
 
 	Literal: VALUE_INT {$$=CreateRecord($1);}

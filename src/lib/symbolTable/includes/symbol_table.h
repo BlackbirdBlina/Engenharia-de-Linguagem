@@ -7,6 +7,8 @@
 #include <sys/types.h>
 #include <stdbool.h>
 
+extern int global_counter;
+
 typedef enum {
     KIND_BOOL, 
     KIND_S_INT8, 

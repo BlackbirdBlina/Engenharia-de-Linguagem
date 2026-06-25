@@ -6,12 +6,12 @@
 typedef struct Record{
     char* code;
     TypeKind kind;
-    
+    char* id;
 } Record;
 
 
-Record * CreateRecord(char*);
-Record* CreateTypeRecord(char* code, TypeKind kind);
+Record* CreateRecord(char*);
+Record* CreateTypedRecord(char* code, TypeKind kind);
 void FreeRecord(Record *);
 
 #endif
