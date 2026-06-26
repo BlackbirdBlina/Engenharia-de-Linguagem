@@ -1,6 +1,7 @@
 #ifndef SEMANTICS
 #define SEMANTICS
 
+#include "../record.h"
 #include "../scope_stack.h"
 #include "../symbol_table.h"
 
@@ -8,6 +9,8 @@ extern ScopeStack *scopeStack;
 extern SymbolTable *varTable;
 extern SymbolTable *typeTable;
 extern SymbolTable *funcTable;
+
+typedef char* id;
 
 /* Custom Functions */
 void p(const char string[]);
@@ -19,6 +22,6 @@ char *whileCount();
 char *forCount();
 char *checkTypeCompatibility(char *, char *);
 void checkVarScope(char *);
-char *getVarType(char *);
+char *getVarType(id);
 
 #endif

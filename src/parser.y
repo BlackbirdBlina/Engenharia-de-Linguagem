@@ -7,6 +7,7 @@
 #include "lib/scope_stack.h"
 #include "lib/parser/semantics.h"
 #include "lib/parser/grammar/assignments.c"
+#include "lib/parser/grammar/attribution.c"
 
 int yylex(void);
 int yyerror(char *s);
@@ -15,11 +16,10 @@ extern char * yytext;
 extern FILE * yyin, * yyout;
 
 %}
-
 %union {
 	int    iValue; 	
 	char   cValue; 	
-	char * sValue;
+	id sValue;
 	struct Record * rec;  
 	};
 
@@ -73,7 +73,7 @@ extern FILE * yyin, * yyout;
 													$$=CreateRecord(cat(temp,7));
                                                     }
 			  ;
-	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main()", $8->code};
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main() ", $8->code};
 														  $$=CreateRecord(cat(temp,2));
                                                           }
 		;
@@ -95,21 +95,17 @@ extern FILE * yyin, * yyout;
 							char* temp[]={$3->code," ",$1};
 							$$=CreateRecordVarTyped(cat(temp,3),$3->type,$1); }
 			;
-	Scope: '{'{PushScope(scopeStack,GenerateScope());
-    } '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
-		 | '{' {PushScope(scopeStack,GenerateScope());
-         } Statements '}' {
-		 						char* temp[]={"{",$3->code,"}"};
+	Scope: '{' { PushScope(scopeStack,GenerateScope()); } '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
+		 | '{' { PushScope(scopeStack,GenerateScope()); } Statements '}' {
+		 						char* temp[]={"{\n\t",$3->code,"\n}"};
 								$$=CreateRecord(cat(temp,3));
 								PopScope(scopeStack);
                                 }
 		 ;
-	Statements: Statement Statements {char* temp[]={$1->code,"\n",$2->code};
+	Statements: Statement Statements { char* temp[]={$1->code,"\n",$2->code};
 									  $$=CreateRecord(cat(temp,3));
                                       }
-			  | Statement {
-              $$=CreateRecord($1->code);
-              }
+			  | Statement { $$=CreateRecord($1->code); }
 			  ;
 	Statement: Assignment {
     $$=CreateRecord($1->code);
@@ -141,53 +137,26 @@ extern FILE * yyin, * yyout;
              }
              | Print ';' {}
 			 ;
-	Return: RETURN ';' {
-    $$=CreateRecord("return;");
-    }
+	Return: RETURN ';' { $$=CreateRecord("return;"); }
 	      | RETURN Expression ';' {char* temp[]={"return",$2->code,";"};
 								  $$=CreateRecord(cat(temp,3));
                                   }
 		  ;
-	Assignment:
-        LET VarTyped '=' Expression ';' {
-            char* temp[] = { "const ", $2->code, "=", $4->code, ";" };
-            $$ = CreateRecord(cat(temp,5));
-            check_let_equal($$,$2,$4);
-
-            insert_symbol(varTable,$2->id,alloc_type_var($2->type,scopeStack->top->scopeName));
-        }
-        | CONST VarTyped '=' Expression ';' {}
-        | LET MUTABLE VarTyped '=' Expression ';' {
-            char* temp[]={$3->code,"=",$5->code,";"};
-            $$=CreateRecord(cat(temp,4));
-        }
-        | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
-        | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
+	Assignment: LET VarTyped '=' Expression ';'                                           { let__equal(&$$, $2, $4, STAT); }
+              | CONST VarTyped '=' Expression ';'                                         { let__equal(&$$, $2, $4, CONSTANT); }
+              | LET MUTABLE VarTyped '=' Expression ';'                                   { let__equal(&$$, $3, $5, MUT); }
+              | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
+              | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
 ;
-Attribution: ID '=' Expression ';' {
-char* temp[]={$1,"=",$3->code,";"};
-checkVarScope($1);
-char* tempVarExpTypeCmp=checkTypeCompatibility(getVarType($1),$3->type);
-if(tempVarExpTypeCmp){
-            if(strcmp(tempVarExpTypeCmp,getVarType($1))!=0){
-                        printf("ERROR: variável %s espera receber algo do tipo %s",$1,getVarType($1));
-                        exit(1);
-                    }
-                }
-                else{
-                    printf("ERROR: variável \"%s\" espera receber algo do tipo \"%s\"",$1,getVarType($1));
-                    exit(1);
-                }
-                $$=CreateRecord(cat(temp,4));
-                }
-               | ID '.' ID '=' Expression ';'{ }
-			   | ID PLUS_ATTRIBUTION Expression ';' { }
-			   | ID MINUS_ATTRIBUTION Expression ';' {  }
-			   | ID MULTIPLY_ATTRIBUTION Expression ';' {  }
-			   | ID DIVIDE_ATTRIBUTION Expression ';' {  }
-			   | Array '=' Expression ';' { }
-               | IncrOrDecr ';' {}
-               ;
+Attribution: ID '=' Expression ';'                                                        { attribute_id_expression(&$$, $1, $3); }
+           | ID '.' ID '=' Expression ';'                                                 { /* TODO: Aqui n pode ser id.id.id.id não? */ }
+           | ID PLUS_ATTRIBUTION Expression ';'                                           {  }
+           | ID MINUS_ATTRIBUTION Expression ';' {  }
+           | ID MULTIPLY_ATTRIBUTION Expression ';' {  }
+           | ID DIVIDE_ATTRIBUTION Expression ';' {  }
+           | Array '=' Expression ';' { }
+           | IncrOrDecr ';' {}
+           ;
     IncrOrDecr: ID INCREMENT {}
 			  | ID DECREMENT {}
 			  | INCREMENT ID {}

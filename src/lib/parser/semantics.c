@@ -107,7 +107,8 @@ void InitializeTypeTable() {
 }
 
 char *checkTypeCompatibility(char *type1, char *type2) {
-    // If the types ??
+    // Returns null
+    // If the types don't exist
     if (!type1 || !type2) {
         return NULL;
     }
@@ -124,6 +125,7 @@ char *checkTypeCompatibility(char *type1, char *type2) {
         return NULL;
     }
 
+    // Check the conversions list:
     for (int i = 0; i < type1Node->info->conversionsQnt; i++) {
         if (strcmp(type1Node->info->conversions[i], type2) == 0) {
             return type2;
@@ -151,10 +153,10 @@ void checkVarScope(char *varName) {
     }
 }
 
-char *getVarType(char *varName) {
-    SymbolNode *var = lookup_symbol(varTable, varName);
-    if (var) {
-        return var->info->type;
+type getVarType(id var) {
+    SymbolNode *tabled_var = lookup_symbol(varTable, var);
+    if (tabled_var != NULL) {
+        return tabled_var->info->type;
     } else {
         return NULL;
     }

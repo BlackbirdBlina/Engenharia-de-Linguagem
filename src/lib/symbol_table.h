@@ -21,32 +21,35 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+typedef char* type;
+
 typedef struct SymbolInfo {
 
-  char *type;
-  char *scope;
+    type type;
+    char *scope;
 
-  const char **conversions;
-  int conversionsQnt;
+    const char **conversions;
+    int conversionsQnt;
 
 } SymbolInfo;
 
 typedef struct SymbolNode {
-  char *key;
-  char *name;
-  SymbolInfo *info;
-  struct SymbolNode *next;
+    char *key;
+    char *name;
+    SymbolInfo *info;
+    struct SymbolNode *next;
 } SymbolNode;
 
 typedef struct {
-  SymbolNode *buckets[TABLE_SIZE];
+    SymbolNode *buckets[TABLE_SIZE];
 } SymbolTable;
 
 extern int global_counter;
 
 // SymbolInfo* alloc_type_info(TypeKind kind);
 SymbolInfo *alloc_type_var(char *type, char *scope);
-SymbolInfo *alloc_type_type(char *type, const char **conversions, int conversionsQnt);
+SymbolInfo *alloc_type_type(char *type, const char **conversions,
+                            int conversionsQnt);
 void free_type_info(SymbolInfo *info);
 SymbolTable *create_table();
 unsigned int hash(const char *key);
