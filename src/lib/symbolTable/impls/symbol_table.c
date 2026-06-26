@@ -23,7 +23,7 @@ unsigned int hash(const char* key) {
 
 char* generate_key(const char* id, const char* scope) {
     char buffer[512];
-    snprintf(buffer, sizeof(buffer), "%s#%s#%d", id, scope, global_counter++);
+    snprintf(buffer, sizeof(buffer), "%s#%s", id, scope);
     return strdup(buffer);
 }
 

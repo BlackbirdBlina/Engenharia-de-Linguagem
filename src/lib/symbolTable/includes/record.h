@@ -9,7 +9,6 @@ typedef struct Record{
     char* id;
 } Record;
 
-
 Record* CreateRecord(char*);
 Record* CreateTypedRecord(char* code, TypeKind kind);
 void FreeRecord(Record *);

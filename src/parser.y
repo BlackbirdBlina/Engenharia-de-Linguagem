@@ -20,30 +20,6 @@ char * forCount();
 
 SymbolTable* createTable_Program = NULL;
 char* scope = NULL;
-/* OUR TODOs */
-/*
-    -> Figure out the syntax for structs:
-        struct Thing {
-            whatever : u_int8 = u_int8::default,
-        }
-        // Na main:
-        let t : Thing = Thing { whatever = 10 };
-        // Ou
-        // Ou
-        let t : struct = Thing { whatever : u_int8 = 10 };
-    -> ENUM, match, union
-            | EnumDecl { p("ENUM Detected"); }
-            EnumDecl: ENUM ID '{' Variants '}'{}
-	Variants: ID ',' Variants{}
-	Variants: ID ',' Variants{}
-			| ID ',' {}
-			;
-			| ID ',' {}
-			;
-			;
-    -> Print tá funcionando, mas a gnt quer ele nativo? Ou faz um macro futuramente (igual rust).
-*/
-
 %}
 
 %union {
@@ -70,38 +46,67 @@ char* scope = NULL;
 %start Program 
 
 %%
-    Program:  {scope = "global";} Decls  { p("PROGRAM Detected");
-					   fprintf(yyout,"%s", $2->code);} 
+    Program:  {scope = "global"; /* Indica o escopo global*/ } Decls {
+				fprintf(yyout,"%s", $2->code);
+		   } 
            ;
-	Decls: SubProgram Decls{
-							char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}
-		 | Assignment Decls{char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}
-		 | StructDecl Decls{char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}
-		 | EnumDecl Decls{char* temp[]={$1->code,"\n",$2->code};
-							$$=CreateRecord(cat(temp,3));}	
+	Decls: SubProgram Decls {
+			char* temp[] = {$1->code, "\n", $2->code}; // Salva num array de char (temp) as strings a serem concatenadas
+			$$ = CreateRecord(cat(temp,3)); // Concatena as strings, cria o registro da declaração do subprograma e o atribui à regra de Decls (declarações)
+		 }
+		 | Assignment Decls {
+			char* temp[] = {$1->code,"\n",$2->code};
+			$$ = CreateRecord(cat(temp,3));
+		 }
+		 | StructDecl Decls {
+			char* temp[] = {$1->code,"\n",$2->code};
+			$$ = CreateRecord(cat(temp,3));}
+		 | EnumDecl Decls {
+			char* temp[] = {$1->code,"\n",$2->code};
+			$$ = CreateRecord(cat(temp,3));
+		 }	
 		 | Main {
-			
-			$$=CreateRecord($1->code);
+			$$ = CreateRecord($1->code); // Não é necessário criar um array de char, pois é só uma "coisa" (main)
 		 }
 		 ;
 	
-	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { p("REGULAR FUNCTION");
-															char* temp[]={$7->code," ",$2,"(",$4->code,")",$8->code};
-															$$=CreateRecord(cat(temp,7));}
-			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { p("PURE FUNCTION");
-			  													   char* temp[]={$8->code," ",$3,"(",$5->code,")",$9->code};
-																   $$=CreateRecord(cat(temp,7));}
-			  | PROCEDURE ID '(' Params ')' Scope { p("PROCEDURE");
-			  										char* temp[]={"void"," ",$2,"(",$4->code,")",$6->code};
-													$$=CreateRecord(cat(temp,7));}
+	SubProgram: FUNCTION ID '(' Params ')' ARROW Type {
+					char global_counter_str[20]; // Define um array de char (global_counter_str) que comporta o tamanho máximo de caracteres que pode receber
+					snprintf(global_counter_str, sizeof(global_counter_str), "%d", global_counter++); // Converte o número da var global_counter em string e armazena em global_counter_str
+					char* temp[] = {$2, "#", global_counter_str}; // Salva num array de char as strings a serem concatenadas
+					scope = cat(temp, 3); // Concatena as strings
+			  } Scope {
+					char* temp[] = {$7->code, " ", $2, "(", $4->code, ")", "\n", $9->code}; // Salva num array de char (temp) as strings a serem concatenadas
+					$$ = CreateRecord(cat(temp,8)); // Concatena as strings, cria o registro do escopo e o atribui à regra do subProgram
+			  }
+			  | PURE FUNCTION ID '(' Params ')' ARROW Type {
+					char global_counter_str[20]; // Define um array de char (global_counter_str) que comporta o tamanho máximo de caracteres que pode receber
+					snprintf(global_counter_str, sizeof(global_counter_str), "%d", global_counter++); // Converte o número da var global_counter em string e armazena em global_counter_str
+					char* temp[] = {$3, "#", global_counter_str}; // Salva num array de char as strings a serem concatenadas
+					scope = cat(temp, 3); // Concatena as strings
+			  } Scope {
+			  		char* temp[] = {$8->code, " ", $3, "(", $5->code, ")", $10->code};
+					$$ = CreateRecord(cat(temp,7));}
+			  | PROCEDURE ID '(' Params ')' {
+					char global_counter_str[20]; // Define um array de char (global_counter_str) que comporta o tamanho máximo de caracteres que pode receber
+					snprintf(global_counter_str, sizeof(global_counter_str), "%d", global_counter++); // converte o número da var global_counter em string e armazena em global_counter_str
+					char* temp[] = {$2, "#", global_counter_str}; // Salva num array de char as strings a serem concatenadas
+					scope = cat(temp, 3); // Concatena as strings
+			  } Scope {
+			  		char* temp[] = {"void", " ", $2, "(", $4->code, ")", $7->code};
+					$$ = CreateRecord(cat(temp,7));}
 			  ;
 
-	Main: FUNCTION MAIN '(' Params ')' ARROW Type {scope = "main";} Scope { 
-			char* temp[]={"#include <stdio.h>\n#include <math.h>\n","\nint main()", $9->code};
-			$$=CreateRecord(cat(temp,3));
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type {
+			char global_counter_str[20]; 
+			snprintf(global_counter_str, sizeof(global_counter_str), "%d", global_counter++);
+			char* temp[] = {"main", "#", global_counter_str};
+			scope = cat(temp, 3);
+			// printf("scope: %s\n", scope);
+		} Scope { 
+			// No array de char abaixo, inclui os imports de bibliotecas necessárias e, em seguida, cria o registro da main para traduzir para C
+			char* temp[] = {"#include <stdio.h>\n#include <math.h>\n#include <sys/types.h>\n#include <stdbool.h>\n#include <stdint.h>\n", "\nint main()", $9->code};
+			$$ = CreateRecord(cat(temp,3));
 		}
 		;
 
@@ -109,37 +114,50 @@ char* scope = NULL;
 		  | { np("No PARAMS"); $$=CreateRecord("");}
 		  ;
 
-	VarTypedList: VarTyped ',' VarTypedList { char* temp[] = {$1->code, ",", $3->code};
-											  $$ = CreateRecord(cat(temp,3));
-											}
-				| VarTyped {$$=CreateRecord($1->code);}
+	VarTypedList: VarTyped ',' VarTypedList { 
+					char* temp[] = {$1->code, ",", $3->code};
+					$$ = CreateRecord(cat(temp,3));
+				}
+				| VarTyped {
+					$$ = CreateRecord($1->code);
+				}
 				;
 
 	VarTyped: ID ':' Type { 
-			np("PARAMS");
-			char* temp[] = {$3->code, " ", $1};
-			Record* record = CreateTypedRecord(cat(temp,3), $3->kind); 
-			record->id = strdup($1);
-			$$ = record;
+				char* temp[] = {$3->code, " ", $1};
+				Record* record = CreateTypedRecord(cat(temp,3), $3->kind); 
+				record->id = strdup($1);
+				$$ = record;
 			}
 			;
 
 	Scope: '{' '}' { $$=CreateRecord("{}"); }
 		 | '{' Statements '}' { np("SCOPE");
-		 						char* temp[]={"{",$2->code,"}"};
+		 						char* temp[]={"{\n",$2->code,"}"};
 								$$=CreateRecord(cat(temp,3)); }
 		 ;
 
-	Statements: Statement Statements {char* temp[]={$1->code,"\n",$2->code};
-									  $$=CreateRecord(cat(temp,3));}
-			  | Statement {$$=CreateRecord($1->code);}
+	Statements: Statement Statements {
+				char* temp[]={$1->code,"\n",$2->code};
+				$$=CreateRecord(cat(temp,3));}
+			  | Statement {
+				$$=CreateRecord($1->code);
+			  }
 			  ;
 	
-	Statement: Assignment {$$=CreateRecord($1->code);}
-             | Attribution {$$=CreateRecord($1->code);}
-             | StructDecl { p("STRUCT Detected"); }
-			 | SubprogramCall ';'{char* temp[]={$1->code,";\n"};
-								  $$=CreateRecord(cat(temp,2));}
+	Statement: Assignment {
+				$$=CreateRecord($1->code);
+			 }
+             | Attribution {
+				$$=CreateRecord($1->code);
+			 }
+             | StructDecl { 
+				p("STRUCT Detected"); 
+			 }
+			 | SubprogramCall ';'{
+				char* temp[]={$1->code,";\n"};
+				$$=CreateRecord(cat(temp,2));
+			 }
              | ModuleCall ';' {}
 			 | Return { np("RETURN");$$=CreateRecord($1->code); }
 			 | Scope {$$=CreateRecord($1->code);}
@@ -159,9 +177,10 @@ char* scope = NULL;
 
 	Assignment: LET VarTyped '=' Expression ';' { 
 				p("NON-MUTABLE ASSIGNMENT");
-				char* temp[]={"const ", $2->code, "=", $4->code, ";\n"};
-				$$ = CreateTypedRecord(cat(temp,5), $2->kind);
+				char* temp[] = {"const ", $2->code, " ", "=", " ", $4->code, ";\n"};
+				$$ = CreateTypedRecord(cat(temp,7), $2->kind);
 
+				// printf("%s#%s\n", $2->id, scope);
 				insert_symbol(createTable_Program, $2->id, scope, alloc_type_info($2->kind));
 			  }
 			  | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
@@ -198,14 +217,14 @@ char* scope = NULL;
 		         ;
 
 	Expression: Expression OR AuxExp1 {
-				char* temp[]={$1->code,"||",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), KIND_BOOL);}
+				char* temp[] = {$1->code, " ", "||", " ", $3->code};
+				$$ = CreateTypedRecord(cat(temp,5), KIND_BOOL);}
 		      | AuxExp1 {$$ = $1;}
 			  ;
 
 	AuxExp1: AuxExp1 AND AuxExp2 {
-				char* temp[]={$1->code,"&&",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), KIND_BOOL);}
+				char* temp[] = {$1->code, " ","&&", " ",$3->code};
+				$$ = CreateTypedRecord(cat(temp,5), KIND_BOOL);}
 		   | AuxExp2 {$$ = $1;}
 		   ;
 	
@@ -213,8 +232,8 @@ char* scope = NULL;
 		   ;
 	
 	AuxExp3: AuxExp3 Compare AuxExp4{
-				char* temp[]={$1->code, $2->code, $3->code};
-				$$ = CreateTypedRecord(cat(temp,3), KIND_BOOL);}
+				char* temp[] = {$1->code, " ", $2->code, " ", $3->code};
+				$$ = CreateTypedRecord(cat(temp,5), KIND_BOOL);}
 		   | AuxExp4{$$ = $1;}
 		   ;
 	
@@ -275,10 +294,9 @@ char* scope = NULL;
     IDs: ID '.' IDs {char* temp[]={$1,".",$3->code};
 					 $$=CreateRecord(cat(temp,3));}
        | ID {
-			char global_counter_str[20]; 
-			snprintf(global_counter_str, sizeof(global_counter_str), "%d", global_counter);
-			char* temp[] = {$1, "#", scope, "#", global_counter_str};
-			char* key = cat(temp, 5);
+			char* temp[] = {$1, "#", scope};
+			char* key = cat(temp, 3);
+			// printf("%s\n", key);
 			SymbolNode* node = lookup_symbol(createTable_Program, key);
 			$$ = CreateTypedRecord($1, node->type->kind);
 		}
@@ -289,35 +307,75 @@ char* scope = NULL;
         ;
 
     Print: PRINT '(' VALUE_STRING ',' Expression ')' {
-		TypeKind kind = $5->kind;
-		char formatter[4];
-		switch (kind) {
-			case KIND_FLOAT32:
-				strcpy(formatter, "%f");
-				break;
-			default:
-				printf("Tipo não encontrado.\n");
-				break;
-		}
+			TypeKind kind = $5->kind; // A variável Kind recebe uma expressão
+			char formatter[4]; // O array de char (formatter) define o tamanho máximo para guardar a informação do que representa o tipo da nossa linguagem em C
+			switch (kind) {
+				case KIND_BOOL:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_INT8:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_INT16:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_INT32:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_SIZE:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_INT8:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_INT16:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_INT32:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_SIZE:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_FLOAT32:
+					strcpy(formatter, "%f");
+					break;
+				case KIND_FLOAT64:
+					strcpy(formatter, "%lf");
+					break;
+				case KIND_CHAR:
+					strcpy(formatter, "%c");
+					break;
+				case KIND_STRING:
+					strcpy(formatter, "%s");
+					break;
+				// Falta incluir os tipos estruturados
+				default:
+					printf("Tipo não encontrado.\n");
+					break;
+			}
 
-		char* temp[] = {"printf(", formatter, ",", $5->code, ");\n"};
-		$$ = CreateRecord(cat(temp,5));
-	}
+			char* temp[] = {"printf(\"", formatter, "\", ", $5->code, ");\n"};
+			$$ = CreateRecord(cat(temp,5));
+	     }
          | PRINT '(' VALUE_STRING ')' {
-			char* temp[]={"printf(",$3,");\n"};
-			$$=CreateRecord(cat(temp,3));
+			char* temp[] = {"printf(", $3, ");\n"};
+			$$ = CreateRecord(cat(temp,3));
 		 }
          ;
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
                   | ID '.' SubprogramCall {} // foo.poo()
-				  | ID MaybeParams {char* temp[]={$1,$2->code};
-									$$=CreateRecord(cat(temp,2));}
+				  | ID MaybeParams {
+					char* temp[] = {$1, $2->code};
+					$$ = CreateRecord(cat(temp,2));}
 				  ;
 
     MaybeParams: '(' ')' {$$=CreateRecord("()");}
-               | '(' ParamsToCall ')' {char* temp[]={"(",$2->code,")"};
-									   $$=CreateRecord(cat(temp,3));}
+               | '(' ParamsToCall ')' {
+				 char* temp[]={"(",$2->code,")"};
+				 $$=CreateRecord(cat(temp,3));
+			   }
                ;
 
 	ParamsToCall: Expression ',' ParamsToCall{char* temp[]={$1->code,",",$3->code};
@@ -411,54 +469,41 @@ char* scope = NULL;
 				  ;
 
 	Type: TYPE_BOOL {
-			np("BOOL"); 
 			$$ = CreateTypedRecord("bool", KIND_BOOL);
 		}
         | TYPE_S_INT8 {
-			np("S_INT8"); 
-			$$ = CreateTypedRecord("s_int8", KIND_S_INT8);
+			$$ = CreateTypedRecord("int8_t", KIND_S_INT8);
 		}
 		| TYPE_S_INT16  {
-			np("S_INT16");
-			$$ = CreateTypedRecord("s_int16", KIND_S_INT16);
+			$$ = CreateTypedRecord("int16_t", KIND_S_INT16);
 		}
         | TYPE_S_INT32  {
-			np("S_INT32");
-			$$ = CreateTypedRecord("s_int32", KIND_S_INT32);
+			$$ = CreateTypedRecord("int32_t", KIND_S_INT32);
 		}
         | TYPE_S_SIZE  {
-			np("S_SIZE");
-			$$ = CreateTypedRecord("s_size", KIND_S_SIZE);
+			$$ = CreateTypedRecord("ssize_t", KIND_S_SIZE);
 		}
         | TYPE_U_INT8  {
-			np("U_INT8");
-			$$ = CreateTypedRecord("s_size", KIND_U_INT8);
+			$$ = CreateTypedRecord("uint8_t", KIND_U_INT8);
 		}
         | TYPE_U_INT16  {
-			np("U_INT16");
-			$$ = CreateTypedRecord("u_int16", KIND_U_INT16);
+			$$ = CreateTypedRecord("uint16_t", KIND_U_INT16);
 		}
         | TYPE_U_INT32  {
-			np("U_INT32");
-			$$ = CreateTypedRecord("u_int32", KIND_U_INT32);
+			$$ = CreateTypedRecord("uint32_t", KIND_U_INT32);
 		}
         | TYPE_U_SIZE  {
-			np("U_SIZE");
-			$$ = CreateTypedRecord("u_size", KIND_U_SIZE);
+			$$ = CreateTypedRecord("size_t", KIND_U_SIZE);
 		}
         | TYPE_FLOAT32 {
-			np("FLOAT32");
-			$$ = CreateTypedRecord("float32", KIND_FLOAT32);
+			$$ = CreateTypedRecord("float", KIND_FLOAT32);
 		}
         | TYPE_FLOAT64  {
-			np("FLOAT64");
-			$$ = CreateTypedRecord("float64", KIND_FLOAT64);
+			$$ = CreateTypedRecord("double", KIND_FLOAT64);
 		}
         | TYPE_CHAR  {
-			np("CHAR");
 			$$ = CreateTypedRecord("char", KIND_CHAR);}
         | TYPE_STRING  {
-			np("STRING");
 			$$ = CreateTypedRecord("char*", KIND_STRING);}
         | TYPE_VEC '<' Type '>' {np("VEC");}
         | TYPE_SET '<' Type '>' {np("SET");}

@@ -4,5 +4,7 @@ func main() -> s_int32 {
     let c : u_int32 = 10;
 
     let result : float32 = x^2 - y + c;
+    
     print("{}", result);
+    
 }
