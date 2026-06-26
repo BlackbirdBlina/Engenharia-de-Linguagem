@@ -8,6 +8,7 @@
 #include "lib/parser/semantics.h"
 #include "lib/parser/grammar/assignments.c"
 #include "lib/parser/grammar/attribution.c"
+#include "lib/parser/grammar/print.c"
 
 int yylex(void);
 int yyerror(char *s);
@@ -18,15 +19,18 @@ extern FILE * yyin, * yyout;
 %}
 %union {
 	int    iValue; 	
+	float  fValue; 	
 	char   cValue; 	
-	id sValue;
+	ID_t idValue;
+	VALUE_STRING_t sValue;
 	struct Record * rec;  
 	};
 
 %token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
 %token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
-%token PRINT
-%token <sValue> OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
+%token PRINT TOPRINT
+%token <sValue> OK ERROR SOME NONE VALUE_BOOL VALUE_CHAR VALUE_STRING VALUE_FLOAT VALUE_INT
+%token <idValue> ID
 %token TYPE_BOOL TYPE_S_INT64 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT64 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
 
@@ -34,7 +38,7 @@ extern FILE * yyin, * yyout;
 %type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print
 %type <rec> SubprogramCall MaybeParams ParamsToCall ModuleCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
 %type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type TypeCollection Compare Literal
-%type <rec> Decls 
+%type <rec> Decls ThingsToPrint
 %start Program 
 
 %%
@@ -371,9 +375,12 @@ Attribution: ID '=' Expression ';'                                              
         | '[' ElementSequence ']' {}
         ;
 
-    Print: PRINT '(' VALUE_STRING ',' Expression ')' {  }
-         | PRINT '(' VALUE_STRING ')' {  }
-         ;
+    Print: PRINT TOPRINT ThingsToPrint                                  { print_to_print(&$$, $3); };
+    ThingsToPrint: ID TOPRINT ThingsToPrint                             { ID_toPrint(&$$, $1, $3); }
+                 | VALUE_STRING TOPRINT ThingsToPrint                   { VALUE_STRING_t_toPrint(&$$, $1, $3); }
+                 | ID                                                   { $$=CreateRecordPrint("","VAR",$1); }
+                 | VALUE_STRING                                         { print_VALUE_STRING_t(&$$, $1); }
+                 ;
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
                   | ID '.' SubprogramCall {} // foo.poo()

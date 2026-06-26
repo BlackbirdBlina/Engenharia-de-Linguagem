@@ -153,7 +153,7 @@ void checkVarScope(char *varName) {
     }
 }
 
-type getVarType(id var) {
+type getVarType(ID_t var) {
     SymbolNode *tabled_var = lookup_symbol(varTable, var);
     if (tabled_var != NULL) {
         return tabled_var->info->type;
