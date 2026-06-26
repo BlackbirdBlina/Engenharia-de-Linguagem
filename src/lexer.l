@@ -122,6 +122,7 @@ id                  {letter}({letter}|{number})*
 "enum"              { return ENUM;}
 "main"              { return MAIN;}
 "print"             { return PRINT;}
+"<<"                { return TOPRINT;}
 
 "true"|"false"                              {
                                                 yylval.sValue = strdup(yytext);
@@ -143,7 +144,7 @@ id                  {letter}({letter}|{number})*
                                                 return VALUE_CHAR;
                                             }
 
-\".*\"                                      {
+\"([^"\\\n]|\\.)*\"                           {
                                                 yylval.sValue = strdup(yytext);
                                                 return VALUE_STRING;
                                             }

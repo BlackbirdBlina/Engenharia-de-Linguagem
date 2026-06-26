@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <sys/types.h>
+#include "linked_list.h"
 
 typedef char* type;
 
@@ -31,6 +32,7 @@ typedef struct SymbolInfo {
     const char **conversions;
     int conversionsQnt;
 
+    LinkedList* typeParams;
 } SymbolInfo;
 
 typedef struct SymbolNode {
@@ -48,8 +50,8 @@ extern int global_counter;
 
 // SymbolInfo* alloc_type_info(TypeKind kind);
 SymbolInfo *alloc_type_var(char *type, char *scope);
-SymbolInfo *alloc_type_type(char *type, const char **conversions,
-                            int conversionsQnt);
+SymbolInfo *alloc_type_type(char *type, const char **conversions,int conversionsQnt);
+SymbolInfo *alloc_type_func(char *returnType, LinkedList* paramsList);
 void free_type_info(SymbolInfo *info);
 SymbolTable *create_table();
 unsigned int hash(const char *key);

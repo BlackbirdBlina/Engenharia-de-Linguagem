@@ -1,6 +1,6 @@
 #ifndef SCOPE_STACK
 #define SCOPE_STACK
-
+#include <stdbool.h>
 typedef struct ScopeNode
 {
     char* scopeName;

@@ -8,13 +8,17 @@ struct Record {
 
   char **funcParamsTypes;
   int funcParamsQnt;
+
+  char* printPrefix;
+  char* printSufix;
 };
 typedef struct Record Record;
 
-Record *CreateRecord(char *);
-Record *CreateRecordType(char *, char *);
-Record *CreateRecordVarTyped(char *, char *, char *);
-Record *CreateRecordFunc(char *, int, char **, char *);
-Record *CreateRecordFuncParams(char *, int, char **);
+Record *CreateRecord(char * code);
+Record *CreateRecordType(char * code, char * typeID);
+Record *CreateRecordVarTyped(char * code, char * typeID, char * ID);
+Record *CreateRecordFunc(char * code, int paramsQnt, char ** paramsTypes, char * returnType);
+Record *CreateRecordFuncParams(char * code, int paramsQnt, char ** paramsTypes);
+Record *CreateRecordPrint(char* code,char* prefix,char* sufix);
 void FreeRecord(Record *);
 #endif

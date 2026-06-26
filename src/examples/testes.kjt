@@ -1,0 +1,4 @@
+func main() -> s_int32 {
+    let i:s_int16= 2;
+    print<<i<<i;
+}

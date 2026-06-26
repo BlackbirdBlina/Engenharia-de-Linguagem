@@ -15,6 +15,7 @@ typedef char* id;
 /* Custom Functions */
 void p(const char string[]);
 void np(const char string[]);
+void InitializeVarTable();
 void InitializeTypeTable();
 ScopeNode *GenerateScope();
 char *cat(char **, int);
