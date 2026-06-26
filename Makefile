@@ -9,7 +9,7 @@ RECORD = src/lib/symbolTable/impls/record.c
 HASH_TABLE = src/lib/symbolTable/impls/symbol_table.c
 INCLUDES = src/lib/symbolTable/includes
 TARGET = compilador
-TEST_FILE = problems/prob-1.kjt
+TEST_FILE = problems/prob-2.kjt
 OUTPUT_FILE = problems/output.c
 OUTPUT_C_TARGET = testcode
 

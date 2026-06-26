@@ -17,6 +17,10 @@ void np(const char string[]);
 char * cat(char **, int);
 char * whileCount();
 char * forCount();
+char * ifCount();
+char * elseCount();
+char * endIfCount();
+char *replace_str(const char *orig, const char *rep, const char *with);
 
 SymbolTable* createTable_Program = NULL;
 char* scope = NULL;
@@ -31,7 +35,7 @@ char* scope = NULL;
 
 %token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
 %token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
-%token PRINT
+%token PRINT READ
 %token <sValue> OK ERROR SOME NONE ID VALUE_INT VALUE_FLOAT VALUE_BOOL VALUE_CHAR VALUE_STRING 
 %token TYPE_BOOL TYPE_S_INT8 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT8 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
@@ -40,7 +44,7 @@ char* scope = NULL;
 %type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print
 %type <rec> SubprogramCall MaybeParams ParamsToCall ModuleCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
 %type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type TypeCollection Compare Literal
-%type <rec> Decls 
+%type <rec> Decls Read
 
 
 %start Program 
@@ -131,32 +135,36 @@ char* scope = NULL;
 			}
 			;
 
-	Scope: '{' '}' { $$=CreateRecord("{}"); }
-		 | '{' Statements '}' { np("SCOPE");
-		 						char* temp[]={"{\n",$2->code,"}"};
-								$$=CreateRecord(cat(temp,3)); }
+	Scope: '{' '}' { 
+			$$ = CreateRecord("{}");
+		 }
+		 | '{' Statements '}' { 
+			char* temp[] = {"{\n", $2->code, "\n}"};
+			$$ = CreateRecord(cat(temp, 3)); 
+		 }
 		 ;
 
 	Statements: Statement Statements {
-				char* temp[]={$1->code,"\n",$2->code};
-				$$=CreateRecord(cat(temp,3));}
+				char* temp[] = {$1->code, "\n", $2->code};
+				$$ = CreateRecord(cat(temp,3));
+			  }
 			  | Statement {
-				$$=CreateRecord($1->code);
+				$$ = CreateRecord($1->code);
 			  }
 			  ;
 	
 	Statement: Assignment {
-				$$=CreateRecord($1->code);
+				$$ = CreateRecord($1->code);
 			 }
              | Attribution {
-				$$=CreateRecord($1->code);
+				$$ = CreateRecord($1->code);
 			 }
              | StructDecl { 
-				p("STRUCT Detected"); 
+
 			 }
 			 | SubprogramCall ';'{
-				char* temp[]={$1->code,";\n"};
-				$$=CreateRecord(cat(temp,2));
+				char* temp[] = {$1->code, ";\n"};
+				$$ = CreateRecord(cat(temp, 2));
 			 }
              | ModuleCall ';' {}
 			 | Return { np("RETURN");$$=CreateRecord($1->code); }
@@ -166,8 +174,7 @@ char* scope = NULL;
 			 | CONTINUE ';' {$$=CreateRecord("break");}
 			 | BREAK ';' {$$=CreateRecord("continue");}
              | Print ';' {}
-
-			 
+			 | Read ';' {}
 			 ;
 
 	Return: RETURN ';' {$$=CreateRecord("return;");}
@@ -176,24 +183,26 @@ char* scope = NULL;
 		  ;
 
 	Assignment: LET VarTyped '=' Expression ';' { 
-				p("NON-MUTABLE ASSIGNMENT");
-				char* temp[] = {"const ", $2->code, " ", "=", " ", $4->code, ";\n"};
-				$$ = CreateTypedRecord(cat(temp,7), $2->kind);
+				char* temp[] = {"const ", $2->code, " = ", $4->code, ";"};
+				$$ = CreateTypedRecord(cat(temp,5), $2->kind);
 
-				// printf("%s#%s\n", $2->id, scope);
 				insert_symbol(createTable_Program, $2->id, scope, alloc_type_info($2->kind));
 			  }
 			  | CONST VarTyped '=' Expression ';' { p("CONSTANT ASSIGNMENT"); }
-			  | LET MUTABLE VarTyped '=' Expression ';' { p("MUTABLE ASSIGNMENT"); 
-			  											  char* temp[]={$3->code,"=",$5->code,";\n"};
-														  $$=CreateRecord(cat(temp,4));}
+			  | LET MUTABLE VarTyped '=' Expression ';' {
+					char* temp[] = {$3->code, " = ", $5->code, ";"};
+					$$ = CreateTypedRecord(cat(temp, 4), $3->kind);
+
+					insert_symbol(createTable_Program, $3->id, scope, alloc_type_info($3->kind)); // Insere na tabela de símbolos 
+			  }
               | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {} // Rever: ElementSequence Mesmo?
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
 			  ;
 
-    Attribution: ID '=' Expression ';' { p("ATTRIBUTION");
-										 char* temp[]={$1,"=",$3->code,";\n"};
-										 $$=CreateRecord(cat(temp,4)); }
+    Attribution: ID '=' Expression ';' {
+					char* temp[]={$1, " = ", $3->code, ";"};
+					$$ = CreateRecord(cat(temp, 4)); 
+			   }
                | ID '.' ID '=' Expression ';'{ p("STRUCT ATTRIBUTION"); }
 			   | ID PLUS_ATTRIBUTION Expression ';' { p("ADDING_ATTRIBUTION"); }
 			   | ID MINUS_ATTRIBUTION Expression ';' { p("SUBTRACTING_ATTRIBUTION"); }
@@ -217,14 +226,14 @@ char* scope = NULL;
 		         ;
 
 	Expression: Expression OR AuxExp1 {
-				char* temp[] = {$1->code, " ", "||", " ", $3->code};
-				$$ = CreateTypedRecord(cat(temp,5), KIND_BOOL);}
+				char* temp[] = {$1->code, " || ", $3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), KIND_BOOL);}
 		      | AuxExp1 {$$ = $1;}
 			  ;
 
 	AuxExp1: AuxExp1 AND AuxExp2 {
-				char* temp[] = {$1->code, " ","&&", " ",$3->code};
-				$$ = CreateTypedRecord(cat(temp,5), KIND_BOOL);}
+				char* temp[] = {$1->code, " && ", $3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), KIND_BOOL);}
 		   | AuxExp2 {$$ = $1;}
 		   ;
 	
@@ -233,51 +242,51 @@ char* scope = NULL;
 	
 	AuxExp3: AuxExp3 Compare AuxExp4{
 				char* temp[] = {$1->code, " ", $2->code, " ", $3->code};
-				$$ = CreateTypedRecord(cat(temp,5), KIND_BOOL);}
+				$$ = CreateTypedRecord(cat(temp, 5), KIND_BOOL);}
 		   | AuxExp4{$$ = $1;}
 		   ;
 	
 	AuxExp4: AuxExp4 '+' AuxExp5{
-				char* temp[]={$1->code,"+",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+				char* temp[] = {$1->code, " + ", $3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), $1->kind);
 			}
 	       | AuxExp4 '-' AuxExp5{
-				char* temp[]={$1->code,"-",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+				char* temp[] = {$1->code, " - ",$3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), $1->kind);
 			}
 		   | AuxExp5{$$ = $1;}
 		   ;
 	
 	AuxExp5: AuxExp5 '*' AuxExp6{
-				char* temp[]={$1->code,"*",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+				char* temp[] = {$1->code, " * ", $3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), $1->kind);
 			}
 		   | AuxExp5 '/' AuxExp6{
-				char* temp[]={$1->code,"/",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), $1->kind);
+				char* temp[] = {$1->code, " / ", $3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), $1->kind);
 			}
 		   | AuxExp5 '%' AuxExp6{
-				char* temp[]={$1->code,"\%",$3->code};
-				$$ = CreateTypedRecord(cat(temp,3), $1->kind); 
+				char* temp[] = {$1->code, " \% ", $3->code};
+				$$ = CreateTypedRecord(cat(temp, 3), $1->kind); 
 			}
 		   | AuxExp6{$$ = $1;}
 		   ;
 	
 	AuxExp6: AuxExp7 '^' AuxExp6{
-				char* temp[]={"pow(",$1->code,",",$3->code,")"};
-				$$ = CreateTypedRecord(cat(temp,5), $1->kind);
+				char* temp[] = {"pow(", $1->code, ", ", $3->code, ")"};
+				$$ = CreateTypedRecord(cat(temp, 5), $1->kind);
 			}
 		   | AuxExp7{$$ = $1;}
 		   ;
 	
 	AuxExp7: NOT AuxExp7{
-				char* temp[]={"!",$2->code};
-				$$ = CreateTypedRecord(cat(temp,2), $2->kind);}
-		   | AuxExp8{$$ = $1;}
+				char* temp[] = {"!", $2->code};
+				$$ = CreateTypedRecord(cat(temp, 2), $2->kind);}
+		   | AuxExp8{ $$ = $1; }
 		   ;
 	
-	AuxExp8: IDs {$$ = $1;}
-		   | Literal {$$=CreateRecord($1->code);}
+	AuxExp8: IDs { $$ = $1; }
+		   | Literal {$$ = CreateRecord($1->code);}
 		   | '(' Expression ')' {$$=CreateRecord($2->code);}
 		   | Array {}
 		   | '&' ID {} // TALVEZ IDs?
@@ -306,7 +315,68 @@ char* scope = NULL;
         | '[' ElementSequence ']' {}
         ;
 
+	Read: READ '(' ID ')' { // Regra para fazer a leitura de inputs
+			char* temp[] = {$3, "#", scope};
+			char* key = cat(temp, 3);
+			SymbolNode* node = lookup_symbol(createTable_Program, key);
+
+			TypeKind kind = node->type->kind; // A variável Kind recebe um
+			char formatter[4]; // O array de char (formatter) define o tamanho máximo para guardar a informação do que representa o tipo da nossa linguagem em C
+			switch (kind) {
+				case KIND_BOOL:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_INT8:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_INT16:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_INT32:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_S_SIZE:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_INT8:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_INT16:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_INT32:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_U_SIZE:
+					strcpy(formatter, "%d");
+					break;
+				case KIND_FLOAT32:
+					strcpy(formatter, "%f");
+					break;
+				case KIND_FLOAT64:
+					strcpy(formatter, "%lf");
+					break;
+				case KIND_CHAR:
+					strcpy(formatter, "%c");
+					break;
+				case KIND_STRING:
+					strcpy(formatter, "%s");
+					break;
+				// Falta incluir os tipos estruturados
+				default:
+					printf("Tipo não encontrado.\n");
+					break;
+			}
+			// scanf("%d", &n); 
+
+			char* temp2[] = {"scanf(\"", formatter, "\", &", $3, ");\n"};
+			char* code = cat(temp2, 5);
+			$$ = CreateRecord(code);
+		}
+		;
+
     Print: PRINT '(' VALUE_STRING ',' Expression ')' {
+
 			TypeKind kind = $5->kind; // A variável Kind recebe uma expressão
 			char formatter[4]; // O array de char (formatter) define o tamanho máximo para guardar a informação do que representa o tipo da nossa linguagem em C
 			switch (kind) {
@@ -355,12 +425,16 @@ char* scope = NULL;
 					break;
 			}
 
-			char* temp[] = {"printf(\"", formatter, "\", ", $5->code, ");\n"};
+			char* new_formatter = replace_str($3, "{}", formatter);
+			char* temp[] = {"\nprintf(", new_formatter, ", ", $5->code, ");\n"};
 			$$ = CreateRecord(cat(temp,5));
+
 	     }
          | PRINT '(' VALUE_STRING ')' {
+
 			char* temp[] = {"printf(", $3, ");\n"};
 			$$ = CreateRecord(cat(temp,3));
+
 		 }
          ;
 
@@ -392,32 +466,80 @@ char* scope = NULL;
 				   ;
 	
 	RepeatStructures:  WHILE '(' Expression ')' Scope{
-														char* tempw[]={"WHILE_",whileCount()};
-														char* whileLabel=cat(tempw,2);
-														char* temp[]={"{",whileLabel,":if(",$3->code,"){",$5->code,"goto ",whileLabel,"}}"};
-														$$=CreateRecord(cat(temp,9));}
+						char* counter = whileCount();
+						char* tempw[] = {"WHILE_", counter}; // Guarda em tempw a string WHILE_ e um número que é um contador para facilitar os saltos do goto
+						char* tempendw[] = {"ENDWHILE_", counter};
+						char* tempWhileScop[] = {"WHILESCOPE_", counter};
+						char* whileLabel = cat(tempw, 2); // Coloca na var whileLabel a concatenação entre a label "WHILE_" e o seu valor correspondente para diferenciar os "whiles" do programa
+						char* endWhile = cat(tempendw, 2);
+						char* whileScope = cat(tempWhileScop, 2);
+						char* temp[] = {
+							"\n", whileLabel, ":\nif(", $3->code, ")", " goto ", whileScope, ";\n", 
+							"goto ", endWhile, ";\n", 
+							whileScope, ":\n", $5->code, " ",
+							"\ngoto ", whileLabel,";\n",
+							endWhile, ":"
+						}; // Guarda em temp as informações da estrutura do while em C simplificado
+						$$ = CreateRecord(cat(temp, 20)); // Realiza o registro da estrutura que deve ser apresentada em C
+					
+					}
 					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{
-																			char* tempf[]={"FOR_",forCount()};
-																			char* forLabel=cat(tempf,2);
-																			char* temp[]={"{ int",$3,"=",$5->code,";",forLabel,":if(",$3,"!=",$7->code,"){",$9->code,"if(",$3,"<",$7->code,"){",$3,"++;}","else{",$3,"--;} goto ",forLabel,"}}"};
-																			$$=CreateRecord(cat(temp,24));}
+
+						char* tempf[] = {"FOR_", forCount()}; // Guarda em tempf a string FOR_ e um número que é um contador para facilitar os saltos do goto
+						char* forLabel = cat(tempf, 2); // Coloca na var forLabel a concatenação entre a label "FOR_" e o seu valor correspondente para diferenciar os "fors" do programa
+						char* temp[] = {"int", $3, " = ", $5->code, ";", forLabel, ":\nif (", $3, " != ", $7->code, ") {\n", $9->code, "if (", $3, " < ", $7->code, ") {\n", $3, "++;}", "\nelse {\n", $3, "--;\n} \ngoto ", forLabel,"}\n}\n"};
+						$$ = CreateRecord(cat(temp,24)); // Realiza o registro da estrutura acima que deve ser apresentada em C
+
+					}
 					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope {}
 					;
 					
-	DecisionStructures: IF '(' Expression ')' Scope {char* temp[]={"if(",$3->code,")",$5->code};
-									   		  		$$=CreateRecord(cat(temp,4));}
-					  | IF '(' Expression ')' Scope ELSE Scope {char* temp[]={"if(",$3->code,")",$5->code,"else",$7->code};
-									   		  					$$=CreateRecord(cat(temp,6));}
-					  | IF '(' Expression ')' Scope ElseIf {char* temp[]={"if(",$3->code,")",$5->code,$6->code};
-									   		  				$$=CreateRecord(cat(temp,5));}
+	DecisionStructures: IF '(' Expression ')' Scope {
+						char* counter = ifCount();
+						char* tempif[] = {"IF_SCOPE", counter};
+						char* tempend[] = {"ENDIF_", counter};
+						char* ifScope = cat(tempif, 2);
+						char* endIf = cat(tempend, 2);
+						char* temp[] = {
+							"\nif", "(", $3->code, ")", " goto ", ifScope, ";\n", 
+							"\ngoto ", endIf, ";\n", 
+							ifScope, ":\n", $5->code
+						};
+						$$ = CreateRecord(cat(temp, 13));
+					  }
+					  | IF '(' Expression ')' Scope ELSE Scope {
+						char* counter = ifCount();
+						char* tempif[] = {"IF_", counter};
+						char* tempend[] = {"ENDIF_", counter};
+						char* tempelse[] = {"ELSE_", elseCount()};
+						char* ifScope = cat(tempif, 2);
+						char* endIf = cat(tempend, 2);
+						char* elseScope = cat(tempelse, 2);
+						char* temp[] = {
+							"\nif", "(", $3->code, ")", " goto ", ifScope, ";\n", 
+							"goto ", elseScope, ";\n", 
+							ifScope, ":\n", $5->code, " ",
+							"\ngoto ", endIf, ";\n\n",
+							elseScope, ":\n", $7->code, "\n",
+							endIf, ": "
+						};
+						$$ = CreateRecord(cat(temp, 23));
+					  }
+					  | IF '(' Expression ')' Scope ElseIf {
+						
+					  }
 					  | MATCH '(' Pattern ')' '{' MatchStructures '}' {}
 					  ;
 
-	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {char* temp[]={"else{ if(",$4->code,")",$6->code,$7->code,"}"};
-									   		  $$=CreateRecord(cat(temp,6));}
-		  | ELSE IF '(' Expression ')' Scope ELSE Scope{char* temp[]={"else{ if(",$4->code,")",$6->code,"else",$8->code,"}"};
-		  												$$=CreateRecord(cat(temp,7));}
+	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {
+				char* temp[] = {"else { if(", $4->code, ")", $6->code, $7->code, "}"};
+				$$ = CreateRecord(cat(temp, 6));
+		  }
+		  | ELSE IF '(' Expression ')' Scope ELSE Scope{
+				char* temp[] = {"else{ if(", $4->code,")", $6->code, "else", $8->code, "}"};
+		  		$$ = CreateRecord(cat(temp, 7));
+		  }
 		  ;
 	
 	Pattern: Expression{}
@@ -606,15 +728,71 @@ char* cat(char** strings, int qnt){
 	}
 	return output;
 }
-char* forCount(){
+char* forCount() {
 	static int forCounts=0;
 	char* text=malloc(sizeof(char)*12);
 	snprintf(text,sizeof(text),"%d",forCounts++);
 	return text;
 }
-char* whileCount(){
-	static int whileCounts=0;
+char* whileCount() {
+	static int whileCounts = 0;
 	char* text=malloc(sizeof(char)*12);
-	snprintf(text,sizeof(text),"%d",whileCounts++);
+	snprintf(text,sizeof(text), "%d", whileCounts++);
 	return text;
+}
+
+char* ifCount() {
+	static int ifCounts = 0;
+	char* text = malloc(sizeof(char)*12);
+	snprintf(text, sizeof(text), "%d", ifCounts++);
+	return text;
+}
+
+char* elseCount() {
+	static int elseCounts = 0;
+	char* text = malloc(sizeof(char)*12);
+	snprintf(text, sizeof(text), "%d", elseCounts++);
+	return text;
+}
+
+char* endIfCount() {
+	static int endifCounts = 0;
+	char* text = malloc(sizeof(char)*12);
+	snprintf(text, sizeof(text), "%d", endifCounts++);
+	return text;
+}
+
+
+char *replace_str(const char *orig, const char *rep, const char *with) {
+    char *result;
+    int i;
+    int count = 0;
+    int rep_len = strlen(rep);
+    int with_len = strlen(with);
+
+    // Conta quantas vezes a substring aparece na original
+    for (i = 0; orig[i] != '\0'; i++) {
+        if (strstr(&orig[i], rep) == &orig[i]) {
+            count++;
+            i += rep_len - 1;
+        }
+    }
+
+    // Aloca memória para a nova string
+    result = malloc(i + count * (with_len - rep_len) + 1);
+    if (result == NULL) return NULL;
+
+    // Faz a substituição
+    char *ins = result;
+    while (*orig) {
+        if (strstr(orig, rep) == orig) {
+            strcpy(ins, with);
+            ins += with_len;
+            orig += rep_len;
+        } else {
+            *ins++ = *orig++;
+        }
+    }
+    *ins = '\0';
+    return result;
 }
