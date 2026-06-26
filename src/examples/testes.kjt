@@ -23,6 +23,21 @@ func main() -> s_int32 {
     // let m : u_int32 = 10;
     // m = true;
 
-    // let c : u_int32 = 10;
-    print << c;
+    // let c : u_int32 = 0;
+    // print << c ;
+
+    // let x : bool      = true;
+    // let x : s_int16   = 10;
+    // let x : s_int32   = 10;
+    // let x : s_int64   = 10;
+    // let x : s_size = 10;
+    // let x : u_int16   = 10;
+    // let x : u_int32   = 10;
+    // let x : u_int64   = 10;
+    // let x : u_size    = 10;
+    // let x : float32   = 10.0;
+    // let x : float64   = 10.0;
+    // let x : char      = 'c';
+
+    print << x ;
 }

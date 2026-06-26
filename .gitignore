@@ -2,4 +2,5 @@ src/*.c
 src/*.h
 src/*.output
 src/compilador
+src/examples/output.c
 

@@ -52,7 +52,9 @@ ScopeNode *GenerateScope() {
     snprintf(scopeName, sizeof(scopeName), "S#%d", scopeCount++);
     return CreateScope(scopeName);
 }
-
+void InitializeVarTable(){
+    varTable=create_table();
+}
 void InitializeTypeTable() {
     typeTable = create_table();
 

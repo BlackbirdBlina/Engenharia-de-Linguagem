@@ -16,6 +16,7 @@ typedef char* VALUE_STRING_t;
 /* Custom Functions */
 void p(const char string[]);
 void np(const char string[]);
+void InitializeVarTable();
 void InitializeTypeTable();
 ScopeNode *GenerateScope();
 char *cat(char **, int);
@@ -23,6 +24,6 @@ char *whileCount();
 char *forCount();
 char *checkTypeCompatibility(char *, char *);
 void checkVarScope(char *);
-char *getVarType(ID_t);
+type getVarType(ID_t);
 
 #endif

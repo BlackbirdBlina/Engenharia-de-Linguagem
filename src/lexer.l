@@ -125,7 +125,7 @@ id                  {letter}({letter}|{number})*
 "<<"                { return TOPRINT;}
 
 "true"|"false"                              {
-                                                yylval. = strdup(yytext);
+                                                yylval.sValue = strdup(yytext);
                                                 return VALUE_BOOL;
                                             }
 
@@ -144,7 +144,7 @@ id                  {letter}({letter}|{number})*
                                                 return VALUE_CHAR;
                                             }
 
-\"([^"\\\n]|\\.)*\"
+\"([^"\\\n]|\\.)*\"                         {
                                                 yylval.sValue = strdup(yytext);
                                                 return VALUE_STRING;
                                             }

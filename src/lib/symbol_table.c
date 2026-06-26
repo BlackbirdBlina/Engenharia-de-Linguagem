@@ -12,8 +12,7 @@ SymbolInfo *alloc_type_var(char *type, char *scope) {
     symbolInfo->scope = scope;
     return symbolInfo;
 }
-SymbolInfo *alloc_type_type(char *type, const char **conversions,
-                            int conversionsQnt) {
+SymbolInfo *alloc_type_type(char *type, const char **conversions,int conversionsQnt) {
     SymbolInfo *symbolInfo = (SymbolInfo *)malloc(sizeof(SymbolInfo));
     if (!symbolInfo) {
         return NULL;
@@ -29,6 +28,15 @@ SymbolInfo *alloc_type_type(char *type, const char **conversions,
     } else {
         symbolInfo->conversions = NULL;
     }
+    return symbolInfo;
+}
+SymbolInfo *alloc_type_func(char *returnType, LinkedList* paramsList){
+    SymbolInfo *symbolInfo = (SymbolInfo *)malloc(sizeof(SymbolInfo));
+    if (!symbolInfo) {
+        return NULL;
+    }
+    symbolInfo->type = returnType;
+    symbolInfo->typeParams = paramsList;
     return symbolInfo;
 }
 unsigned int hash(const char *key) {

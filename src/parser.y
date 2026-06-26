@@ -3,12 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lib/record.h"
+#include "lib/linked_list.h"
 #include "lib/symbol_table.h"
 #include "lib/scope_stack.h"
 #include "lib/parser/semantics.h"
 #include "lib/parser/grammar/assignments.c"
 #include "lib/parser/grammar/attribution.c"
 #include "lib/parser/grammar/print.c"
+#include "lib/parser/grammar/operator.c"
 
 int yylex(void);
 int yyerror(char *s);
@@ -44,7 +46,7 @@ extern FILE * yyin, * yyout;
 %%
     Program:
         Decls  {
-            fprintf(yyout,"%s", $1->code);
+            fprintf(yyout,"#include<stdio.h>\n%s", $1->code);
         }
         ;
 	Decls: SubProgram Decls{
@@ -171,174 +173,45 @@ Attribution: ID '=' Expression ';'                                              
 	ArrayAccesses: '[' Expression ']' ArrayAccesses{}
 		         | '[' Expression ']' {}
 		         ;
-	Expression: Expression OR AuxExp1 {char* temp[]={$1->code,"||",$3->code};
-										if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
-											printf("Tipos incompatíveis com o operador '||' ");
-											exit(0);
-										}	
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
-                                       }
-		      | AuxExp1 {
-              $$=CreateRecordType($1->code,$1->type);
-              }
-			  ;
+	Expression: Expression OR AuxExp1 {handle_operands_types(&$$,$1,$3,"||",bool_);}
+                | AuxExp1 {$$=CreateRecordType($1->code,$1->type);}
+                ;
 
-	AuxExp1: AuxExp1 AND AuxExp2 {char* temp[]={$1->code,"&&",$3->code};
-									if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
-											printf("Tipos incompatíveis com o operador '&&' ");
-											exit(0);
-									}	
-								  $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
-                                  }
-		   | AuxExp2 {
-           $$=CreateRecordType($1->code,$1->type);
-           }
+	AuxExp1: AuxExp1 AND AuxExp2 {handle_operands_types(&$$,$1,$3,"&&",bool_);}
+		   | AuxExp2 {$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{char* temp[]={$1->code,"!=",$3->code};
-		   								if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
-											printf("Tipos incompatíveis com o operador '!=' ");
-											exit(0);
-										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
-                                       }
-	       | AuxExp3{
-           $$=CreateRecordType($1->code,$1->type);
-           }
+	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{handle_operands_types(&$$,$1,$3,"!=",bool_);}
+	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp3: AuxExp3 Compare AuxExp4{char* temp[]={$1->code,$2->code,$3->code};
-										if(!checkTypeCompatibility(bool_,$1->type) || !checkTypeCompatibility(bool_,$3->type)){
-											printf("Tipos incompatíveis com o operador '%s' ",$2->code);
-											exit(0);
-										}
-									   $$=CreateRecordType(cat(temp,3),checkTypeCompatibility($1->type,$3->type));
-                                       }
-		   | AuxExp4{
-           $$=CreateRecordType($1->code,$1->type);
-           }
+	AuxExp3: AuxExp3 Compare AuxExp4{handle_operands_types(&$$,$1,$3,$2->code,bool_);}
+		   | AuxExp4{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp4: AuxExp4 '+' AuxExp5 {
-        char* temp[]={$1->code,"+",$3->code};
-
-        if (!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)) {
-            printf("Tipos incompatíveis com o operador '+' ");
-            exit(0);
-        }
-
-        char * temp2 = checkTypeCompatibility($1->type,$3->type);
-        if (temp2) {
-            $$=CreateRecordType(cat(temp,3),temp2);
-        }
-        else {
-            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
-            exit(1);
-        }
-
-        $$ = CreateRecordType(cat(temp, 3), checkTypeCompatibility($1->type, $3->type));
-
-        }
-	       | AuxExp4 '-' AuxExp5{char* temp[]={$1->code,"-",$3->code};
-		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
-											printf("Tipos incompatíveis com o operador '-' ");
-											exit(0);
-										}
-        char * temp2 = checkTypeCompatibility($1->type,$3->type);
-        if (temp2) {
-            $$=CreateRecordType(cat(temp,3),temp2);
-        }
-        else {
-            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
-            exit(1);
-        }
-           }
-		   | AuxExp5{
-           $$=CreateRecordType($1->code,$1->type);
-           }
-		   ;
+	AuxExp4: AuxExp4 '+' AuxExp5 {handle_operands_types(&$$,$1,$3,"+",literal_int);}
+    | AuxExp4 '-' AuxExp5{handle_operands_types(&$$,$1,$3,"-",literal_int);}
+    | AuxExp5{$$=CreateRecordType($1->code,$1->type);}
+    ;
 	
-	AuxExp5: AuxExp5 '*' AuxExp6{char* temp[]={$1->code,"*",$3->code};
-										if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
-											printf("Tipos incompatíveis com o operador '*' ");
-											exit(0);
-										}
-                                                char * temp2 = checkTypeCompatibility($1->type,$3->type);
-        if (temp2) {
-            $$=CreateRecordType(cat(temp,3),temp2);
-        }
-        else {
-            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
-            exit(1);
-        }
+	AuxExp5: AuxExp5 '*' AuxExp6{handle_operands_types(&$$,$1,$3,"*",literal_int);}
+	| AuxExp5 '/' AuxExp6{handle_operands_types(&$$,$1,$3,"/",literal_int);}
+	| AuxExp5 '%' AuxExp6{handle_operands_types(&$$,$1,$3,"\%",literal_int);}
+    | AuxExp6{$$=CreateRecordType($1->code,$1->type);}
+    ;
 
-                                       }
-		   | AuxExp5 '/' AuxExp6{char* temp[]={$1->code,"/",$3->code};
-		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
-											printf("Tipos incompatíveis com o operador '/' ");
-											exit(0);
-										}
-                                                char * temp2 = checkTypeCompatibility($1->type,$3->type);
-        if (temp2) {
-            $$=CreateRecordType(cat(temp,3),temp2);
-        }
-        else {
-            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
-            exit(1);
-        }
+	AuxExp6: AuxExp7 '^' AuxExp6{handle_operands_types(&$$,$1,$3,"^",literal_int);}
+    | AuxExp7{$$=CreateRecordType($1->code,$1->type);}
+    ;
 
-                                       }
-		   | AuxExp5 '%' AuxExp6{char* temp[]={$1->code,"\%",$3->code};
-		   								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
-                                            // TODO: -V
-											printf("Tipos incompatíveis com o operador  ");
-											exit(0);
-										}
-                                        char * temp2 = checkTypeCompatibility($1->type,$3->type);
-        if (temp2) {
-            $$=CreateRecordType(cat(temp,3),temp2);
-        }
-        else {
-            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
-            exit(1);
-        }
-        }
-		   | AuxExp6{
-           $$=CreateRecordType($1->code,$1->type);
-           }
-		   ;
-	
-	AuxExp6: AuxExp7 '^' AuxExp6{char* temp[]={$1->code,"^",$3->code};
-								if(!checkTypeCompatibility(literal_int,$1->type) || !checkTypeCompatibility(literal_int,$3->type)){
-									printf("Tipos incompatíveis com o operador '^' ");
-									exit(0);
-								}
-                                        char * temp2 = checkTypeCompatibility($1->type,$3->type);
-        if (temp2) {
-            $$=CreateRecordType(cat(temp,3),temp2);
-        }
-        else {
-            printf("ERROR: %s and %s are not interchangeable types\n", $1->type, $3->type);
-            exit(1);
-        }
-
-                                }
-		   | AuxExp7{
-           $$=CreateRecordType($1->code,$1->type);
-           }
-		   ;
-	
-	AuxExp7: NOT AuxExp7{char* temp[]={"!",$2->code};
-						 $$=CreateRecordType(cat(temp,2),$2->type);
-                         }
-		   | AuxExp8{
-           $$=CreateRecordType($1->code,$1->type);
-           }
-		   ;
-	
-	AuxExp8: IDs {
-    $$=CreateRecordType($1->code,$1->type);
+	AuxExp7: NOT AuxExp7{
+        char* temp[]={"!",$2->code};
+        $$=CreateRecordType(cat(temp,2),$2->type);
     }
+    | AuxExp8{$$=CreateRecordType($1->code,$1->type);}
+    ;
+
+	AuxExp8: IDs {$$=CreateRecordType($1->code,$1->type);}
 		   | Literal {
            $$=CreateRecordType($1->code,$1->type);
            }
@@ -375,34 +248,27 @@ Attribution: ID '=' Expression ';'                                              
         | '[' ElementSequence ']' {}
         ;
 
-    Print: PRINT TOPRINT ThingsToPrint                                  { print_to_print(&$$, $3); };
+    Print: PRINT TOPRINT ThingsToPrint                                  { PRINT_toPrint(&$$, $3); };
     ThingsToPrint: ID TOPRINT ThingsToPrint                             { ID_toPrint(&$$, $1, $3); }
-                 | VALUE_STRING TOPRINT ThingsToPrint                   { VALUE_STRING_t_toPrint(&$$, $1, $3); }
-                 | ID                                                   { $$=CreateRecordPrint("","VAR",$1); }
-                 | VALUE_STRING                                         { print_VALUE_STRING_t(&$$, $1); }
+                 | VALUE_STRING TOPRINT ThingsToPrint                   { VALUE_STRING_toPrint(&$$, $1, $3); }
+                 | ID                                                   { print_ID(&$$, $1); }
+                 | VALUE_STRING                                         { print_VALUE_STRING(&$$, $1); }
                  ;
 
 	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
                   | ID '.' SubprogramCall {} // foo.poo()
-				  | ID MaybeParams {char* temp[]={$1,$2->code};
-									$$=CreateRecord(cat(temp,2));
-                                    }
+				  | ID MaybeParams                                      { char* temp[]={$1,$2->code};
+                                                                          $$=CreateRecord(cat(temp,2)); }
 				  ;
 
-    MaybeParams: '(' ')' {
-    $$=CreateRecord("()");
-    }
-               | '(' ParamsToCall ')' {char* temp[]={"(",$2->code,")"};
-									   $$=CreateRecord(cat(temp,3));
-                                       }
+    MaybeParams: '(' ')'                                                { $$=CreateRecord("()"); }
+               | '(' ParamsToCall ')'                                   { char* temp[]={"(",$2->code,")"};
+                                                                          $$=CreateRecord(cat(temp,3)); }
                ;
 
-	ParamsToCall: Expression ',' ParamsToCall{char* temp[]={$1->code,",",$3->code};
-									   		  $$=CreateRecord(cat(temp,3));
-                                              }
-				| Expression {
-                $$=CreateRecord($1->code);
-                }
+	ParamsToCall: Expression ',' ParamsToCall                           { char* temp[]={$1->code,",",$3->code};
+                                                                          $$=CreateRecord(cat(temp,3)); }
+				| Expression                                            { $$=CreateRecord($1->code); }
 				;
     
     ModuleCall: ID ':' ':' SubprogramCall  {}
@@ -596,9 +462,9 @@ int main (int argc, char ** argv) {
        exit(0);
     }
 	scopeStack=CreateStack();
-	varTable=create_table();
 	funcTable=create_table();
 	InitializeTypeTable();
+    InitializeVarTable();
 	PushScope(scopeStack,CreateScope("GLOBAL"));
     yyin = fopen(argv[1], "r");
     yyout = fopen(argv[2], "w");

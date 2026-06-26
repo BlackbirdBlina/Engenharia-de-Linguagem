@@ -18,10 +18,11 @@
 #define literal_int "literal_int"
 #define literal_float "literal_float"
 
+#include "linked_list.h"
 #include <stdbool.h>
 #include <sys/types.h>
 
-typedef char* type;
+typedef char *type;
 
 typedef struct SymbolInfo {
 
@@ -31,6 +32,7 @@ typedef struct SymbolInfo {
     const char **conversions;
     int conversionsQnt;
 
+    LinkedList *typeParams;
 } SymbolInfo;
 
 typedef struct SymbolNode {
@@ -50,6 +52,7 @@ extern int global_counter;
 SymbolInfo *alloc_type_var(char *type, char *scope);
 SymbolInfo *alloc_type_type(char *type, const char **conversions,
                             int conversionsQnt);
+SymbolInfo *alloc_type_func(char *returnType, LinkedList *paramsList);
 void free_type_info(SymbolInfo *info);
 SymbolTable *create_table();
 unsigned int hash(const char *key);

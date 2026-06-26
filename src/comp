@@ -1,4 +1,4 @@
 #!/bin/sh
 
 # flex lexer.l ; yacc -d parser.y ; gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c -o compilador
-flex lexer.l ; yacc -d parser.y ; gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c -o compilador ; ./compilador examples/testes.txt examples/output.txt
+flex lexer.l ; yacc -d parser.y ; gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c -o compilador ; ./compilador examples/testes.kjt examples/output.c
