@@ -25,7 +25,7 @@ SOURCES = $(RECORD) $(HASH_TABLE) $(SCOPE) $(LINKED_LIST) $(SEMANTIC)
 TARGET = src/compilador
 TEST_FILE = src/examples/testes.kjt
 OTHERS_TESTS = src/examples/tests/all_tests.kjt
-OUTPUT_FILE = problems/output.c
+OUTPUT_FILE = src/examples/output.c
 OUTPUT_C_TARGET = testcode
 
 HEADERS = $(INCLUDE_RECORD) $(INCLUDE_SYMBOL_TABLE) $(INCLUDE_SCOPE) \
@@ -54,4 +54,4 @@ testc: run
 	./$(OUTPUT_C_TARGET)
 
 clean:
-	rm -f lex.yy.c y.tab.c y.tab.h y.output $(TARGET) $(OUTPUT_C_TARGET)
+	rm -f src/lex.yy.c src/y.tab.c src/y.tab.h src/y.output $(TARGET) $(OUTPUT_C_TARGET)
