@@ -6,11 +6,13 @@ func funcaoLegal(i:s_int16,j:u_int16) -> s_int32{
 func main() -> s_int32 {
     let mut x:s_int32=funcaoLegal(1,2);
     input>>x>>x>>x>>x;
-    if(x<2){
-        print<<x;
-    }
-    else{
-        print<<"oi"<<x<<x<<x<<x;
+    while(1){
+        if(x<2){
+            print<<x;
+        }
+        else{
+            print<<"oi"<<x<<x<<x<<x;
+        }
     }
 
 }

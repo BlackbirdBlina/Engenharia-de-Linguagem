@@ -292,11 +292,22 @@ Attribution: ID '=' Expression ';'                                              
 	
 	RepeatStructures:
         WHILE '(' Expression ')' Scope {
-														char* tempw[]={"WHILE_",whileCount()};
-														char* whileLabel=cat(tempw,2);
-														char* temp[]={"{",whileLabel,":if(",$3->code,"){",$5->code,"goto ",whileLabel,"}}"};
-														$$=CreateRecord(cat(temp,9));
-                                                        }
+						char* counter = whileCount();
+						char* tempw[] = {"WHILE_", counter}; // Guarda em tempw a string WHILE_ e um número que é um contador para facilitar os saltos do goto
+						char* tempendw[] = {"ENDWHILE_", counter};
+						char* tempWhileScop[] = {"WHILESCOPE_", counter};
+						char* whileLabel = cat(tempw, 2); // Coloca na var whileLabel a concatenação entre a label "WHILE_" e o seu valor correspondente para diferenciar os "whiles" do programa
+						char* endWhile = cat(tempendw, 2);
+						char* whileScope = cat(tempWhileScop, 2);
+						char* temp[] = {
+							"\n", whileLabel, ":\nif(", $3->code, ")", " goto ", whileScope, ";\n", 
+							"goto ", endWhile, ";\n", 
+							whileScope, ":\n", $5->code, " ",
+							"\ngoto ", whileLabel,";\n",
+							endWhile, ":"
+						}; // Guarda em temp as informações da estrutura do while em C simplificado
+						$$ = CreateRecord(cat(temp, 20)); // Realiza o registro da estrutura que deve ser apresentada em C
+                    }
 					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{
 																			char* tempf[]={"FOR_",forCount()};
 																			char* forLabel=cat(tempf,2);
