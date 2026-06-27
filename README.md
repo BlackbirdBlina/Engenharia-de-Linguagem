@@ -20,7 +20,11 @@ make
 # 4. Execute os binários gerados
 make run
 ```
-
+## Como compilar
+- Após gerar os binários seguindo os passos anteriores, execute o comando abaixo:
+```bash
+make testc
+```
 - Nome da linguagem: Kojito
 
 ![Kojito](documentations/LogoKojito.png)
