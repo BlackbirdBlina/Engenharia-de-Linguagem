@@ -1,7 +1,8 @@
 CC = gcc
 LEX = flex
 YACC = yacc
-YFLAGS = -d -v
+YFLAGS = -d -v -o src/y.tab.c
+LFLAGS = -o src/lex.yy.c
 
 INPUT_LEX = src/lexer.l
 INPUT_YACC = src/parser.y
@@ -21,7 +22,7 @@ INCLUDE_TYPES = src/lib/parser/types.h
 
 SOURCES = $(RECORD) $(HASH_TABLE) $(SCOPE) $(LINKED_LIST) $(SEMANTIC)
 
-TARGET = compilador
+TARGET = src/compilador
 TEST_FILE = src/examples/testes.kjt
 OTHERS_TESTS = src/examples/tests/all_tests.kjt
 OUTPUT_FILE = problems/output.c
@@ -37,13 +38,13 @@ INCLUDES = -I src -I src/lib -I src/lib/parser -I src/lib/parser/grammar -I .
 all: build
 
 build: lex.yy.c y.tab.c $(SOURCES) $(HEADERS)
-	$(CC) y.tab.c lex.yy.c $(SOURCES) $(INCLUDES) -o $(TARGET)
+	$(CC) src/y.tab.c src/lex.yy.c $(SOURCES) $(INCLUDES) -o $(TARGET)
 
 y.tab.c: $(INPUT_YACC)
 	$(YACC) $(YFLAGS) $(INPUT_YACC)
 
 lex.yy.c: $(INPUT_LEX) y.tab.c
-	$(LEX) $(INPUT_LEX)
+	$(LEX) $(LFLAGS) $(INPUT_LEX)
 
 run: build
 	./$(TARGET) $(TEST_FILE) $(OUTPUT_FILE)
