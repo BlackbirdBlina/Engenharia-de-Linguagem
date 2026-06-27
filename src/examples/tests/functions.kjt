@@ -1,0 +1,17 @@
+func funcLegal(i : s_int32) -> s_int32 {
+    return 7;
+}
+// pure func pureFuncLegal(i : s_int32) -> s_int32 {
+//     return 2;
+// }
+// proced procedLegal(i : s_int32) -> s_int32 {
+//     return;
+// }
+
+
+func main() -> s_int32 {
+    let i : s_int32 = funcLegal(1);
+    // let mut x : s_int64 = funcLegal(1);
+    // input >> i >> x;
+    print << i;
+}
