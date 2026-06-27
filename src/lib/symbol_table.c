@@ -3,13 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-SymbolInfo *alloc_type_var(char *type, char *scope) {
+SymbolInfo *alloc_type_var(char *type, char *scope,ASSIGN assign) {
     SymbolInfo *symbolInfo = (SymbolInfo *)malloc(sizeof(SymbolInfo));
     if (!symbolInfo) {
         return NULL;
     }
     symbolInfo->type = type;
     symbolInfo->scope = scope;
+    symbolInfo->assign=assign;
     return symbolInfo;
 }
 SymbolInfo *alloc_type_type(char *type, const char **conversions,int conversionsQnt) {

@@ -5,7 +5,7 @@
 #include "../../record.h"
 #include "../semantics.h"
 
-typedef enum { STAT, MUT, CONSTANT } ASSIGN;
+
 
 void check_let__equal(Record *$2, Record *$4) {
     // let i : bool = false;
@@ -41,14 +41,20 @@ void let__equal(Record **$$, Record *varTyped, Record *expression, ASSIGN a) {
     case STAT:
         char *temp[] = {"const ", varTyped->code, " = ", expression->code, ";"};
         *$$ = CreateRecord(cat(temp, 5));
+        check_let__equal(varTyped, expression);
+        store_var_in_varTable(varTyped->id,varTyped->type,STAT);
         break;
     case MUT:
         char *temp1[] = {varTyped->code, " = ", expression->code, ";"};
+        check_let__equal(varTyped, expression);
+        store_var_in_varTable(varTyped->id,varTyped->type,MUT);
         *$$ = CreateRecord(cat(temp1, 4));
         break;
     case CONSTANT:
         char *temp2[] = {"const ", varTyped->code, " = ", expression->code, ";"};
         *$$ = CreateRecord(cat(temp2, 5));
+        check_let__equal(varTyped, expression);
+        store_var_in_varTable(varTyped->id,varTyped->type,CONSTANT);
         break;
     
     default:
@@ -56,8 +62,7 @@ void let__equal(Record **$$, Record *varTyped, Record *expression, ASSIGN a) {
         exit(1);
         break;
     }
-    check_let__equal(varTyped, expression);
-    store_var_in_varTable(varTyped->id,varTyped->type);
+
 }
 
 // : setlocal commentstring=//\ %s

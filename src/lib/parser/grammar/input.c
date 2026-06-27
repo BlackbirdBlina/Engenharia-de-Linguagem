@@ -20,6 +20,15 @@ void INPUT_toInput(Record **$$, Record *$3) {
 
 void ID_toInput(Record **$$, ID_t $1, Record *$3) {
     checkVarScope($1);
+    ASSIGN a= getVarAssign($1);
+    if(a==CONSTANT){
+        printf("ERROR: the variable %s is constant",$1);
+        exit(1);
+    }
+    if(a==STAT){
+        printf("ERROR: the variable %s is stat",$1);
+        exit(1);
+    }
     // TODO: O que aconteceria se getvartype é null?
     // type try_get = getVarType($1);
 
@@ -34,6 +43,15 @@ void ID_toInput(Record **$$, ID_t $1, Record *$3) {
 
 void input_ID(Record **$$, ID_t $1) {
     checkVarScope($1);
+    ASSIGN a= getVarAssign($1);
+    if(a==CONSTANT){
+        printf("ERROR: the variable %s is constant",$1);
+        exit(1);
+    }
+    if(a==STAT){
+        printf("ERROR: the variable %s is stat",$1);
+        exit(1);
+    }
     str prefix = checkPrefix(getVarType($1));
     str tmpInputSufix[]={"&",$1};
     *$$ = CreateRecordIO("", prefix, cat(tmpInputSufix,2));

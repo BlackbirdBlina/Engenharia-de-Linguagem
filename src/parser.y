@@ -69,19 +69,31 @@ extern FILE * yyin, * yyout;
 		 ;
 	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope {
 															char* temp[]={$7->code," ",$2,"(",$4->code,")",$8->code};
+                                                            if(!checkTypeCompatibility($8->returnType,$7->type)){
+                                                                printf("ERROR: function without a correct return");
+                                                                exit(1);
+                                                            }
 															$$=CreateRecordFunc(cat(temp,7),$4->paramsTypes,$7->type);
                                                             store_func_in_funcTable($2,$4->paramsTypes,$7->type);
-
+                                                            
                                                             }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope {
 			  													   char* temp[]={$8->code," ",$3,"(",$5->code,")",$9->code};
 																   $$=CreateRecordFunc(cat(temp,7),$5->paramsTypes,$8->type);
+                                                                   if(!checkTypeCompatibility($8->returnType,$9->type)){
+                                                                        printf("ERROR: pure function without a correct return");
+                                                                        exit(1);
+                                                                    }
                                                                    store_func_in_funcTable($3,$5->paramsTypes,$8->type);
                                                                    }
 			  | PROCEDURE ID '(' Params ')' Scope {
 			  										char* temp[]={"void"," ",$2,"(",$4->code,")",$6->code};
 													$$=CreateRecordFunc(cat(temp,7),$4->paramsTypes,"");
-                                                    store_func_in_funcTable($2,$4->paramsTypes,"");
+                                                    if(!checkTypeCompatibility($6->returnType,void_) && $6->returnType){
+                                                        printf("ERROR: procedure with a return");
+                                                        exit(1);
+                                                    }
+                                                    store_func_in_funcTable($2,$4->paramsTypes,void_);
                                                     }
 			  ;
 	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main() ", $8->code};
@@ -112,13 +124,31 @@ extern FILE * yyin, * yyout;
 		 | '{' { PushScope(scopeStack,GenerateScope()); } Statements '}' {
 		 						char* temp[]={"{\n\t",$3->code,"\n}"};
 								$$=CreateRecord(cat(temp,3));
+                                $$->returnType=$3->returnType;
 								PopScope(scopeStack);
                                 }
 		 ;
 	Statements: Statement Statements { char* temp[]={$1->code,"\n",$2->code};
 									  $$=CreateRecord(cat(temp,3));
+                                      if($1->returnType && $2->returnType){
+                                        char* temp=checkTypeCompatibility($1->returnType,$2->returnType);
+                                        if(temp){
+                                           $$->returnType=temp; 
+                                        }
+                                        else{
+                                            printf("ERROR: Returns with incompatible types;");
+                                            exit(1);
+                                        }
                                       }
-			  | Statement { $$=CreateRecord($1->code); }
+                                      else if($1->returnType){
+                
+                                        $$->returnType=$1->returnType;
+                                      }
+                                      else if($2->returnType){
+                                        $$->returnType=$2->returnType;
+                                      }
+                                      }
+			  | Statement { $$=CreateRecord($1->code); $$->returnType=$1->returnType;}
 			  ;
 	Statement: Assignment {
     $$=CreateRecord($1->code);
@@ -131,15 +161,15 @@ extern FILE * yyin, * yyout;
 								$$=CreateRecord(cat(temp,2));
                                 }
 			 | Return {
-             $$=CreateRecord($1->code); }
+             $$=CreateRecord($1->code); $$->returnType=$1->returnType;}
 			 | Scope {
-             $$=CreateRecord($1->code);
+             $$=CreateRecord($1->code); $$->returnType=$1->returnType;
              }
 			 | RepeatStructures {
-             $$=CreateRecord($1->code);
+             $$=CreateRecord($1->code); 
              }
 			 | DecisionStructures {
-             $$=CreateRecord($1->code);
+             $$=CreateRecord($1->code); $$->returnType=$1->returnType;
              }
 			 | CONTINUE ';' {
              $$=CreateRecord("break");
@@ -154,9 +184,10 @@ extern FILE * yyin, * yyout;
              $$=CreateRecord($1->code);
              }
 			 ;
-	Return: RETURN ';' { $$=CreateRecord("return;"); }
+	Return: RETURN ';' { $$=CreateRecord("return;"); $$->returnType=void_; }
 	      | RETURN Expression ';' {char* temp[]={"return ",$2->code,";"};
 								  $$=CreateRecord(cat(temp,3));
+                                  $$->returnType=$2->type;
                                   }
 		  ;
 	Assignment: LET VarTyped '=' Expression ';'                                           { let__equal(&$$, $2, $4, STAT); }
@@ -196,7 +227,7 @@ Attribution: ID '=' Expression ';'                                              
 	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp3: AuxExp3 Compare AuxExp4{handle_operands_types(&$$,$1,$3,$2->code,literal_int);}
+	AuxExp3: AuxExp3 Compare AuxExp4{handle_operands_types(&$$,$1,$3,$2->code,literal_int);$$->type=bool_;}
 		   | AuxExp4{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
@@ -233,7 +264,6 @@ Attribution: ID '=' Expression ';'                                              
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
            | '&' ID '[' INTERVAL VALUE_INT ']' {}
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
-           | Print {}
 		   | SubprogramCall {$$=CreateRecordType($1->code,$1->type);}
            | List {}
 		   ;
@@ -327,9 +357,10 @@ Attribution: ID '=' Expression ';'                                              
 						char* temp[] = {
 							"\nif", "(", $3->code, ")", " goto ", ifScope, ";\n", 
 							"\ngoto ", endIf, ";\n", 
-							ifScope, ":\n", $5->code
+							ifScope, ":\n", $5->code, "\n",
+							endIf, ": "
 						};
-						$$ = CreateRecord(cat(temp, 13));
+						$$ = CreateRecord(cat(temp, 16));
                         }
 					  | IF '(' Expression ')' Scope ELSE Scope {
 						char* counter = ifCount();

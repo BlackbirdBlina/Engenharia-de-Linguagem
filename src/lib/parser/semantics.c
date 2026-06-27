@@ -134,6 +134,11 @@ void InitializeTypeTable() {
     const char *conversions_literal_float[] = {float32, float64};
     insert_symbol(typeTable, literal_float,
                   alloc_type_type(literal_float, conversions_literal_float, 2));
+
+    const char *conversions_void[] = {};
+    insert_symbol(typeTable, void_,
+                  alloc_type_type(void_, conversions_void, 0));
+
 }
 
 char *checkTypeCompatibility(char *type1, char *type2) {
@@ -191,6 +196,15 @@ type getVarType(ID_t var) {
         return NULL;
     }
 }
+ASSIGN getVarAssign(ID_t var){
+    SymbolNode *tabled_var = search_var_in_varTable(var);
+    if (tabled_var != NULL) {
+        return tabled_var->info->assign;
+    } else {
+        printf("ERROR: The variable %s has not a assign",var);
+        exit(1);
+    }
+}
 str checkPrefix(type t) {
     if (strcmp(t, bool_) == 0)
         return "%d";
@@ -234,9 +248,9 @@ void check_type_prefix(str prefix, ID_t $1) {
 str getCurrentScopeName(){
     return scopeStack->top->scopeName;
 }
-void store_var_in_varTable(ID_t varID, type type){
+void store_var_in_varTable(ID_t varID, type type,ASSIGN assign){
     char* tempVarAndScope[]={varID,getCurrentScopeName()};
-    insert_symbol(varTable, cat(tempVarAndScope,2),alloc_type_var(type, getCurrentScopeName()));
+    insert_symbol(varTable, cat(tempVarAndScope,2),alloc_type_var(type, getCurrentScopeName(),assign));
 }
 void store_func_in_funcTable(ID_t funcID,LinkedList* paramsTypes,type returnType){
     insert_symbol(funcTable, funcID,alloc_type_func(returnType, paramsTypes));
