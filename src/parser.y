@@ -7,11 +7,11 @@
 #include "lib/symbol_table.h"
 #include "lib/scope_stack.h"
 #include "lib/parser/semantics.h"
+#include "lib/parser/grammar/IO.c"
+#include "lib/parser/grammar/operator.c"
+#include "lib/parser/grammar/subprogram.c"
 #include "lib/parser/grammar/assignments.c"
 #include "lib/parser/grammar/attribution.c"
-#include "lib/parser/grammar/print.c"
-#include "lib/parser/grammar/input.c"
-#include "lib/parser/grammar/operator.c"
 
 int yylex(void);
 int yyerror(char *s);
@@ -26,7 +26,7 @@ extern FILE * yyin, * yyout;
 	char   cValue; 	
 	ID_t idValue;
 	VALUE_STRING_t sValue;
-	struct Record * rec;  
+	struct Record* rec;  
 	};
 
 %token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
@@ -47,7 +47,7 @@ extern FILE * yyin, * yyout;
 %%
     Program:
         Decls  {
-            fprintf(yyout,"#include<stdio.h>\n%s", $1->code);
+            fprintf(yyout,"#include<stdio.h>\n#include<stdbool.h>\n%s", $1->code);
         }
         ;
 	Decls: SubProgram Decls{
@@ -67,34 +67,10 @@ extern FILE * yyin, * yyout;
 				$$=CreateRecord($1->code);
 		 }
 		 ;
-	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope {
-															char* temp[]={$7->code," ",$2,"(",$4->code,")",$8->code};
-                                                            if(!checkTypeCompatibility($8->returnType,$7->type)){
-                                                                printf("ERROR: function without a correct return");
-                                                                exit(1);
-                                                            }
-															$$=CreateRecordFunc(cat(temp,7),$4->paramsTypes,$7->type);
-                                                            store_func_in_funcTable($2,$4->paramsTypes,$7->type);
-                                                            
-                                                            }
-			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope {
-			  													   char* temp[]={$8->code," ",$3,"(",$5->code,")",$9->code};
-																   $$=CreateRecordFunc(cat(temp,7),$5->paramsTypes,$8->type);
-                                                                   if(!checkTypeCompatibility($8->returnType,$9->type)){
-                                                                        printf("ERROR: pure function without a correct return");
-                                                                        exit(1);
-                                                                    }
-                                                                   store_func_in_funcTable($3,$5->paramsTypes,$8->type);
-                                                                   }
+	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { FUNCTION_Decl(&$$, $2, $4, $7, $8); }
+			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { PURE_FUNCTION_Decl(&$$, $3, $5, $8, $9); }
 			  | PROCEDURE ID '(' Params ')' Scope {
-			  										char* temp[]={"void"," ",$2,"(",$4->code,")",$6->code};
-													$$=CreateRecordFunc(cat(temp,7),$4->paramsTypes,"");
-                                                    if(!checkTypeCompatibility($6->returnType,void_) && $6->returnType){
-                                                        printf("ERROR: procedure with a return");
-                                                        exit(1);
-                                                    }
-                                                    store_func_in_funcTable($2,$4->paramsTypes,void_);
-                                                    }
+                            }
 			  ;
 	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main() ", $8->code};
 														  $$=CreateRecord(cat(temp,2));
