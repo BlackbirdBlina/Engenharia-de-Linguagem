@@ -20,10 +20,10 @@
 #define void_ "void"
 
 #include "linked_list.h"
+#include "parser/types.h"
 #include <stdbool.h>
 #include <sys/types.h>
 
-typedef char *type;
 typedef enum { STAT, MUT, CONSTANT } ASSIGN;
 
 typedef struct SymbolInfo {
@@ -51,8 +51,9 @@ typedef struct {
 
 extern int global_counter;
 
-SymbolInfo *alloc_type_var(char *type, char *scope,ASSIGN assign);
-SymbolInfo *alloc_type_type(char *type, const char **conversions,int conversionsQnt);
+SymbolInfo *alloc_type_var(char *type, char *scope, ASSIGN assign);
+SymbolInfo *alloc_type_type(char *type, const char **conversions,
+                            int conversionsQnt);
 SymbolInfo *alloc_type_func(char *returnType, LinkedList *paramsList);
 void free_type_info(SymbolInfo *info);
 SymbolTable *create_table();

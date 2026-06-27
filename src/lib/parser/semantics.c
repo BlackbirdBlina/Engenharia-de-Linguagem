@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 ScopeStack *scopeStack;
 SymbolTable *varTable;
 SymbolTable *typeTable;
@@ -46,25 +45,25 @@ char *whileCount() {
     snprintf(text, sizeof(text), "%d", whileCounts++);
     return text;
 }
-char* ifCount() {
-	static int ifCounts = 0;
-	char* text = malloc(sizeof(char)*12);
-	snprintf(text, sizeof(text), "%d", ifCounts++);
-	return text;
+char *ifCount() {
+    static int ifCounts = 0;
+    char *text = malloc(sizeof(char) * 12);
+    snprintf(text, sizeof(text), "%d", ifCounts++);
+    return text;
 }
 
-char* elseCount() {
-	static int elseCounts = 0;
-	char* text = malloc(sizeof(char)*12);
-	snprintf(text, sizeof(text), "%d", elseCounts++);
-	return text;
+char *elseCount() {
+    static int elseCounts = 0;
+    char *text = malloc(sizeof(char) * 12);
+    snprintf(text, sizeof(text), "%d", elseCounts++);
+    return text;
 }
 
-char* endIfCount() {
-	static int endifCounts = 0;
-	char* text = malloc(sizeof(char)*12);
-	snprintf(text, sizeof(text), "%d", endifCounts++);
-	return text;
+char *endIfCount() {
+    static int endifCounts = 0;
+    char *text = malloc(sizeof(char) * 12);
+    snprintf(text, sizeof(text), "%d", endifCounts++);
+    return text;
 }
 ScopeNode *GenerateScope() {
     static int scopeCount = 1;
@@ -72,17 +71,13 @@ ScopeNode *GenerateScope() {
     snprintf(scopeName, sizeof(scopeName), "S#%d", scopeCount++);
     return CreateScope(scopeName);
 }
-void InitializeScopeStack(){
-    scopeStack=CreateStack();
-    PushScope(scopeStack,CreateScope("GLOBAL"));
+void InitializeScopeStack() {
+    scopeStack = CreateStack();
+    PushScope(scopeStack, CreateScope("GLOBAL"));
 }
-void InitializeFuncTable(){
-    funcTable=create_table();
-}
+void InitializeFuncTable() { funcTable = create_table(); }
 
-void InitializeVarTable(){
-    varTable=create_table();
-}
+void InitializeVarTable() { varTable = create_table(); }
 void InitializeTypeTable() {
     typeTable = create_table();
 
@@ -138,7 +133,6 @@ void InitializeTypeTable() {
     const char *conversions_void[] = {};
     insert_symbol(typeTable, void_,
                   alloc_type_type(void_, conversions_void, 0));
-
 }
 
 char *checkTypeCompatibility(char *type1, char *type2) {
@@ -196,114 +190,77 @@ type getVarType(ID_t var) {
         return NULL;
     }
 }
-ASSIGN getVarAssign(ID_t var){
+ASSIGN getVarAssign(ID_t var) {
     SymbolNode *tabled_var = search_var_in_varTable(var);
     if (tabled_var != NULL) {
         return tabled_var->info->assign;
     } else {
-        printf("ERROR: The variable %s has not a assign",var);
+        printf("ERROR: The variable %s has not a assign", var);
         exit(1);
     }
 }
-str checkPrefix(type t) {
-    if (strcmp(t, bool_) == 0)
-        return "%d";
-    if (strcmp(t, s_int16) == 0)
-        return "%hd";
-    if (strcmp(t, s_int32) == 0)
-        return "%d";
-    if (strcmp(t, s_int64) == 0)
-        return "%lld";
-    if (strcmp(t, s_size) == 0)
-        return "%lld";
-    if (strcmp(t, u_int16) == 0)
-        return "%hu";
-    if (strcmp(t, u_int32) == 0)
-        return "%u";
-    if (strcmp(t, u_int64) == 0)
-        return "%llu";
-    if (strcmp(t, u_size) == 0)
-        return "%lu";
-    if (strcmp(t, float32) == 0)
-        return "%f";
-    if (strcmp(t, float64) == 0)
-        return "%lf";
-    if (strcmp(t, char_) == 0)
-        return "%c";
-    // if (strcmp(t, literal_int) == 0)
-    //     return "%d";
-    // if (strcmp(t, literal_float) == 0)
-    //     return "%d";
-    return NULL;
+str getCurrentScopeName() { return scopeStack->top->scopeName; }
+void store_var_in_varTable(ID_t varID, type type, ASSIGN assign) {
+    char *tempVarAndScope[] = {varID, getCurrentScopeName()};
+    insert_symbol(varTable, cat(tempVarAndScope, 2),
+                  alloc_type_var(type, getCurrentScopeName(), assign));
 }
-void check_type_prefix(str prefix, ID_t $1) {
-
-    // If the type for the prefix is not predictable:
-    if (prefix == NULL) {
-        printf("ERROR: \"%s\"'s type '%s' is not printable\n", $1,
-               getVarType($1));
-        exit(1);
-    }
+void store_func_in_funcTable(ID_t funcID, LinkedList *paramsTypes,
+                             type returnType) {
+    insert_symbol(funcTable, funcID, alloc_type_func(returnType, paramsTypes));
 }
-str getCurrentScopeName(){
-    return scopeStack->top->scopeName;
-}
-void store_var_in_varTable(ID_t varID, type type,ASSIGN assign){
-    char* tempVarAndScope[]={varID,getCurrentScopeName()};
-    insert_symbol(varTable, cat(tempVarAndScope,2),alloc_type_var(type, getCurrentScopeName(),assign));
-}
-void store_func_in_funcTable(ID_t funcID,LinkedList* paramsTypes,type returnType){
-    insert_symbol(funcTable, funcID,alloc_type_func(returnType, paramsTypes));
-}
-type check_params_types_on_subprogram_call(ID_t funcID,LinkedList* paramsTypes){
-    if(!funcID || !paramsTypes){
+type check_params_types_on_subprogram_call(ID_t funcID,
+                                           LinkedList *paramsTypes) {
+    if (!funcID || !paramsTypes) {
         printf("Bad use of check_params_types_on_subprogram_call");
         exit(1);
         return NULL;
     }
-    SymbolNode* func1=search_func_in_funcTable(funcID);
-    if(!func1){
-        printf("ERROR: The subprogram %s was not declared",funcID);
+    SymbolNode *func1 = search_func_in_funcTable(funcID);
+    if (!func1) {
+        printf("ERROR: The subprogram %s was not declared", funcID);
         exit(1);
         return NULL;
     }
-    if(func1->info->typeParams->size != paramsTypes->size){
-        printf("ERROR: The params used to call %s are not compatibles with your definition",funcID);
+    if (func1->info->typeParams->size != paramsTypes->size) {
+        printf("ERROR: The params used to call %s are not compatibles with "
+               "your definition",
+               funcID);
         exit(1);
         return NULL;
     }
-    NodeInfo* auxType1=func1->info->typeParams->start;
-    NodeInfo* auxType2=paramsTypes->start;
-    for(int i=0;i<func1->info->typeParams->size ;i++){
-        if(!checkTypeCompatibility(auxType1->content,auxType2->content)){
-            printf("ERROR: The params used to call %s are not compatibles with your definition",funcID);
+    NodeInfo *auxType1 = func1->info->typeParams->start;
+    NodeInfo *auxType2 = paramsTypes->start;
+    for (int i = 0; i < func1->info->typeParams->size; i++) {
+        if (!checkTypeCompatibility(auxType1->content, auxType2->content)) {
+            printf("ERROR: The params used to call %s are not compatibles with "
+                   "your definition",
+                   funcID);
             exit(1);
             return NULL;
         }
-        auxType1=auxType1->next;
-        auxType2=auxType2->next;
+        auxType1 = auxType1->next;
+        auxType2 = auxType2->next;
     }
     return func1->info->type;
-
 }
-SymbolNode* search_var_in_varTable(ID_t varID){
-    ScopeNode* auxScope=scopeStack->top;
-    SymbolNode* var;
-    while(auxScope){
-        char* tempVarAndScope[]={varID,auxScope->scopeName};
-        var=lookup_symbol(varTable,cat(tempVarAndScope,2));
-        if(var){
+SymbolNode *search_var_in_varTable(ID_t varID) {
+    ScopeNode *auxScope = scopeStack->top;
+    SymbolNode *var;
+    while (auxScope) {
+        char *tempVarAndScope[] = {varID, auxScope->scopeName};
+        var = lookup_symbol(varTable, cat(tempVarAndScope, 2));
+        if (var) {
             return var;
         }
-        auxScope=auxScope->next;
+        auxScope = auxScope->next;
     }
     return NULL;
 }
-SymbolNode* search_func_in_funcTable(ID_t funcID){
-    return lookup_symbol(funcTable,funcID);
+SymbolNode *search_func_in_funcTable(ID_t funcID) {
+    return lookup_symbol(funcTable, funcID);
 }
-SymbolNode* search_var_in_currentScope(ID_t varID){
-    char* tempVarAndScope[]={varID,getCurrentScopeName()};
-    return lookup_symbol(varTable,cat(tempVarAndScope,2));
+SymbolNode *search_var_in_currentScope(ID_t varID) {
+    char *tempVarAndScope[] = {varID, getCurrentScopeName()};
+    return lookup_symbol(varTable, cat(tempVarAndScope, 2));
 }
-
