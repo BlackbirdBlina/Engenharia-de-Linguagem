@@ -67,34 +67,24 @@ extern FILE * yyin, * yyout;
 				$$=CreateRecord($1->code);
 		 }
 		 ;
-	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope { FUNCTION_Decl(&$$, $2, $4, $7, $8); }
-			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope { PURE_FUNCTION_Decl(&$$, $3, $5, $8, $9); }
-			  | PROCEDURE ID '(' Params ')' Scope {
-                            }
+	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope         { FUNCTION_Decl(&$$, $2, $4, $7, $8); }
+			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope    { PURE_FUNCTION_Decl(&$$, $3, $5, $8, $9); }
+			  | PROCEDURE ID '(' Params ')' Scope                   { PROCEDURE_Decl(&$$, $2, $4, $6); }
 			  ;
-	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main() ", $8->code};
-														  $$=CreateRecord(cat(temp,2));
-                                                          }
+	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope {
+            char* temp[]={"int main() ", $8->code};
+            $$=CreateRecord(cat(temp,2));
+        }
 		;
-	Params: VarTypedList {
-        $$=CreateRecordFuncParams($1->code,$1->paramsTypes);
-    }
-          | {LinkedList* paramsTypes=CreateLinkedList();$$=CreateRecordFuncParams("",paramsTypes);}
+    Params: VarTypedList                                            { $$ = CreateRecordFuncParams($1->code, $1->paramsTypes); }
+        |                                                           { LinkedList* paramsTypes = CreateLinkedList();
+                                                                      $$ = CreateRecordFuncParams("", paramsTypes); }
         ;
-	VarTypedList: VarTyped ',' VarTypedList { 
-                                              char* temp[]={$1->code,",",$3->code};  
-                                              PushElement($3->paramsTypes,CreateNodeInfo($1->type));
-											  $$=CreateRecordFuncParams(cat(temp,3),$3->paramsTypes);
-											}
-				| VarTyped {
-                            LinkedList* paramsTypes=CreateLinkedList();
-                            PushElement(paramsTypes,CreateNodeInfo($1->type));
-                            $$=CreateRecordFuncParams($1->code,paramsTypes);
-                }
+	VarTypedList: VarTyped ',' VarTypedList                         { VarTypedList_Chain(&$$, $1, $3); }
+				| VarTyped                                          { VarTypedList_Single(&$$, $1); }
 				;
-	VarTyped: ID ':' Type {
-							char* temp[]={$3->code," ",$1};
-							$$=CreateRecordVarTyped(cat(temp,3),$3->type,$1); }
+	VarTyped: ID ':' Type                                           { char* temp[] = {$3->code, " ", $1};
+                                                                      $$ = CreateRecordVarTyped(cat(temp, 3), $3->type, $1); }
 			;
 	Scope: '{' { PushScope(scopeStack,GenerateScope()); } '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
 		 | '{' { PushScope(scopeStack,GenerateScope()); } Statements '}' {
@@ -273,7 +263,7 @@ Attribution: ID '=' Expression ';'                                              
                 ;
 
 	SubprogramCall: ID MaybeParams                                      { char* temp[]={$1,$2->code};
-                                                                          $$=CreateRecordType(cat(temp,2),check_params_types_on_subprogram_call($1,$2->paramsTypes)); }
+                                                                          $$=CreateRecordType(cat(temp,2), checkParamType($1,$2->paramsTypes)); }
 				  ;
 
     MaybeParams: '(' ')'                                                {

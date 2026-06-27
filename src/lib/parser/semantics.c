@@ -209,41 +209,6 @@ void store_func_in_funcTable(ID_t funcID, LinkedList *paramsTypes,
                              type returnType) {
     insert_symbol(funcTable, funcID, alloc_type_func(returnType, paramsTypes));
 }
-type check_params_types_on_subprogram_call(ID_t funcID,
-                                           LinkedList *paramsTypes) {
-    if (!funcID || !paramsTypes) {
-        printf("Bad use of check_params_types_on_subprogram_call");
-        exit(1);
-        return NULL;
-    }
-    SymbolNode *func1 = search_func_in_funcTable(funcID);
-    if (!func1) {
-        printf("ERROR: The subprogram %s was not declared", funcID);
-        exit(1);
-        return NULL;
-    }
-    if (func1->info->typeParams->size != paramsTypes->size) {
-        printf("ERROR: The params used to call %s are not compatibles with "
-               "your definition",
-               funcID);
-        exit(1);
-        return NULL;
-    }
-    NodeInfo *auxType1 = func1->info->typeParams->start;
-    NodeInfo *auxType2 = paramsTypes->start;
-    for (int i = 0; i < func1->info->typeParams->size; i++) {
-        if (!checkTypeCompatibility(auxType1->content, auxType2->content)) {
-            printf("ERROR: The params used to call %s are not compatibles with "
-                   "your definition",
-                   funcID);
-            exit(1);
-            return NULL;
-        }
-        auxType1 = auxType1->next;
-        auxType2 = auxType2->next;
-    }
-    return func1->info->type;
-}
 SymbolNode *search_var_in_varTable(ID_t varID) {
     ScopeNode *auxScope = scopeStack->top;
     SymbolNode *var;
