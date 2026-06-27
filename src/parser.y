@@ -10,6 +10,7 @@
 #include "lib/parser/grammar/assignments.c"
 #include "lib/parser/grammar/attribution.c"
 #include "lib/parser/grammar/print.c"
+#include "lib/parser/grammar/input.c"
 #include "lib/parser/grammar/operator.c"
 
 int yylex(void);
@@ -34,13 +35,13 @@ extern FILE * yyin, * yyout;
 %token <sValue> OK ERROR SOME NONE VALUE_BOOL VALUE_CHAR VALUE_STRING VALUE_FLOAT VALUE_INT
 %token <idValue> ID
 %token TYPE_BOOL TYPE_S_INT64 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT64 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
-%token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
+%token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN INPUT TOINPUT
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
-%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print
-%type <rec> SubprogramCall MaybeParams ParamsToCall ModuleCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
-%type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type TypeCollection Compare Literal
-%type <rec> Decls ThingsToPrint
+%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print Input
+%type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
+%type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type Compare Literal
+%type <rec> Decls ThingsToPrint ThingsToInput
 %start Program 
 
 %%
@@ -68,15 +69,19 @@ extern FILE * yyin, * yyout;
 		 ;
 	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope {
 															char* temp[]={$7->code," ",$2,"(",$4->code,")",$8->code};
-															$$=CreateRecord(cat(temp,7));
+															$$=CreateRecordFunc(cat(temp,7),$4->paramsTypes,$7->type);
+                                                            store_func_in_funcTable($2,$4->paramsTypes,$7->type);
+
                                                             }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope {
 			  													   char* temp[]={$8->code," ",$3,"(",$5->code,")",$9->code};
-																   $$=CreateRecord(cat(temp,7));
+																   $$=CreateRecordFunc(cat(temp,7),$5->paramsTypes,$8->type);
+                                                                   store_func_in_funcTable($3,$5->paramsTypes,$8->type);
                                                                    }
 			  | PROCEDURE ID '(' Params ')' Scope {
 			  										char* temp[]={"void"," ",$2,"(",$4->code,")",$6->code};
-													$$=CreateRecord(cat(temp,7));
+													$$=CreateRecordFunc(cat(temp,7),$4->paramsTypes,"");
+                                                    store_func_in_funcTable($2,$4->paramsTypes,"");
                                                     }
 			  ;
 	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope { char* temp[]={"int main() ", $8->code};
@@ -84,17 +89,19 @@ extern FILE * yyin, * yyout;
                                                           }
 		;
 	Params: VarTypedList {
-    $$=CreateRecord($1->code);
+        $$=CreateRecordFuncParams($1->code,$1->paramsTypes);
     }
-		  | {
-          $$=CreateRecord("");
-          }
-		  ;
-	VarTypedList: VarTyped ',' VarTypedList { char* temp[]={$1->code,",",$3->code};
-											  $$=CreateRecord(cat(temp,3));
+          | {LinkedList* paramsTypes=CreateLinkedList();$$=CreateRecordFuncParams("",paramsTypes);}
+        ;
+	VarTypedList: VarTyped ',' VarTypedList { 
+                                              char* temp[]={$1->code,",",$3->code};  
+                                              PushElement($3->paramsTypes,CreateNodeInfo($1->type));
+											  $$=CreateRecordFuncParams(cat(temp,3),$3->paramsTypes);
 											}
 				| VarTyped {
-                $$=CreateRecord($1->code);
+                            LinkedList* paramsTypes=CreateLinkedList();
+                            PushElement(paramsTypes,CreateNodeInfo($1->type));
+                            $$=CreateRecordFuncParams($1->code,paramsTypes);
                 }
 				;
 	VarTyped: ID ':' Type {
@@ -123,7 +130,6 @@ extern FILE * yyin, * yyout;
 			 | SubprogramCall ';'{char* temp[]={$1->code,";"};
 								$$=CreateRecord(cat(temp,2));
                                 }
-             | ModuleCall ';' {}
 			 | Return {
              $$=CreateRecord($1->code); }
 			 | Scope {
@@ -141,10 +147,15 @@ extern FILE * yyin, * yyout;
 			 | BREAK ';' {
              $$=CreateRecord("continue");
              }
-             | Print ';' {}
+             | Print ';' {
+             $$=CreateRecord($1->code);
+             }
+             |Input{
+             $$=CreateRecord($1->code);
+             }
 			 ;
 	Return: RETURN ';' { $$=CreateRecord("return;"); }
-	      | RETURN Expression ';' {char* temp[]={"return",$2->code,";"};
+	      | RETURN Expression ';' {char* temp[]={"return ",$2->code,";"};
 								  $$=CreateRecord(cat(temp,3));
                                   }
 		  ;
@@ -181,11 +192,11 @@ Attribution: ID '=' Expression ';'                                              
 		   | AuxExp2 {$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{handle_operands_types(&$$,$1,$3,"!=",bool_);}
+	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{handle_operands_types(&$$,$1,$3,"!=",literal_int);}
 	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp3: AuxExp3 Compare AuxExp4{handle_operands_types(&$$,$1,$3,$2->code,bool_);}
+	AuxExp3: AuxExp3 Compare AuxExp4{handle_operands_types(&$$,$1,$3,$2->code,literal_int);}
 		   | AuxExp4{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
@@ -212,9 +223,7 @@ Attribution: ID '=' Expression ';'                                              
     ;
 
 	AuxExp8: IDs {$$=CreateRecordType($1->code,$1->type);}
-		   | Literal {
-           $$=CreateRecordType($1->code,$1->type);
-           }
+		   | Literal {$$=CreateRecordType($1->code,$1->type);}
 		   | '(' Expression ')' {char* temp[]={"(",$2->code,")"};
 								$$=CreateRecordType(cat(temp,3),$2->type);
                                 }
@@ -225,10 +234,7 @@ Attribution: ID '=' Expression ';'                                              
            | '&' ID '[' INTERVAL VALUE_INT ']' {}
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
            | Print {}
-           | ModuleCall {}
-		   | SubprogramCall {
-           $$=CreateRecord($1->code);
-           }
+		   | SubprogramCall {$$=CreateRecordType($1->code,$1->type);}
            | List {}
 		   ;
 
@@ -255,26 +261,31 @@ Attribution: ID '=' Expression ';'                                              
                  | VALUE_STRING                                         { print_VALUE_STRING(&$$, $1); }
                  ;
 
-	SubprogramCall: ID MaybeParams '.' SubprogramCall {}
-                  | ID '.' SubprogramCall {} // foo.poo()
-				  | ID MaybeParams                                      { char* temp[]={$1,$2->code};
-                                                                          $$=CreateRecord(cat(temp,2)); }
+    Input: INPUT TOINPUT ThingsToInput ';'{INPUT_toInput(&$$,$3);}
+    ThingsToInput: ID TOINPUT ThingsToInput{ID_toInput(&$$,$1,$3);}
+                |  ID {input_ID(&$$,$1);}
+                ;
+
+	SubprogramCall: ID MaybeParams                                      { char* temp[]={$1,$2->code};
+                                                                          $$=CreateRecordType(cat(temp,2),check_params_types_on_subprogram_call($1,$2->paramsTypes)); }
 				  ;
 
-    MaybeParams: '(' ')'                                                { $$=CreateRecord("()"); }
+    MaybeParams: '(' ')'                                                {
+                                                                         LinkedList* paramsTypes=CreateLinkedList(); 
+                                                                         $$=CreateRecordFuncParams("()",paramsTypes); }
                | '(' ParamsToCall ')'                                   { char* temp[]={"(",$2->code,")"};
-                                                                          $$=CreateRecord(cat(temp,3)); }
+                                                                          $$=CreateRecordFuncParams(cat(temp,3),$2->paramsTypes); }
                ;
 
 	ParamsToCall: Expression ',' ParamsToCall                           { char* temp[]={$1->code,",",$3->code};
-                                                                          $$=CreateRecord(cat(temp,3)); }
-				| Expression                                            { $$=CreateRecord($1->code); }
+                                                                          PushElement($3->paramsTypes,CreateNodeInfo($1->type));
+                                                                          $$=CreateRecordFuncParams(cat(temp,3),$3->paramsTypes); }
+				| Expression                                            { 
+                                                                         LinkedList* paramsTypes=CreateLinkedList();
+                                                                         PushElement(paramsTypes,CreateNodeInfo($1->type));
+                                                                         $$=CreateRecordFuncParams($1->code,paramsTypes); }
 				;
     
-    ModuleCall: ID ':' ':' SubprogramCall  {}
-              | TypeCollection ':' ':' SubprogramCall {}
-              ;
-
 	ElementSequence: Expression ',' ElementSequence{}
 				   | Expression {}
 				   ;
@@ -296,12 +307,37 @@ Attribution: ID '=' Expression ';'                                              
 					|  LOOP Scope {}
 					;
 					
-	DecisionStructures: IF '(' Expression ')' Scope {char* temp[]={"if(",$3->code,")",$5->code};
-									   		  		$$=CreateRecord(cat(temp,4));
-                                                    }
-					  | IF '(' Expression ')' Scope ELSE Scope {char* temp[]={"if(",$3->code,")",$5->code,"else",$7->code};
-									   		  					$$=CreateRecord(cat(temp,6));
-                                                                }
+	DecisionStructures: IF '(' Expression ')' Scope {
+						char* counter = ifCount();
+						char* tempif[] = {"IF_SCOPE", counter};
+						char* tempend[] = {"ENDIF_", counter};
+						char* ifScope = cat(tempif, 2);
+						char* endIf = cat(tempend, 2);
+						char* temp[] = {
+							"\nif", "(", $3->code, ")", " goto ", ifScope, ";\n", 
+							"\ngoto ", endIf, ";\n", 
+							ifScope, ":\n", $5->code
+						};
+						$$ = CreateRecord(cat(temp, 13));
+                        }
+					  | IF '(' Expression ')' Scope ELSE Scope {
+						char* counter = ifCount();
+						char* tempif[] = {"IF_", counter};
+						char* tempend[] = {"ENDIF_", counter};
+						char* tempelse[] = {"ELSE_", elseCount()};
+						char* ifScope = cat(tempif, 2);
+						char* endIf = cat(tempend, 2);
+						char* elseScope = cat(tempelse, 2);
+						char* temp[] = {
+							"\nif", "(", $3->code, ")", " goto ", ifScope, ";\n", 
+							"goto ", elseScope, ";\n", 
+							ifScope, ":\n", $5->code, " ",
+							"\ngoto ", endIf, ";\n\n",
+							elseScope, ":\n", $7->code, "\n",
+							endIf, ": "
+						};
+						$$ = CreateRecord(cat(temp, 23));
+                        }
 					  | IF '(' Expression ')' Scope ElseIf {char* temp[]={"if(",$3->code,")",$5->code,$6->code};
 									   		  				$$=CreateRecord(cat(temp,5));
                                                             }
@@ -344,24 +380,6 @@ Attribution: ID '=' Expression ';'                                              
 			| ID ',' {}
 			;
 
-    TypeCollection: TYPE_S_INT64 {}
-				  | TYPE_S_INT32 {}
-				  | TYPE_S_SIZE {}
-				  | TYPE_S_INT16 {}
-				  | TYPE_U_INT64 {}
-				  | TYPE_U_INT16 {}
-				  | TYPE_U_INT32 {}
-				  | TYPE_U_SIZE {}
-				  | TYPE_FLOAT32 {}
-				  | TYPE_FLOAT64 {}
-				  | TYPE_CHAR {}
-				  | TYPE_STRING {}
-				  | TYPE_VEC {}
-				  | TYPE_SET {}
-				  | TYPE_MATRIX {}
-				  | TYPE_RESULT {}
-				  | TYPE_OPTION {}
-				  ;
 
 	Type: TYPE_BOOL { $$=CreateRecordType("bool",bool_);
     }
@@ -461,11 +479,10 @@ int main (int argc, char ** argv) {
        printf("Usage: $./compiler input.txt output.txt\nClosing application...\n");
        exit(0);
     }
-	scopeStack=CreateStack();
-	funcTable=create_table();
+	InitializeScopeStack();
+	InitializeFuncTable();
 	InitializeTypeTable();
     InitializeVarTable();
-	PushScope(scopeStack,CreateScope("GLOBAL"));
     yyin = fopen(argv[1], "r");
     yyout = fopen(argv[2], "w");
     codigo = yyparse();

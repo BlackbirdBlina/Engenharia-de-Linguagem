@@ -48,10 +48,8 @@ typedef struct {
 
 extern int global_counter;
 
-// SymbolInfo* alloc_type_info(TypeKind kind);
 SymbolInfo *alloc_type_var(char *type, char *scope);
-SymbolInfo *alloc_type_type(char *type, const char **conversions,
-                            int conversionsQnt);
+SymbolInfo *alloc_type_type(char *type, const char **conversions,int conversionsQnt);
 SymbolInfo *alloc_type_func(char *returnType, LinkedList *paramsList);
 void free_type_info(SymbolInfo *info);
 SymbolTable *create_table();

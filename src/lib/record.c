@@ -20,11 +20,24 @@ Record *CreateRecordVarTyped(char *code, char *typeID, char *ID) {
     record->id = strdup(ID);
     return record;
 }
-Record *CreateRecordPrint(char *code, char *prefix, char *sufix) {
+Record *CreateRecordFunc(char *code, LinkedList* paramsTypes,char *returnType){
     Record *record = (Record *)malloc(sizeof(Record));
     record->code = strdup(code);
-    record->printPrefix = strdup(prefix);
-    record->printSufix = strdup(sufix);
+    record->paramsTypes = paramsTypes;
+    record->returnType = strdup(returnType);
+    return record;
+}
+Record *CreateRecordFuncParams(char *code, LinkedList* paramsTypes){
+    Record *record = (Record *)malloc(sizeof(Record));
+    record->code = strdup(code);
+    record->paramsTypes = paramsTypes;
+    return record;
+}
+Record *CreateRecordIO(char *code, char *prefix, char *sufix) {
+    Record *record = (Record *)malloc(sizeof(Record));
+    record->code = strdup(code);
+    record->IOPrefix = strdup(prefix);
+    record->IOSufix = strdup(sufix);
     return record;
 }
 void FreeRecord(Record *record) {

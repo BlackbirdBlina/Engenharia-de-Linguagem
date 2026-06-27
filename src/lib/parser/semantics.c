@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 ScopeStack *scopeStack;
 SymbolTable *varTable;
 SymbolTable *typeTable;
@@ -45,13 +46,40 @@ char *whileCount() {
     snprintf(text, sizeof(text), "%d", whileCounts++);
     return text;
 }
+char* ifCount() {
+	static int ifCounts = 0;
+	char* text = malloc(sizeof(char)*12);
+	snprintf(text, sizeof(text), "%d", ifCounts++);
+	return text;
+}
 
+char* elseCount() {
+	static int elseCounts = 0;
+	char* text = malloc(sizeof(char)*12);
+	snprintf(text, sizeof(text), "%d", elseCounts++);
+	return text;
+}
+
+char* endIfCount() {
+	static int endifCounts = 0;
+	char* text = malloc(sizeof(char)*12);
+	snprintf(text, sizeof(text), "%d", endifCounts++);
+	return text;
+}
 ScopeNode *GenerateScope() {
     static int scopeCount = 1;
     char *scopeName = malloc(sizeof(char) * 14);
     snprintf(scopeName, sizeof(scopeName), "S#%d", scopeCount++);
     return CreateScope(scopeName);
 }
+void InitializeScopeStack(){
+    scopeStack=CreateStack();
+    PushScope(scopeStack,CreateScope("GLOBAL"));
+}
+void InitializeFuncTable(){
+    funcTable=create_table();
+}
+
 void InitializeVarTable(){
     varTable=create_table();
 }
@@ -142,24 +170,126 @@ char *checkTypeCompatibility(char *type1, char *type2) {
     return NULL;
 }
 
-void checkVarScope(char *varName) {
-    SymbolNode *var = lookup_symbol(varTable, varName);
+void checkVarScope(ID_t varName) {
+    SymbolNode *var = search_var_in_varTable(varName);
     if (var) {
         if (!FindScope(scopeStack, var->info->scope)) {
-            printf("Variavel %s Fora de escopo\n", varName);
+            printf("ERROR: Variable  \"%s\" out of scope\n", varName);
             exit(1);
         }
     } else {
-        printf("Variável \"%s\" não declarada\n", varName);
+        printf("ERROR: Variable \"%s\" not declared\n", varName);
         exit(1);
     }
 }
 
 type getVarType(ID_t var) {
-    SymbolNode *tabled_var = lookup_symbol(varTable, var);
+    SymbolNode *tabled_var = search_var_in_varTable(var);
     if (tabled_var != NULL) {
         return tabled_var->info->type;
     } else {
         return NULL;
     }
 }
+str checkPrefix(type t) {
+    if (strcmp(t, bool_) == 0)
+        return "%d";
+    if (strcmp(t, s_int16) == 0)
+        return "%hd";
+    if (strcmp(t, s_int32) == 0)
+        return "%d";
+    if (strcmp(t, s_int64) == 0)
+        return "%lld";
+    if (strcmp(t, s_size) == 0)
+        return "%lld";
+    if (strcmp(t, u_int16) == 0)
+        return "%hu";
+    if (strcmp(t, u_int32) == 0)
+        return "%u";
+    if (strcmp(t, u_int64) == 0)
+        return "%llu";
+    if (strcmp(t, u_size) == 0)
+        return "%lu";
+    if (strcmp(t, float32) == 0)
+        return "%f";
+    if (strcmp(t, float64) == 0)
+        return "%lf";
+    if (strcmp(t, char_) == 0)
+        return "%c";
+    // if (strcmp(t, literal_int) == 0)
+    //     return "%d";
+    // if (strcmp(t, literal_float) == 0)
+    //     return "%d";
+    return NULL;
+}
+void check_type_prefix(str prefix, ID_t $1) {
+
+    // If the type for the prefix is not predictable:
+    if (prefix == NULL) {
+        printf("ERROR: \"%s\"'s type '%s' is not printable\n", $1,
+               getVarType($1));
+        exit(1);
+    }
+}
+str getCurrentScopeName(){
+    return scopeStack->top->scopeName;
+}
+void store_var_in_varTable(ID_t varID, type type){
+    char* tempVarAndScope[]={varID,getCurrentScopeName()};
+    insert_symbol(varTable, cat(tempVarAndScope,2),alloc_type_var(type, getCurrentScopeName()));
+}
+void store_func_in_funcTable(ID_t funcID,LinkedList* paramsTypes,type returnType){
+    insert_symbol(funcTable, funcID,alloc_type_func(returnType, paramsTypes));
+}
+type check_params_types_on_subprogram_call(ID_t funcID,LinkedList* paramsTypes){
+    if(!funcID || !paramsTypes){
+        printf("Bad use of check_params_types_on_subprogram_call");
+        exit(1);
+        return NULL;
+    }
+    SymbolNode* func1=search_func_in_funcTable(funcID);
+    if(!func1){
+        printf("ERROR: The subprogram %s was not declared",funcID);
+        exit(1);
+        return NULL;
+    }
+    if(func1->info->typeParams->size != paramsTypes->size){
+        printf("ERROR: The params used to call %s are not compatibles with your definition",funcID);
+        exit(1);
+        return NULL;
+    }
+    NodeInfo* auxType1=func1->info->typeParams->start;
+    NodeInfo* auxType2=paramsTypes->start;
+    for(int i=0;i<func1->info->typeParams->size ;i++){
+        if(!checkTypeCompatibility(auxType1->content,auxType2->content)){
+            printf("ERROR: The params used to call %s are not compatibles with your definition",funcID);
+            exit(1);
+            return NULL;
+        }
+        auxType1=auxType1->next;
+        auxType2=auxType2->next;
+    }
+    return func1->info->type;
+
+}
+SymbolNode* search_var_in_varTable(ID_t varID){
+    ScopeNode* auxScope=scopeStack->top;
+    SymbolNode* var;
+    while(auxScope){
+        char* tempVarAndScope[]={varID,auxScope->scopeName};
+        var=lookup_symbol(varTable,cat(tempVarAndScope,2));
+        if(var){
+            return var;
+        }
+        auxScope=auxScope->next;
+    }
+    return NULL;
+}
+SymbolNode* search_func_in_funcTable(ID_t funcID){
+    return lookup_symbol(funcTable,funcID);
+}
+SymbolNode* search_var_in_currentScope(ID_t varID){
+    char* tempVarAndScope[]={varID,getCurrentScopeName()};
+    return lookup_symbol(varTable,cat(tempVarAndScope,2));
+}
+

@@ -10,7 +10,7 @@ typedef enum { STAT, MUT, CONSTANT } ASSIGN;
 void check_let__equal(Record *$2, Record *$4) {
     // let i : bool = false;
     // let i : bool = false;
-    if (lookup_symbol(varTable, $2->id)) {
+    if (search_var_in_currentScope($2->id)) {
         printf("ERROR: \"%s\" was already declared\n", $2->id);
         exit(1);
     }
@@ -36,11 +36,28 @@ void let__equal(Record **$$, Record *varTyped, Record *expression, ASSIGN a) {
     // } else if (a == CONSTANT) {
     //     printf("CONSTANT\n");
     // }
-    char *temp[] = {"const ", varTyped->code, " = ", expression->code, ";"};
-    *$$ = CreateRecord(cat(temp, 5));
+    switch (a)
+    {
+    case STAT:
+        char *temp[] = {"const ", varTyped->code, " = ", expression->code, ";"};
+        *$$ = CreateRecord(cat(temp, 5));
+        break;
+    case MUT:
+        char *temp1[] = {varTyped->code, " = ", expression->code, ";"};
+        *$$ = CreateRecord(cat(temp1, 4));
+        break;
+    case CONSTANT:
+        char *temp2[] = {"const ", varTyped->code, " = ", expression->code, ";"};
+        *$$ = CreateRecord(cat(temp2, 5));
+        break;
+    
+    default:
+        printf("ERROR: Assigment not defined");
+        exit(1);
+        break;
+    }
     check_let__equal(varTyped, expression);
-    insert_symbol(varTable, varTyped->id,
-                  alloc_type_var(varTyped->type, scopeStack->top->scopeName));
+    store_var_in_varTable(varTyped->id,varTyped->type);
 }
 
 // : setlocal commentstring=//\ %s

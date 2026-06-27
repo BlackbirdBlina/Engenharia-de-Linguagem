@@ -122,7 +122,10 @@ id                  {letter}({letter}|{number})*
 "enum"              { return ENUM;}
 "main"              { return MAIN;}
 "print"             { return PRINT;}
+"input"             { return INPUT;}
 "<<"                { return TOPRINT;}
+">>"                { return TOINPUT;}
+
 
 "true"|"false"                              {
                                                 yylval.sValue = strdup(yytext);
