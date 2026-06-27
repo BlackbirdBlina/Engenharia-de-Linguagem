@@ -1,0 +1,33 @@
+func main() -> s_int32 {
+    let mut x : s_int32 = 0;
+    let mut intervalo1Contador : s_int32 = 0;
+    let mut intervalo2Contador : s_int32 = 0;
+    let mut intervalo3Contador : s_int32 = 0;
+    let mut intervalo4Contador : s_int32 = 0;
+
+    print("Insira uma sequência de números para serem verificados, quando quiser parar digite -1: \n");
+    read(x);
+
+    while (x != -1) {
+        if (x >= 0 && x <= 25) {
+            intervalo1Contador = intervalo1Contador + 1;
+        }
+        if (x >= 26 && x <= 50) {
+             intervalo2Contador = intervalo2Contador + 1;
+        }
+        if (x >= 51 && x <= 75) {
+            intervalo3Contador = intervalo3Contador + 1;
+        }
+        if (x >= 76 && x <= 100) {
+             intervalo4Contador = intervalo4Contador + 1;
+        }
+        read(x);
+    }
+    
+    print("A quantidade de números digitados presentes em cada intervalo foi:\n");
+    print("Intervalo 1 [0, 25]: {}\n", intervalo1Contador);
+    print("Intervalo 2 [26, 50]: {}\n", intervalo2Contador);
+    print("Intervalo 3 [51, 75]: {}\n", intervalo3Contador);
+    print("Intervalo 4 [76, 100]: {}\n", intervalo4Contador);
+    
+}

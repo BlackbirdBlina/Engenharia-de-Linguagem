@@ -41,7 +41,7 @@ char* scope = NULL;
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
-%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print
+%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 AuxExp9 IDs List Print
 %type <rec> SubprogramCall MaybeParams ParamsToCall ModuleCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
 %type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type TypeCollection Compare Literal
 %type <rec> Decls Read
@@ -284,17 +284,29 @@ char* scope = NULL;
 				$$ = CreateTypedRecord(cat(temp, 2), $2->kind);}
 		   | AuxExp8{ $$ = $1; }
 		   ;
+
+	AuxExp8: '(' Expression ')' { // Regra para operadores unários
+				$$ = $2;
+		   }
+		   | '-' AuxExp8 {
+				char* temp[] = {"-", $2->code}; 
+				$$ = CreateTypedRecord(cat(temp, 2), $2->kind);
+		   }
+		   | '+' AuxExp8 {
+				char* temp[] = {"+", $2->code};
+				$$ = CreateTypedRecord(cat(temp, 2), $2->kind);}
+		   | AuxExp9 { 
+			$$ = $1; 
+		   }
 	
-	AuxExp8: IDs { $$ = $1; }
+	AuxExp9: IDs { $$ = $1; }
 		   | Literal {$$ = CreateRecord($1->code);}
-		   | '(' Expression ')' {$$=CreateRecord($2->code);}
 		   | Array {}
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
            | '&' ID '[' INTERVAL VALUE_INT ']' {}
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
-           | Print {}
            | ModuleCall {}
 		   | SubprogramCall {$$=CreateRecord($1->code);}
            | List {}
@@ -504,9 +516,10 @@ char* scope = NULL;
 						char* temp[] = {
 							"\nif", "(", $3->code, ")", " goto ", ifScope, ";\n", 
 							"\ngoto ", endIf, ";\n", 
-							ifScope, ":\n", $5->code
+							ifScope, ":\n", $5->code, "\n",
+							endIf, ": "
 						};
-						$$ = CreateRecord(cat(temp, 13));
+						$$ = CreateRecord(cat(temp, 16));
 					  }
 					  | IF '(' Expression ')' Scope ELSE Scope {
 						char* counter = ifCount();
