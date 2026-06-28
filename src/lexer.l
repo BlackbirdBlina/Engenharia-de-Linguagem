@@ -133,7 +133,7 @@ id                  {letter}({letter}|{number})*
                                             }
 
 {number}+(E[+-]?{number}+)?                 {
-                                                yylval.sValue = strdup(yytext);
+                                                yylval.iValue = atoll(strdup(yytext));
                                                 return VALUE_INT;
                                             }
 

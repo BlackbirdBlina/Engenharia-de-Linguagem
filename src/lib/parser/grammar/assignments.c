@@ -5,16 +5,14 @@
 #include "../../record.h"
 #include "../semantics.h"
 
-
-
-void check_let__equal(Record *$2, Record *$4) {
+void check_let__equal(Record* $2, Record* $4) {
     // let i : bool = false;
     // let i : bool = false;
     if (search_var_in_currentScope($2->id)) {
         printf("ERROR: \"%s\" was already declared\n", $2->id);
         exit(1);
     }
-    char *tempVarExpTypeCmp = checkTypeCompatibility($2->type, $4->type);
+    char* tempVarExpTypeCmp = checkTypeCompatibility($2->type, $4->type);
     // Se der certo, não retorna nada:
     if (tempVarExpTypeCmp != NULL) {
         if (strcmp(tempVarExpTypeCmp, $2->type) == 0) {
@@ -27,42 +25,34 @@ void check_let__equal(Record *$2, Record *$4) {
     exit(1);
 }
 
-void let__equal(Record **$$, Record *varTyped, Record *expression, ASSIGN a) {
-    // FUTURAMENTE MUDAR DE ACORDO COM O ASSIGN
-    // if (a == STAT) {
-    //     printf("STATIC\n");
-    // } else if (a == MUT) {
-    //     printf("MUTABLE\n");
-    // } else if (a == CONSTANT) {
-    //     printf("CONSTANT\n");
-    // }
-    switch (a)
-    {
+void let__equal_ArrayDecl(Record** $$, Record* varTyped, Record* expression, ASSIGN a) {
+}
+void let__equal(Record** $$, Record* varTyped, Record* expression, ASSIGN a) {
+    switch (a) {
     case STAT:
-        char *temp[] = {"const ", varTyped->code, " = ", expression->code, ";"};
+        char* temp[] = {"const ", varTyped->code, " = ", expression->code, ";"};
         *$$ = CreateRecord(cat(temp, 5));
         check_let__equal(varTyped, expression);
-        store_var_in_varTable(varTyped->id,varTyped->type,STAT);
+        store_var_in_varTable(varTyped->id, varTyped->type, STAT);
         break;
     case MUT:
-        char *temp1[] = {varTyped->code, " = ", expression->code, ";"};
+        char* temp1[] = {varTyped->code, " = ", expression->code, ";"};
         check_let__equal(varTyped, expression);
-        store_var_in_varTable(varTyped->id,varTyped->type,MUT);
+        store_var_in_varTable(varTyped->id, varTyped->type, MUT);
         *$$ = CreateRecord(cat(temp1, 4));
         break;
     case CONSTANT:
-        char *temp2[] = {"const ", varTyped->code, " = ", expression->code, ";"};
+        char* temp2[] = {"const ", varTyped->code, " = ", expression->code, ";"};
         *$$ = CreateRecord(cat(temp2, 5));
         check_let__equal(varTyped, expression);
-        store_var_in_varTable(varTyped->id,varTyped->type,CONSTANT);
+        store_var_in_varTable(varTyped->id, varTyped->type, CONSTANT);
         break;
-    
+
     default:
         printf("ERROR: Assigment not defined");
         exit(1);
         break;
     }
-
 }
 
 // : setlocal commentstring=//\ %s

@@ -1,10 +1,4 @@
-func funcaoLegal(i:s_int32)->s_int32{
-    return 2;
-}
-
 func main() -> s_int32 {
-    let i:s_int64=funcaoLegal(1);
-    let mut x:s_int64=funcaoLegal(1);
-    //i=2;
-    input>>i>>x;
+    // let b : u_int16 = 0;
+    let a : [u_int16; 2] = {0, 1, 2};
 }

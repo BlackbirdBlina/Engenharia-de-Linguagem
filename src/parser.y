@@ -12,6 +12,7 @@
 #include "lib/parser/grammar/subprogram.c"
 #include "lib/parser/grammar/assignments.c"
 #include "lib/parser/grammar/attribution.c"
+#include "lib/parser/grammar/array.c"
 
 int yylex(void);
 int yyerror(char *s);
@@ -21,26 +22,32 @@ extern FILE * yyin, * yyout;
 
 %}
 %union {
-	int    iValue; 	
+	long long iValue; 	
 	float  fValue; 	
 	char   cValue; 	
-	ID_t idValue;
+	ID_t   idValue;
 	VALUE_STRING_t sValue;
 	struct Record* rec;  
+	struct TypeRec* typeRec;  
+	struct ArrayType* arrayType;  
 	};
 
 %token CONST MUTABLE LET ';' OR AND NOT_EQUAL '=' '<' '>' LESS_EQUAL GREATER_EQUAL NOT '+' '^' '-' '*' '/' '%' '(' ')' '[' ']' '{' '}' '.' ',' ':' PROCEDURE FUNCTION PURE FOR LOOP CONTINUE BREAK IF IN ELSE RETURN '&'
 %token EQUAL INCREMENT DECREMENT PLUS_ATTRIBUTION MINUS_ATTRIBUTION MULTIPLY_ATTRIBUTION DIVIDE_ATTRIBUTION 
 %token PRINT TOPRINT
-%token <sValue> OK ERROR SOME NONE VALUE_BOOL VALUE_CHAR VALUE_STRING VALUE_FLOAT VALUE_INT
+%token <sValue> OK ERROR SOME NONE VALUE_BOOL VALUE_CHAR VALUE_STRING VALUE_FLOAT
+%token <iValue> VALUE_INT
 %token <idValue> ID
-%token TYPE_BOOL TYPE_S_INT64 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT64 TYPE_U_INT16 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
+%token <typeRec> TYPE_BOOL TYPE_S_INT64 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT64 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
+%token <typeRec> TYPE_U_INT16
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN INPUT TOINPUT
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
 %type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print Input
 %type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
-%type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Type Compare Literal
+%type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Compare Literal
+%type <typeRec> Type
+%type <arrayType> ArrayDecl ArrayDeclForm
 %type <rec> Decls ThingsToPrint ThingsToInput
 %start Program 
 
@@ -83,8 +90,21 @@ extern FILE * yyin, * yyout;
 	VarTypedList: VarTyped ',' VarTypedList                         { VarTypedList_Chain(&$$, $1, $3); }
 				| VarTyped                                          { VarTypedList_Single(&$$, $1); }
 				;
-	VarTyped: ID ':' Type                                           { char* temp[] = {$3->code, " ", $1};
-                                                                      $$ = CreateRecordVarTyped(cat(temp, 3), $3->type, $1); }
+	VarTyped: ID ':' Type                                           {
+        if ($3->size > 1) {
+        char size_str[32];
+        snprintf(size_str, sizeof(size_str), "[%d]", $3->size); 
+
+        char* temp[] = {$3->c_code, " ", $1, size_str};
+        char* c_code = cat(temp, 4);
+
+        $$ = CreateRecordVarTyped(c_code, $3->type, $1);
+    } else {
+        char* temp[] = {$3->c_code, " ", $1};
+        char* c_code = cat(temp, 3);
+        $$ = CreateRecordVarTyped(c_code, $3->type, $1);
+    }
+                                                                    }
 			;
 	Scope: '{' { PushScope(scopeStack,GenerateScope()); } '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
 		 | '{' { PushScope(scopeStack,GenerateScope()); } Statements '}' {
@@ -161,7 +181,7 @@ extern FILE * yyin, * yyout;
               | LET MUTABLE VarTyped '=' Expression ';'                                   { let__equal(&$$, $3, $5, MUT); }
               | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
-;
+              ;
 Attribution: ID '=' Expression ';'                                                        { attribute_id_expression(&$$, $1, $3); }
            | ID '.' ID '=' Expression ';'                                                 { /* TODO: Aqui n pode ser id.id.id.id não? */ }
            | ID PLUS_ATTRIBUTION Expression ';'                                           {  }
@@ -176,11 +196,9 @@ Attribution: ID '=' Expression ';'                                              
 			  | INCREMENT ID {}
 			  | DECREMENT ID {}
               ;
-	Array: ID ArrayAccesses{}
-		 ;
-	ArrayAccesses: '[' Expression ']' ArrayAccesses{}
-		         | '[' Expression ']' {}
-		         ;
+
+
+
 	Expression: Expression OR AuxExp1 {handle_operands_types(&$$,$1,$3,"||",bool_);}
                 | AuxExp1 {$$=CreateRecordType($1->code,$1->type);}
                 ;
@@ -225,6 +243,18 @@ Attribution: ID '=' Expression ';'                                              
 								$$=CreateRecordType(cat(temp,3),$2->type);
                                 }
 		   | Array {}
+		   | ArrayDecl {
+           for (int i = 0; i < $1->size-1; ++i) {
+               // TODO: Add a field to compare the ArrayType struct with a certain type,
+               // instead of the whole field with each other.
+               if (checkTypeCompatibility($1->expectedType, $1->contentTypes[i]) == NULL) {
+                   // TODO: Add the expected and the found type difference.
+                   printf("Not all of array declaration has the same type: %s %s %lld\n",
+                       $1->contentTypes[i], $1->expectedType, $1->size);
+               }
+           }
+           $$ = CreateRecordType($1->content, $1->expectedType);
+           }
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
@@ -233,6 +263,32 @@ Attribution: ID '=' Expression ';'                                              
 		   | SubprogramCall {$$=CreateRecordType($1->code,$1->type);}
            | List {}
 		   ;
+
+	Array: ID ArrayAccesses {}
+         ;
+
+	ArrayAccesses: '[' Expression ']' ArrayAccesses {}
+		         | '[' Expression ']' {}
+		         ;
+
+	ArrayDecl: '{' ArrayDeclForm '}' { c_code tmp[] = {"{ ", $2->content, " }"};
+                                       c_code content = cat(tmp, 3);
+                                       $$ = newArrayType(content, $2->contentTypes[0], $2->contentTypes, $2->size); }
+             ;
+	ArrayDeclForm: Expression ',' ArrayDeclForm {
+        c_code temp[] = {$1->code, ", ", $3->content};
+        c_code content = cat(temp, 3);
+        type contentTypes[$3->size];
+        contentTypes[0] = $1->type;
+        for (int i = 1; i < $3->size; ++i) {
+            contentTypes[i] = $3->contentTypes[i];
+        }
+        long long size = 1 + ($3->size);
+        $$ = newArrayType(content, $1->type, contentTypes, size);
+    }
+                 | Expression { type contentTypes[] = {$1->type};
+                                $$ = newArrayType($1->code, $1->type, contentTypes, 1); }
+                 ;
 
     IDs:
         ID '.' IDs {
@@ -389,50 +445,29 @@ Attribution: ID '=' Expression ';'                                              
 			;
 
 
-	Type: TYPE_BOOL { $$=CreateRecordType("bool",bool_);
-    }
-        | TYPE_S_INT16  {
-        $$=CreateRecordType("short int",s_int16);
-        }
-        | TYPE_S_INT32  {
-        $$=CreateRecordType("int",s_int32);
-        }
-        | TYPE_S_INT64 {
-        $$=CreateRecordType("long long int",s_int64);
-        }
-        | TYPE_S_SIZE  {}
-        | TYPE_U_INT16  {
-        $$=CreateRecordType("unsigned short int",u_int16);
-        }
-        | TYPE_U_INT32  {
-        $$=CreateRecordType("unsigned int",u_int32);
-        }
-        | TYPE_U_INT64  {
-        $$=CreateRecordType("unsigned long long int",u_int64);
-        }
-        | TYPE_U_SIZE  {}
-        | TYPE_FLOAT32 {
-        $$=CreateRecordType("float",float32);
-        }
-        | TYPE_FLOAT64  {
-        $$=CreateRecordType("double",float64);
-        }
-        | TYPE_CHAR  {
-        $$=CreateRecordType("char",char_);
-        }
-        | TYPE_STRING  {
-        $$=CreateRecordType("char*","string");
-        }
+	Type: TYPE_BOOL
+        | TYPE_S_INT16 // { $$=newTypeRec("short int",s_int16); }
+        | TYPE_S_INT32 // { $$=newTypeRec("int",s_int32); }
+        | TYPE_S_INT64 // { $$=newTypeRec("long long int",s_int64); }
+        | TYPE_S_SIZE  // {}
+        | TYPE_U_INT16  { $$=newTypeRec("unsigned short int", u_int16, 1); }
+        | TYPE_U_INT32 // { $$=newTypeRec("unsigned int",u_int32); }
+        | TYPE_U_INT64 // { $$=newTypeRec("unsigned long long int",u_int64); }
+        | TYPE_U_SIZE  // {}
+        | TYPE_FLOAT32 // { $$=newTypeRec("float",float32); }
+        | TYPE_FLOAT64 // { $$=newTypeRec("double",float64); }
+        | TYPE_CHAR    // { $$=newTypeRec("char",char_); }
+        | TYPE_STRING  // { $$=newTypeRec("char*","string"); }
+		| ID {}
+        | '[' Type ';' VALUE_INT ']' { $$ = newTypeRec($2->c_code, $2->type, $2->size + 1); }
+        | '&' '[' Type ']' {}
+        | '&' Type {}
+        | '('')' {}
         | TYPE_VEC '<' Type '>' {}
         | TYPE_SET '<' Type '>' {}
         | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' {}
         | TYPE_RESULT '<' Type ',' Type '>' {}
         | TYPE_OPTION '<' Type ',' Type '>' {}
-        | '[' Type ';' VALUE_INT ']' {}
-        | '&' '[' Type ']' {}
-        | '&' Type {}
-        | '('')' {}
-		| ID {}
         ;
 
 	Compare: '<' {
@@ -452,8 +487,16 @@ Attribution: ID '=' Expression ';'                                              
            }
 		   ;
 
-	Literal: VALUE_INT {
-    $$=CreateRecordType($1,literal_int);
+	Literal: VALUE_INT { 
+        long long size;
+        if ($1 < 2) {
+            size = 2;
+        } else {
+            size = $1;
+        }
+        char VALUE_INT_STRING[size];
+        snprintf(VALUE_INT_STRING, sizeof(VALUE_INT_STRING), "%lld", $1);
+        $$ = CreateRecordType(VALUE_INT_STRING, literal_int);
     }
            | VALUE_FLOAT {
            $$=CreateRecordType($1,literal_float);

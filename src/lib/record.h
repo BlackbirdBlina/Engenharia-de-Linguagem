@@ -5,31 +5,41 @@
 #include "parser/types.h"
 
 struct Record {
-    char *code;
-    char *type;
-    char *id;
+    c_code code;
+    type type;
+    char* id;
 
-    LinkedList *paramsTypes;
+    LinkedList* paramsTypes;
     type returnType;
 
-    char *IOPrefix;
-    char *IOSufix;
+    char* IOPrefix;
+    char* IOSufix;
 };
-
-// typedef struct {
-//     LinkedList *paramsTypes;
-//     type returnType;
-//
-// } functionRec;
-
 typedef struct Record Record;
 
-Record *CreateRecord(char *code);
-Record *CreateRecordType(char *code, char *typeID);
-Record *CreateRecordVarTyped(char *code, char *typeID, char *ID);
-Record *CreateRecordFunc(char *code, LinkedList *paramsTypes, char *returnType);
-Record *CreateRecordFuncParams(char *code, LinkedList *paramsTypes);
-Record *CreateRecordIO(char *code, char *prefix, char *sufix);
+struct TypeRec {
+    c_code c_code;
+    type type;
+    int size;
+};
+typedef struct TypeRec TypeRec;
+TypeRec* newTypeRec(c_code code, type typeID, int size);
 
-void FreeRecord(Record *);
+struct ArrayType {
+    c_code content;
+    type expectedType;
+    type* contentTypes;
+    long long size;
+};
+typedef struct ArrayType ArrayType;
+ArrayType* newArrayType(c_code code, type expectedType, type* types, long long size);
+
+Record* CreateRecord(char* code);
+Record* CreateRecordType(char* code, type typeID);
+Record* CreateRecordVarTyped(char* code, char* typeID, char* ID);
+Record* CreateRecordFunc(char* code, LinkedList* paramsTypes, char* returnType);
+Record* CreateRecordFuncParams(char* code, LinkedList* paramsTypes);
+Record* CreateRecordIO(char* code, char* prefix, char* sufix);
+
+void FreeRecord(Record*);
 #endif

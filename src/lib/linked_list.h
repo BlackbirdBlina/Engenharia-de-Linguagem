@@ -14,6 +14,6 @@ typedef struct LinkedList {
 
 NodeInfo* CreateNodeInfo(char*);
 LinkedList* CreateLinkedList();
-void PushElement(LinkedList*,NodeInfo*);
-NodeInfo* AcessAt(LinkedList*,int);
+void PushElement(LinkedList*, NodeInfo*);
+NodeInfo* AccessAt(LinkedList*, int);
 #endif
