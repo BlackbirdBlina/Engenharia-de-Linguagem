@@ -20,7 +20,7 @@ char * forCount();
 char * ifCount();
 char * elseCount();
 char * endIfCount();
-char *replace_str(const char *orig, const char *rep, const char *with);
+char * replace_str(const char *orig, const char *rep, const char *with);
 
 SymbolTable* createTable_Program = NULL;
 char* scope = NULL;
@@ -183,6 +183,10 @@ char* scope = NULL;
 		  ;
 
 	Assignment: LET VarTyped '=' Expression ';' { 
+				// if (!is_compatible($2->kind, $4->kind)) {
+				// 	printf(...)
+				// 	ret
+				// }
 				char* temp[] = {"const ", $2->code, " = ", $4->code, ";"};
 				$$ = CreateTypedRecord(cat(temp,5), $2->kind);
 
@@ -320,7 +324,7 @@ char* scope = NULL;
 			// printf("%s\n", key);
 			SymbolNode* node = lookup_symbol(createTable_Program, key);
 			$$ = CreateTypedRecord($1, node->type->kind);
-		}
+	   }
        ;
 		   
     List: '[' ']' {}
@@ -495,15 +499,47 @@ char* scope = NULL;
 						$$ = CreateRecord(cat(temp, 20)); // Realiza o registro da estrutura que deve ser apresentada em C
 					
 					}
-					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{
+					|  FOR '(' ID IN Expression INTERVAL Expression ')' {
+						char* temp[] = {$3, "#", scope};
+						char* key = cat(temp, 3);
+						insert_symbol(createTable_Program, $3, scope, alloc_type_info($5->kind));
 
-						char* tempf[] = {"FOR_", forCount()}; // Guarda em tempf a string FOR_ e um número que é um contador para facilitar os saltos do goto
-						char* forLabel = cat(tempf, 2); // Coloca na var forLabel a concatenação entre a label "FOR_" e o seu valor correspondente para diferenciar os "fors" do programa
-						char* temp[] = {"int", $3, " = ", $5->code, ";", forLabel, ":\nif (", $3, " != ", $7->code, ") {\n", $9->code, "if (", $3, " < ", $7->code, ") {\n", $3, "++;}", "\nelse {\n", $3, "--;\n} \ngoto ", forLabel,"}\n}\n"};
-						$$ = CreateRecord(cat(temp,24)); // Realiza o registro da estrutura acima que deve ser apresentada em C
+					} Scope {
+						
+						char* counter = forCount();
+						char* tempPrepar[] = {"FOR_PREP_", counter};
+						char* tempFor[] = {"FOR_", counter};
+						char* tempEndFor[] = {"END_FOR_", counter};
+						char* tempForScope[] = {"FOR_SCOPE_", counter};
+						char* prepFor = cat(tempPrepar, 2);
+						char* forLabel = cat(tempFor, 2); 
+						char* endFor = cat(tempEndFor, 2);
+						char* forScope = cat(tempForScope, 2);
+						printf("ok\n");
+						printf("%s", $5->code);
+						char* temp[] = {
+							"const int inicio_", forLabel, " = ", $5->code, ";\n",
+							"const int fim_", forLabel, " = ", $7->code, ";\n",
+							"int ", $3, " = ", "inicio_", forLabel, ";\n",
+							forLabel, ":\n",
+							"if (", $3, " < fim_", forLabel, ")", " goto ", forScope, ";\n", 
+							"goto ", endFor, ";\n",
+							forScope, ":\n",
+							$10->code, "\n",
+							$3, " = ", $3, " + 1;\n",
+							"goto ", forLabel, ";\n",
+							endFor, ":\n"
+						};
+						
+						$$ = CreateRecord(cat(temp, 42)); 
 
 					}
-					|  FOR '(' ID IN Expression ')' Scope{}
+					|  FOR '(' ID IN Expression ')' Scope{
+						printf("ok6\n");
+						char* temp[] = {
+							"\n", "whileLabel", ":\nif("};
+						$$ = CreateRecord(cat(temp, 3)); 
+					}
 					|  LOOP Scope {}
 					;
 					
@@ -741,12 +777,14 @@ char* cat(char** strings, int qnt){
 	}
 	return output;
 }
+
 char* forCount() {
 	static int forCounts=0;
 	char* text=malloc(sizeof(char)*12);
 	snprintf(text,sizeof(text),"%d",forCounts++);
 	return text;
 }
+
 char* whileCount() {
 	static int whileCounts = 0;
 	char* text=malloc(sizeof(char)*12);
