@@ -125,9 +125,9 @@ void InitializeTypeTable() {
                   alloc_type_type(char_, conversions_char, 0));
 
     const char* conversions_literal_int[] = {
-        u_int16, u_int32, u_int64, s_int16, s_int32, s_int64, float32, float64};
+        u_int16, u_int32, u_int64, s_int16, s_int32, s_int64, float32, float64, literal_float};
     insert_symbol(typeTable, literal_int,
-                  alloc_type_type(literal_int, conversions_literal_int, 8));
+                  alloc_type_type(literal_int, conversions_literal_int, 9));
 
     const char* conversions_literal_float[] = {float32, float64};
     insert_symbol(typeTable, literal_float,
@@ -144,25 +144,25 @@ type checkTypeCompat(char* type1, char* type2, compatDirection direction) {
     if (!type1 || !type2) {
         return NULL;
     }
-
+    
     // If they are the same
     if (strcmp(type1, type2) == 0) {
         return type1;
     }
-
+    
     // Find
     SymbolNode* type1Node = lookup_symbol(typeTable, type1);
     SymbolNode* type2Node = lookup_symbol(typeTable, type2);
     if (!type1Node || !type2Node) {
         return NULL;
     }
-
+    
     // If type1Node is an array
     type isArrayType1 = type1Node->info->isArrayOf;
     type isArrayType2 = type2Node->info->isArrayOf;
-
+    
     if (isArrayType1 != NULL && isArrayType2 != NULL) {
-
+        
         int arraySizeType1 = type1Node->info->size;
         int arraySizeType2 = type2Node->info->size;
 
@@ -173,12 +173,12 @@ type checkTypeCompat(char* type1, char* type2, compatDirection direction) {
             return NULL;
         }
     }
-
+    
     // TODO: When tried LEFT_RIGHT (or vice-versa) but did not find, show:
     // printf("Line %d: the type '%s' does not convert to '%s', did you mean '%s' -> '%s'",
     //        yylineno, type1, type2, type2, type1);
     // exit(1);
-
+    
     // Check the conversions list:
     if (direction == LEFT_RIGHT || direction == BOTH) {
         for (int i = 0; i < type1Node->info->conversionsQnt; i++) {
@@ -194,7 +194,6 @@ type checkTypeCompat(char* type1, char* type2, compatDirection direction) {
             }
         }
     }
-
     return NULL;
 }
 

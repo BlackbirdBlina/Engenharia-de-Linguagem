@@ -144,9 +144,12 @@ extern FILE * yyin, * yyout;
                                   $$->returnType=$2->type;
                                   }
 		  ;
-	Assignment: LET VarTyped '=' Expression ';'                                           {   let__equal(&$$, $2, $4, STAT); }
-              | CONST VarTyped '=' Expression ';'                                         { let__equal(&$$, $2, $4, CONSTANT); }
+	Assignment: LET VarTyped '=' Expression ';'                                           { let__equal(&$$, $2, $4, STAT); }
               | LET MUTABLE VarTyped '=' Expression ';'                                   { let__equal(&$$, $3, $5, MUT); }
+			  |	LET VarTyped '=' ArrayDecl';'                                             { let__equal_array(&$$, $2, $4, STAT); }
+              | LET MUTABLE VarTyped '=' ArrayDecl ';'                                    { let__equal_array(&$$, $3, $5, MUT); }
+              | LET MUTABLE VarTyped';'                                   				  { let__equal_without_exp(&$$, $3, MUT); }
+              | CONST VarTyped '=' Expression ';'                                         { let__equal(&$$, $2, $4, CONSTANT); }
               | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
               ;
@@ -210,8 +213,7 @@ Attribution: ID '=' Expression ';'                                              
 		   | '(' Expression ')' {char* temp[]={"(",$2->code,")"};
 								$$=CreateRecordType(cat(temp,3),$2->type);
                                 }
-		   | Array {}
-		   | ArrayDecl { $$ = CreateRecordType($1->content, $1->type); }
+		   | Array {$$=CreateRecord($1->code,$1->type);}
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
@@ -221,11 +223,24 @@ Attribution: ID '=' Expression ';'                                              
            | List {}
 		   ;
 
-	Array: ID ArrayAccesses {}
+	Array: ID ArrayAccesses {
+			type typeArrayAcess=getVarType($1);
+			for(int i=0;i<$2->sizeOfArrayAcess;i++){
+				type arrayStore=lookup_symbol(typeTable,typeArrayAcess)->info->isArray;
+				if(arrayStore !=NULL){
+					typeArrayAcess=arrayStore;
+				}
+			}
+			char temp[]={$1,$2->code};
+			$$=CreateRecordType(cat(temp,2),typeArrayAcess);
+	}
          ;
 
-	ArrayAccesses: '[' Expression ']' ArrayAccesses { /*TODO: !!!!!!!!!!*/}
-		         | '[' Expression ']' {}
+	ArrayAccesses: '[' Expression ']' ArrayAccesses {char* temp[]={"[",$2->code,"]",$4->code};
+													$$ = CreateRecordArrayAcess(cat(temp,3),$4->sizeOfArrayAcess+1);}
+		         | '[' Expression ']' {
+										char* temp[]={"[",$2->code,"]"};
+										$$ = CreateRecordArrayAcess(cat(temp,3),1);}
 		         ;
 
 	ArrayDecl: '{' ArrayDeclForm '}' { arrayDeclaration(&$$, $2); }
@@ -389,19 +404,19 @@ Attribution: ID '=' Expression ';'                                              
 			;
 
 
-	Type: TYPE_BOOL    // { $$=newTypeRec("short int",s_int16); }
-        | TYPE_S_INT16 // { $$=newTypeRec("short int",s_int16); }
+	Type: TYPE_BOOL     { $$=newTypeRec("short int",s_int16,1); }
+        | TYPE_S_INT16  { $$=newTypeRec("short int",s_int16,1); }
         | TYPE_S_INT32  { $$=newTypeRec("int",s_int32, 1); }
-        | TYPE_S_INT64 // { $$=newTypeRec("long long int",s_int64); }
+        | TYPE_S_INT64  { $$=newTypeRec("long long int",s_int64,1); }
         | TYPE_S_SIZE  // {}
         | TYPE_U_INT16  { $$ = newTypeRec("unsigned short int", u_int16, 1); }
         | TYPE_U_INT32  { $$ = newTypeRec("unsigned int", u_int32, 1); }
-        | TYPE_U_INT64 // { $$=newTypeRec("unsigned long long int",u_int64); }
-        | TYPE_U_SIZE  // {}
-        | TYPE_FLOAT32 // { $$=newTypeRec("float",float32); }
-        | TYPE_FLOAT64 // { $$=newTypeRec("double",float64); }
-        | TYPE_CHAR    // { $$=newTypeRec("char",char_); }
-        | TYPE_STRING  // { $$=newTypeRec("char*","string"); }
+        | TYPE_U_INT64  { $$=newTypeRec("unsigned long long int",u_int64,1); }
+        | TYPE_U_SIZE   {}
+        | TYPE_FLOAT32  { $$=newTypeRec("float",float32,1); }
+        | TYPE_FLOAT64  { $$=newTypeRec("double",float64,1); }
+        | TYPE_CHAR     { $$=newTypeRec("char",char_,1); }
+        | TYPE_STRING   { $$=newTypeRec("char*","string",1); }
 		| ID {}
         | '[' Type ';' VALUE_INT ']' {
                                         // Max algorismos for long long
@@ -414,6 +429,7 @@ Attribution: ID '=' Expression ';'                                              
                                         if (lookup_symbol(typeTable, type) == NULL) {
                                             insert_symbol(typeTable, type, allocTypeArray(type, $2->type, $4));
                                         }
+
 
                                         $$ = newTypeRec($2->c_code, type, $4);
         }

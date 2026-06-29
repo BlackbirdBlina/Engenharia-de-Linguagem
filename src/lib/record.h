@@ -14,6 +14,8 @@ struct Record {
 
     char* IOPrefix;
     char* IOSufix;
+
+    int sizeOfArrayAcess;
 };
 typedef struct Record Record;
 
@@ -41,6 +43,7 @@ Record* CreateRecordVarTyped(char* code, char* typeID, char* ID);
 Record* CreateRecordFunc(char* code, LinkedList* paramsTypes, char* returnType);
 Record* CreateRecordFuncParams(char* code, LinkedList* paramsTypes);
 Record* CreateRecordIO(char* code, char* prefix, char* sufix);
+Record* CreateRecordArrayAcess(char* code,int sizeOfArrayAcess);
 
 void FreeRecord(Record*);
 #endif
