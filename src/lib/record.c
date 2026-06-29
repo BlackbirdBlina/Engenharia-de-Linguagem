@@ -62,6 +62,13 @@ Record* CreateRecordIO(char* code, char* prefix, char* sufix) {
     record->returnType = NULL;
     return record;
 }
+Record* CreateRecordArrayAcess(char* code,int sizeOfArrayAcess){
+    Record* record = (Record*)malloc(sizeof(Record));
+    record->code = strdup(code);
+    record->sizeOfArrayAcess=sizeOfArrayAcess;
+    record->returnType = NULL;
+    return record;
+}
 void FreeRecord(Record* record) {
     if (record) {
         if (record->code != NULL)

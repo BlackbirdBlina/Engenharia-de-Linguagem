@@ -16,8 +16,11 @@ void arrayDeclaration(ArrayType** $$, ArrayType* ArrayDeclForm_) {
     c_code content = cat(tmp, 3);
 
     type arrayDecl_[] = {"[", ArrayDeclForm_->type, ";", lltochar(ArrayDeclForm_->size), "]"};
-
-    *$$ = newArrayType(content, cat(arrayDecl_, 5), ArrayDeclForm_->size);
+    type type= cat(arrayDecl_, 5);
+    if (lookup_symbol(typeTable, type) == NULL) {
+        insert_symbol(typeTable, type, allocTypeArray(type, ArrayDeclForm_->type, ArrayDeclForm_->size));
+    }
+    *$$ = newArrayType(content, type, ArrayDeclForm_->size);
 }
 
 void arrayDeclarationForm(ArrayType** $$, Record* Expression, ArrayType* ArrayDeclForm_) {

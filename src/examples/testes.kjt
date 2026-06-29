@@ -1,4 +1,4 @@
 func main() -> s_int32 {
-    // let b : u_int16 = 0;
-    let a : [u_int16; 2] = {0, 1, 2};
+    //let b:[[bool;2];2] = { {1,2} , {3,4} };
+    let b: [s_int32;2]={1,2};
 }
