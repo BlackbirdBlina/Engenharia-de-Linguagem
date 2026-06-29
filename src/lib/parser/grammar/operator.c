@@ -2,23 +2,24 @@
 #include <stdlib.h>
 
 #include "../../record.h"
+#include "../parser.h"
 #include "../semantics.h"
 
-void handle_operands_types(Record **$$, Record *$1, Record *$3, char *operator,
-                           char *type_operand_expected) {
-    char *temp[] = {$1->code, operator, $3->code};
+void handleOperandTypes(Record** $$, Record* expression1, Record* expression2, char* operator, char* expectedOperandType) {
+    char* temp[] = {expression1->code, operator, expression2->code};
 
-    if (!checkTypeCompatibility(type_operand_expected, $1->type) ||
-        !checkTypeCompatibility(type_operand_expected, $3->type)) {
-        printf("ERROR: incompatible types with operator'%s'\n", operator);
+    if (!checkTypeCompat(expectedOperandType, expression1->type, BOTH) || !checkTypeCompat(expectedOperandType, expression2->type, BOTH)) {
+        printf("ERROR Line %d: incompatible types with operator'%s'\n",
+               yylineno, operator);
         exit(0);
     }
-    char *temp2 = checkTypeCompatibility($1->type, $3->type);
+
+    char* temp2 = checkTypeCompat(expression1->type, expression2->type, BOTH);
     if (temp2) {
         *$$ = CreateRecordType(cat(temp, 3), temp2);
     } else {
-        printf("ERROR: %s and %s are not interchangeable types\n", $1->type,
-               $3->type);
+        printf("ERROR Line %d: %s and %s are not interchangeable types\n",
+               yylineno, expression1->type, expression2->type);
         exit(1);
     }
 }

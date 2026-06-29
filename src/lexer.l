@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lib/parser/semantics.h"
+#include "lib/parser/parser.h"
 #include "y.tab.h"
 
 int column_counter = 0;

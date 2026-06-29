@@ -1,5 +1,5 @@
-func funcLegal(i : s_int32) -> s_int32 {
-    return 7;
+func funcLegal(i : u_int16) -> u_int16 {
+    return 7.7;
 }
 // pure func pureFuncLegal(i : s_int32) -> s_int32 {
 //     return 2;
@@ -7,10 +7,10 @@ func funcLegal(i : s_int32) -> s_int32 {
 // proced procedLegal(i : s_int32) -> s_int32 {
 //     return;
 // }
-
-
+//
+//
 func main() -> s_int32 {
-    let i : s_int32 = funcLegal(1);
+    let i : u_int16 = funcLegal(2);
     // let mut x : s_int64 = funcLegal(1);
     // input >> i >> x;
     print << i;

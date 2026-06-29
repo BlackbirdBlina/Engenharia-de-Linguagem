@@ -2,21 +2,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "lib/parser/parser.h"
 #include "lib/record.h"
 #include "lib/linked_list.h"
 #include "lib/symbol_table.h"
 #include "lib/scope_stack.h"
 #include "lib/parser/semantics.h"
 #include "lib/parser/grammar/IO.c"
+#include "lib/parser/grammar/array.c"
 #include "lib/parser/grammar/operator.c"
+#include "lib/parser/grammar/vartyped.c"
 #include "lib/parser/grammar/subprogram.c"
 #include "lib/parser/grammar/assignments.c"
 #include "lib/parser/grammar/attribution.c"
-#include "lib/parser/grammar/array.c"
 
 int yylex(void);
 int yyerror(char *s);
-extern int yylineno;
 extern char * yytext;
 extern FILE * yyin, * yyout;
 
@@ -47,6 +48,10 @@ extern FILE * yyin, * yyout;
 %type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
 %type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Compare Literal
 %type <typeRec> Type
+// EXAMPLE:
+//     ArrayDecl '{' ArrayDeclForm '}'
+//     ArrayDecl = { 0, 1}
+//     ArrayDeclForm = 0, 1
 %type <arrayType> ArrayDecl ArrayDeclForm
 %type <rec> Decls ThingsToPrint ThingsToInput
 %start Program 
@@ -74,6 +79,7 @@ extern FILE * yyin, * yyout;
 				$$=CreateRecord($1->code);
 		 }
 		 ;
+    
 	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope         { FUNCTION_Decl(&$$, $2, $4, $7, $8); }
 			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope    { PURE_FUNCTION_Decl(&$$, $3, $5, $8, $9); }
 			  | PROCEDURE ID '(' Params ')' Scope                   { PROCEDURE_Decl(&$$, $2, $4, $6); }
@@ -90,21 +96,7 @@ extern FILE * yyin, * yyout;
 	VarTypedList: VarTyped ',' VarTypedList                         { VarTypedList_Chain(&$$, $1, $3); }
 				| VarTyped                                          { VarTypedList_Single(&$$, $1); }
 				;
-	VarTyped: ID ':' Type                                           {
-        if ($3->size > 1) {
-        char size_str[32];
-        snprintf(size_str, sizeof(size_str), "[%d]", $3->size); 
-
-        char* temp[] = {$3->c_code, " ", $1, size_str};
-        char* c_code = cat(temp, 4);
-
-        $$ = CreateRecordVarTyped(c_code, $3->type, $1);
-    } else {
-        char* temp[] = {$3->c_code, " ", $1};
-        char* c_code = cat(temp, 3);
-        $$ = CreateRecordVarTyped(c_code, $3->type, $1);
-    }
-                                                                    }
+	VarTyped: ID ':' Type                                           { VarTyped_ID_Type(&$$, $1, $3); }
 			;
 	Scope: '{' { PushScope(scopeStack,GenerateScope()); } '}' { $$=CreateRecord("{}"); PopScope(scopeStack); }
 		 | '{' { PushScope(scopeStack,GenerateScope()); } Statements '}' {
@@ -115,60 +107,36 @@ extern FILE * yyin, * yyout;
                                 }
 		 ;
 	Statements: Statement Statements { char* temp[]={$1->code,"\n",$2->code};
-									  $$=CreateRecord(cat(temp,3));
-                                      if($1->returnType && $2->returnType){
-                                        char* temp=checkTypeCompatibility($1->returnType,$2->returnType);
-                                        if(temp){
-                                           $$->returnType=temp; 
-                                        }
-                                        else{
-                                            printf("ERROR: Returns with incompatible types;");
-                                            exit(1);
-                                        }
-                                      }
-                                      else if($1->returnType){
-                
-                                        $$->returnType=$1->returnType;
-                                      }
-                                      else if($2->returnType){
-                                        $$->returnType=$2->returnType;
-                                      }
-                                      }
+									   $$ = CreateRecord(cat(temp, 3));
+                                       if($1->returnType && $2->returnType){
+                                          char* temp = checkTypeCompat($1->returnType, $2->returnType, BOTH);
+                                          if(temp){
+                                              $$->returnType = temp; 
+                                          }
+                                          else{
+                                              printf("ERROR: Returns with incompatible types;");
+                                              exit(1);
+                                          }
+                                       }
+                                       else if($1->returnType){ $$->returnType=$1->returnType; }
+                                       else if($2->returnType){ $$->returnType=$2->returnType; }
+                                     }
 			  | Statement { $$=CreateRecord($1->code); $$->returnType=$1->returnType;}
 			  ;
-	Statement: Assignment {
-    $$=CreateRecord($1->code);
-    }
-             | Attribution {
-             $$=CreateRecord($1->code);
-             }
+	Statement: Assignment { $$=CreateRecord($1->code); }
+             | Attribution { $$=CreateRecord($1->code); }
              | StructDecl {}
 			 | SubprogramCall ';'{char* temp[]={$1->code,";"};
 								$$=CreateRecord(cat(temp,2));
                                 }
-			 | Return {
-             $$=CreateRecord($1->code); $$->returnType=$1->returnType;}
-			 | Scope {
-             $$=CreateRecord($1->code); $$->returnType=$1->returnType;
-             }
-			 | RepeatStructures {
-             $$=CreateRecord($1->code); 
-             }
-			 | DecisionStructures {
-             $$=CreateRecord($1->code); $$->returnType=$1->returnType;
-             }
-			 | CONTINUE ';' {
-             $$=CreateRecord("break");
-             }
-			 | BREAK ';' {
-             $$=CreateRecord("continue");
-             }
-             | Print ';' {
-             $$=CreateRecord($1->code);
-             }
-             |Input{
-             $$=CreateRecord($1->code);
-             }
+			 | Return { $$=CreateRecord($1->code); $$->returnType=$1->returnType;}
+			 | Scope { $$=CreateRecord($1->code); $$->returnType=$1->returnType; }
+			 | RepeatStructures { $$=CreateRecord($1->code); }
+			 | DecisionStructures { $$=CreateRecord($1->code); $$->returnType=$1->returnType; }
+			 | CONTINUE ';' { $$=CreateRecord("break"); }
+			 | BREAK ';' { $$=CreateRecord("continue"); }
+             | Print ';' { $$=CreateRecord($1->code); }
+             |Input{ $$=CreateRecord($1->code); }
 			 ;
 	Return: RETURN ';' { $$=CreateRecord("return;"); $$->returnType=void_; }
 	      | RETURN Expression ';' {char* temp[]={"return ",$2->code,";"};
@@ -176,7 +144,7 @@ extern FILE * yyin, * yyout;
                                   $$->returnType=$2->type;
                                   }
 		  ;
-	Assignment: LET VarTyped '=' Expression ';'                                           { let__equal(&$$, $2, $4, STAT); }
+	Assignment: LET VarTyped '=' Expression ';'                                           {   let__equal(&$$, $2, $4, STAT); }
               | CONST VarTyped '=' Expression ';'                                         { let__equal(&$$, $2, $4, CONSTANT); }
               | LET MUTABLE VarTyped '=' Expression ';'                                   { let__equal(&$$, $3, $5, MUT); }
               | LET STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
@@ -199,34 +167,34 @@ Attribution: ID '=' Expression ';'                                              
 
 
 
-	Expression: Expression OR AuxExp1 {handle_operands_types(&$$,$1,$3,"||",bool_);}
+	Expression: Expression OR AuxExp1 {handleOperandTypes(&$$,$1,$3,"||",bool_);}
                 | AuxExp1 {$$=CreateRecordType($1->code,$1->type);}
                 ;
 
-	AuxExp1: AuxExp1 AND AuxExp2 {handle_operands_types(&$$,$1,$3,"&&",bool_);}
+	AuxExp1: AuxExp1 AND AuxExp2 {handleOperandTypes(&$$,$1,$3,"&&",bool_);}
 		   | AuxExp2 {$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{handle_operands_types(&$$,$1,$3,"!=",literal_int);}
+	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{handleOperandTypes(&$$,$1,$3,"!=",literal_int);}
 	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp3: AuxExp3 Compare AuxExp4{handle_operands_types(&$$,$1,$3,$2->code,literal_int);$$->type=bool_;}
+	AuxExp3: AuxExp3 Compare AuxExp4{handleOperandTypes(&$$,$1,$3,$2->code,literal_int);$$->type=bool_;}
 		   | AuxExp4{$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
-	AuxExp4: AuxExp4 '+' AuxExp5 {handle_operands_types(&$$,$1,$3,"+",literal_int);}
-    | AuxExp4 '-' AuxExp5{handle_operands_types(&$$,$1,$3,"-",literal_int);}
+	AuxExp4: AuxExp4 '+' AuxExp5 {handleOperandTypes(&$$,$1,$3,"+",literal_int);}
+    | AuxExp4 '-' AuxExp5{handleOperandTypes(&$$,$1,$3,"-",literal_int);}
     | AuxExp5{$$=CreateRecordType($1->code,$1->type);}
     ;
 	
-	AuxExp5: AuxExp5 '*' AuxExp6{handle_operands_types(&$$,$1,$3,"*",literal_int);}
-	| AuxExp5 '/' AuxExp6{handle_operands_types(&$$,$1,$3,"/",literal_int);}
-	| AuxExp5 '%' AuxExp6{handle_operands_types(&$$,$1,$3,"\%",literal_int);}
+	AuxExp5: AuxExp5 '*' AuxExp6{handleOperandTypes(&$$,$1,$3,"*",literal_int);}
+	| AuxExp5 '/' AuxExp6{handleOperandTypes(&$$,$1,$3,"/",literal_int);}
+	| AuxExp5 '%' AuxExp6{handleOperandTypes(&$$,$1,$3,"\%",literal_int);}
     | AuxExp6{$$=CreateRecordType($1->code,$1->type);}
     ;
 
-	AuxExp6: AuxExp7 '^' AuxExp6{handle_operands_types(&$$,$1,$3,"^",literal_int);}
+	AuxExp6: AuxExp7 '^' AuxExp6{handleOperandTypes(&$$,$1,$3,"^",literal_int);}
     | AuxExp7{$$=CreateRecordType($1->code,$1->type);}
     ;
 
@@ -243,18 +211,7 @@ Attribution: ID '=' Expression ';'                                              
 								$$=CreateRecordType(cat(temp,3),$2->type);
                                 }
 		   | Array {}
-		   | ArrayDecl {
-           for (int i = 0; i < $1->size-1; ++i) {
-               // TODO: Add a field to compare the ArrayType struct with a certain type,
-               // instead of the whole field with each other.
-               if (checkTypeCompatibility($1->expectedType, $1->contentTypes[i]) == NULL) {
-                   // TODO: Add the expected and the found type difference.
-                   printf("Not all of array declaration has the same type: %s %s %lld\n",
-                       $1->contentTypes[i], $1->expectedType, $1->size);
-               }
-           }
-           $$ = CreateRecordType($1->content, $1->expectedType);
-           }
+		   | ArrayDecl { $$ = CreateRecordType($1->content, $1->type); }
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
@@ -267,27 +224,14 @@ Attribution: ID '=' Expression ';'                                              
 	Array: ID ArrayAccesses {}
          ;
 
-	ArrayAccesses: '[' Expression ']' ArrayAccesses {}
+	ArrayAccesses: '[' Expression ']' ArrayAccesses { /*TODO: !!!!!!!!!!*/}
 		         | '[' Expression ']' {}
 		         ;
 
-	ArrayDecl: '{' ArrayDeclForm '}' { c_code tmp[] = {"{ ", $2->content, " }"};
-                                       c_code content = cat(tmp, 3);
-                                       $$ = newArrayType(content, $2->contentTypes[0], $2->contentTypes, $2->size); }
+	ArrayDecl: '{' ArrayDeclForm '}' { arrayDeclaration(&$$, $2); }
              ;
-	ArrayDeclForm: Expression ',' ArrayDeclForm {
-        c_code temp[] = {$1->code, ", ", $3->content};
-        c_code content = cat(temp, 3);
-        type contentTypes[$3->size];
-        contentTypes[0] = $1->type;
-        for (int i = 1; i < $3->size; ++i) {
-            contentTypes[i] = $3->contentTypes[i];
-        }
-        long long size = 1 + ($3->size);
-        $$ = newArrayType(content, $1->type, contentTypes, size);
-    }
-                 | Expression { type contentTypes[] = {$1->type};
-                                $$ = newArrayType($1->code, $1->type, contentTypes, 1); }
+	ArrayDeclForm: Expression ',' ArrayDeclForm { arrayDeclarationForm(&$$, $1, $3); }
+                 | Expression { $$ = newArrayType($1->code, $1->type, 1); }
                  ;
 
     IDs:
@@ -445,13 +389,13 @@ Attribution: ID '=' Expression ';'                                              
 			;
 
 
-	Type: TYPE_BOOL
+	Type: TYPE_BOOL    // { $$=newTypeRec("short int",s_int16); }
         | TYPE_S_INT16 // { $$=newTypeRec("short int",s_int16); }
-        | TYPE_S_INT32 // { $$=newTypeRec("int",s_int32); }
+        | TYPE_S_INT32  { $$=newTypeRec("int",s_int32, 1); }
         | TYPE_S_INT64 // { $$=newTypeRec("long long int",s_int64); }
         | TYPE_S_SIZE  // {}
-        | TYPE_U_INT16  { $$=newTypeRec("unsigned short int", u_int16, 1); }
-        | TYPE_U_INT32 // { $$=newTypeRec("unsigned int",u_int32); }
+        | TYPE_U_INT16  { $$ = newTypeRec("unsigned short int", u_int16, 1); }
+        | TYPE_U_INT32  { $$ = newTypeRec("unsigned int", u_int32, 1); }
         | TYPE_U_INT64 // { $$=newTypeRec("unsigned long long int",u_int64); }
         | TYPE_U_SIZE  // {}
         | TYPE_FLOAT32 // { $$=newTypeRec("float",float32); }
@@ -459,7 +403,20 @@ Attribution: ID '=' Expression ';'                                              
         | TYPE_CHAR    // { $$=newTypeRec("char",char_); }
         | TYPE_STRING  // { $$=newTypeRec("char*","string"); }
 		| ID {}
-        | '[' Type ';' VALUE_INT ']' { $$ = newTypeRec($2->c_code, $2->type, $2->size + 1); }
+        | '[' Type ';' VALUE_INT ']' {
+                                        // Max algorismos for long long
+                                        char value_int[20];
+                                        sprintf(value_int, "%lld", $4);
+
+                                        type temp[] = {"[", $2->type, ";", value_int, "]"};
+                                        type type = cat(temp, 5);
+                                        
+                                        if (lookup_symbol(typeTable, type) == NULL) {
+                                            insert_symbol(typeTable, type, allocTypeArray(type, $2->type, $4));
+                                        }
+
+                                        $$ = newTypeRec($2->c_code, type, $4);
+        }
         | '&' '[' Type ']' {}
         | '&' Type {}
         | '('')' {}
@@ -487,7 +444,7 @@ Attribution: ID '=' Expression ';'                                              
            }
 		   ;
 
-	Literal: VALUE_INT { 
+	Literal: VALUE_INT {
         long long size;
         if ($1 < 2) {
             size = 2;
@@ -496,20 +453,14 @@ Attribution: ID '=' Expression ';'                                              
         }
         char VALUE_INT_STRING[size];
         snprintf(VALUE_INT_STRING, sizeof(VALUE_INT_STRING), "%lld", $1);
+
+        // TODO: Maybe filter this to their respective types instead of just literal_int conversions.
         $$ = CreateRecordType(VALUE_INT_STRING, literal_int);
     }
-           | VALUE_FLOAT {
-           $$=CreateRecordType($1,literal_float);
-           }
-           | VALUE_BOOL {
-           $$=CreateRecordType($1,bool_);
-           }
-           | VALUE_CHAR {
-           $$=CreateRecordType($1,char_);
-           }
-           | VALUE_STRING {
-           $$=CreateRecord($1);
-           }
+           | VALUE_FLOAT { $$=CreateRecordType($1,literal_float); }
+           | VALUE_BOOL { $$=CreateRecordType($1,bool_); }
+           | VALUE_CHAR { $$=CreateRecordType($1,char_); }
+           | VALUE_STRING { $$=CreateRecord($1); }
            | OK '(' Expression ')' {}
            | ERROR '(' Expression ')' {}
            | SOME '(' Expression ')' {}

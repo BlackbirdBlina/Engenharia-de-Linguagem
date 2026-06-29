@@ -25,14 +25,15 @@ struct TypeRec {
 typedef struct TypeRec TypeRec;
 TypeRec* newTypeRec(c_code code, type typeID, int size);
 
+// let a : [u_int16; 2] = {0, 1};
+// ...int a[2] = {0, 1}
 struct ArrayType {
-    c_code content;
-    type expectedType;
-    type* contentTypes;
-    long long size;
+    c_code content; // { 0, 1, ... }
+    type type;      // u_int16
+    long long size; // 2
 };
 typedef struct ArrayType ArrayType;
-ArrayType* newArrayType(c_code code, type expectedType, type* types, long long size);
+ArrayType* newArrayType(c_code code, type type, long long size);
 
 Record* CreateRecord(char* code);
 Record* CreateRecordType(char* code, type typeID);

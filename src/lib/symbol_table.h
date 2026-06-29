@@ -24,42 +24,49 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-typedef enum { STAT, MUT, CONSTANT } ASSIGN;
+typedef enum {
+    STAT,
+    MUT,
+    CONSTANT
+} ASSIGN;
 
 typedef struct SymbolInfo {
-
     type type;
-    char *scope;
+    char* scope;
+
     ASSIGN assign;
 
-    const char **conversions;
+    const char** conversions;
     int conversionsQnt;
 
-    LinkedList *typeParams;
+    LinkedList* typeParams;
+
+    type isArrayOf;
+    long long size;
 } SymbolInfo;
 
 typedef struct SymbolNode {
-    char *key;
-    char *name;
-    SymbolInfo *info;
-    struct SymbolNode *next;
+    char* key;
+    char* name;
+    SymbolInfo* info;
+    struct SymbolNode* next;
 } SymbolNode;
 
 typedef struct {
-    SymbolNode *buckets[TABLE_SIZE];
+    SymbolNode* buckets[TABLE_SIZE];
 } SymbolTable;
 
 extern int global_counter;
 
-SymbolInfo *alloc_type_var(char *type, char *scope, ASSIGN assign);
-SymbolInfo *alloc_type_type(char *type, const char **conversions,
-                            int conversionsQnt);
-SymbolInfo *alloc_type_func(char *returnType, LinkedList *paramsList);
-void free_type_info(SymbolInfo *info);
-SymbolTable *create_table();
-unsigned int hash(const char *key);
-void insert_symbol(SymbolTable *table, const char *id, SymbolInfo *info);
-SymbolNode *lookup_symbol(SymbolTable *table, const char *unique_key);
-void free_table(SymbolTable *table);
+SymbolInfo* alloc_type_var(char* type, char* scope, ASSIGN assign);
+SymbolInfo* alloc_type_type(char* type, const char** conversions, int conversionsQnt);
+SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size);
+SymbolInfo* alloc_type_func(char* returnType, LinkedList* paramsList);
+void free_type_info(SymbolInfo* info);
+SymbolTable* create_table();
+unsigned int hash(const char* key);
+void insert_symbol(SymbolTable* table, const char* id, SymbolInfo* info);
+SymbolNode* lookup_symbol(SymbolTable* table, const char* unique_key);
+void free_table(SymbolTable* table);
 
 #endif

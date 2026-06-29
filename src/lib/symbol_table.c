@@ -3,36 +3,50 @@
 #include <stdlib.h>
 #include <string.h>
 
-SymbolInfo *alloc_type_var(char *type, char *scope,ASSIGN assign) {
-    SymbolInfo *symbolInfo = (SymbolInfo *)malloc(sizeof(SymbolInfo));
+SymbolInfo* alloc_type_var(type t, char* scope, ASSIGN assign) {
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
     if (!symbolInfo) {
         return NULL;
     }
-    symbolInfo->type = type;
+    symbolInfo->type = t;
     symbolInfo->scope = scope;
-    symbolInfo->assign=assign;
+    symbolInfo->assign = assign;
     return symbolInfo;
 }
-SymbolInfo *alloc_type_type(char *type, const char **conversions,int conversionsQnt) {
-    SymbolInfo *symbolInfo = (SymbolInfo *)malloc(sizeof(SymbolInfo));
+SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size) {
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
     if (!symbolInfo) {
         return NULL;
     }
-    symbolInfo->type = type;
+    symbolInfo->type = t;
+    symbolInfo->isArrayOf = isArrayOf;
+    symbolInfo->size = size;
+    symbolInfo->conversions = NULL;
+    symbolInfo->conversionsQnt = 0;
+    return symbolInfo;
+}
+SymbolInfo* alloc_type_type(type t, const char** conversions, int conversionsQnt) {
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
+    if (!symbolInfo) {
+        return NULL;
+    }
+    symbolInfo->type = t;
     symbolInfo->conversionsQnt = conversionsQnt;
     if (conversionsQnt > 0) {
         symbolInfo->conversions =
-            (const char **)malloc(conversionsQnt * sizeof(const char *));
+            (const char**)malloc(conversionsQnt * sizeof(const char*));
         for (int i = 0; i < conversionsQnt; i++) {
             symbolInfo->conversions[i] = conversions[i];
         }
     } else {
         symbolInfo->conversions = NULL;
     }
+    symbolInfo->isArrayOf = NULL;
+    symbolInfo->size = 0;
     return symbolInfo;
 }
-SymbolInfo *alloc_type_func(char *returnType, LinkedList* paramsList){
-    SymbolInfo *symbolInfo = (SymbolInfo *)malloc(sizeof(SymbolInfo));
+SymbolInfo* alloc_type_func(type returnType, LinkedList* paramsList) {
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
     if (!symbolInfo) {
         return NULL;
     }
@@ -40,7 +54,7 @@ SymbolInfo *alloc_type_func(char *returnType, LinkedList* paramsList){
     symbolInfo->typeParams = paramsList;
     return symbolInfo;
 }
-unsigned int hash(const char *key) {
+unsigned int hash(const char* key) {
     unsigned long hash = 5381;
     int character;
     while ((character = (unsigned char)*key++)) {
@@ -49,8 +63,8 @@ unsigned int hash(const char *key) {
     return hash % TABLE_SIZE;
 }
 
-SymbolTable *create_table() {
-    SymbolTable *table = (SymbolTable *)malloc(sizeof(SymbolTable));
+SymbolTable* create_table() {
+    SymbolTable* table = (SymbolTable*)malloc(sizeof(SymbolTable));
     if (!table)
         return NULL;
     for (int i = 0; i < TABLE_SIZE; i++) {
@@ -59,17 +73,17 @@ SymbolTable *create_table() {
     return table;
 }
 
-void insert_symbol(SymbolTable *table, const char *id, SymbolInfo *info) {
+void insert_symbol(SymbolTable* table, const char* id, SymbolInfo* info) {
     if (!table || !id) {
         printf(
             "Não foi possível realizar a inserção, pois houve um problema na "
             "tabela, no id ou no escopo.\n");
         return;
     }
-    char *unique_key = strdup(id);
+    char* unique_key = strdup(id);
     unsigned int slot = hash(unique_key);
 
-    SymbolNode *new_node = (SymbolNode *)malloc(sizeof(SymbolNode));
+    SymbolNode* new_node = (SymbolNode*)malloc(sizeof(SymbolNode));
     if (!new_node) {
         free(unique_key);
         printf(
@@ -81,7 +95,7 @@ void insert_symbol(SymbolTable *table, const char *id, SymbolInfo *info) {
     new_node->name = strdup(id);
     new_node->info = info;
     if (table->buckets[slot] != NULL) {
-        SymbolNode *current = table->buckets[slot];
+        SymbolNode* current = table->buckets[slot];
         while (current->next != NULL) {
             current = current->next;
         }
@@ -91,14 +105,14 @@ void insert_symbol(SymbolTable *table, const char *id, SymbolInfo *info) {
     }
 }
 
-SymbolNode *lookup_symbol(SymbolTable *table, const char *unique_key) {
+SymbolNode* lookup_symbol(SymbolTable* table, const char* unique_key) {
     if (!table || !unique_key) {
         printf("Table not initialized OR key was not informed.\n");
         return NULL;
     }
 
     unsigned int slot = hash(unique_key);
-    SymbolNode *current = table->buckets[slot];
+    SymbolNode* current = table->buckets[slot];
 
     while (current != NULL) {
         if (strcmp(current->key, unique_key) == 0) {

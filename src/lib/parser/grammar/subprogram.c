@@ -1,4 +1,5 @@
 #include "../../record.h"
+#include "../parser.h"
 #include "../semantics.h"
 #include "../types.h"
 #include <stdio.h>
@@ -18,12 +19,14 @@ type checkParamType(ID_t funcID, LinkedList* paramsTypes) {
     }
     SymbolNode* func1 = search_func_in_funcTable(funcID);
     if (!func1) {
-        printf("ERROR: The subprogram \"%s\" was not declared\n", funcID);
+        printf("ERROR Line %d: The subprogram \"%s\" was not declared\n",
+               yylineno, funcID);
         exit(1);
         return NULL;
     }
     if (func1->info->typeParams->size != paramsTypes->size) {
-        printf("ERROR: Subprogram \"%s\" expects different parameters\n", funcID);
+        printf("ERROR Line %d: Subprogram \"%s\" expects different parameters\n",
+               yylineno, funcID);
         exit(1);
         return NULL;
     }
@@ -31,8 +34,9 @@ type checkParamType(ID_t funcID, LinkedList* paramsTypes) {
     NodeInfo* auxType2 = paramsTypes->start;
 
     for (int i = 0; i < func1->info->typeParams->size; i++) {
-        if (!checkTypeCompatibility(auxType1->content, auxType2->content)) {
-            printf("ERROR: Subprogram \"%s\" expects diferent parameters\n", funcID);
+        if (!checkTypeCompat(auxType1->content, auxType2->content, RIGHT_LEFT)) {
+            printf("ERROR Line %d: Subprogram \"%s\" expects diferent parameters\n",
+                   yylineno, funcID);
             exit(1);
             return NULL;
         }
@@ -45,25 +49,29 @@ type checkParamType(ID_t funcID, LinkedList* paramsTypes) {
 void checkReturn(SUBPROGRAM_TYPE subType, str ID, type ScopeReturnType, type Type) {
     switch (subType) {
     case (FUNCTION_t): {
-        if (!checkTypeCompatibility(ScopeReturnType, Type)) {
-            printf("ERROR: \"%s\" returns '%s' but requires '%s'\n", ID,
-                   ScopeReturnType, Type);
+        if (checkTypeCompat(Type, ScopeReturnType, RIGHT_LEFT) == NULL) {
+            printf("ERROR Line %d: \"%s\" returns '%s' but requires '%s'\n",
+                   yylineno, ID, ScopeReturnType, Type);
             exit(1);
         }
         break;
     }
+
     case (PURE_FUNCTION_t): {
-        if (!checkTypeCompatibility(Type, ScopeReturnType)) {
-            printf("ERROR: pure \"%s\" returns '%s' but requires '%s'\n", ID,
-                   ScopeReturnType, Type);
+        if (checkTypeCompat(Type, ScopeReturnType, RIGHT_LEFT) == NULL) {
+            printf("ERROR Line %d: pure \"%s\" returns '%s' but requires '%s'\n",
+                   yylineno, ID, ScopeReturnType, Type);
             exit(1);
         }
+        break;
     }
     case (PROCEDURE_t): {
-        if (!checkTypeCompatibility(ScopeReturnType, Type) && ScopeReturnType) {
-            printf("ERROR: procedure with a return\n");
+        if (checkTypeCompat(Type, ScopeReturnType, BOTH) == NULL && ScopeReturnType) {
+            printf("ERROR Line %d: procedure with a return\n",
+                   yylineno);
             exit(1);
         }
+        break;
     }
     }
 }

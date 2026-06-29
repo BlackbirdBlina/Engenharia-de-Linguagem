@@ -9,14 +9,10 @@ Record* CreateRecord(char* code) {
     return record;
 }
 
-ArrayType* newArrayType(c_code content, type expectedType, type* types, long long size) {
+ArrayType* newArrayType(c_code content, type type, long long size) {
     ArrayType* t = (ArrayType*)malloc(sizeof(ArrayType));
     t->content = strdup(content);
-    t->expectedType = strdup(expectedType);
-    t->contentTypes = (type*)malloc(sizeof(type));
-    for (int i = 0; i < size; ++i) {
-        t->contentTypes[i] = strdup(types[i]);
-    }
+    t->type = strdup(type);
     t->size = size;
     return t;
 }

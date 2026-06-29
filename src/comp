@@ -1,4 +1,7 @@
 #!/bin/sh
 
-# flex lexer.l ; yacc -d parser.y ; gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c -o compilador
-flex lexer.l ; yacc -d parser.y -Wcounterexamples ; gcc -fsanitize=address y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c ./lib/linked_list.c -o compilador -g ; ./compilador examples/testes.kjt examples/output.c
+flex lexer.l ;
+yacc -d parser.y -Wcounterexamples ;
+# gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c -o compilador
+# gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c ./lib/linked_list.c -o compilador -g ; ./compilador examples/testes.kjt examples/output.c
+gcc y.tab.c lex.yy.c ./lib/parser/semantics.c ./lib/record.c ./lib/scope_stack.c ./lib/symbol_table.c ./lib/linked_list.c -o compilador -g ; ./compilador examples/tests/functions.kjt examples/output.c

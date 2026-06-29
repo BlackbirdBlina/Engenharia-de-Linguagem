@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../../record.h"
+#include "../../symbol_table.h"
 #include "../semantics.h"
 
 void check_let__equal(Record* $2, Record* $4) {
@@ -12,21 +13,20 @@ void check_let__equal(Record* $2, Record* $4) {
         printf("ERROR: \"%s\" was already declared\n", $2->id);
         exit(1);
     }
-    char* tempVarExpTypeCmp = checkTypeCompatibility($2->type, $4->type);
+
+    char* tempVarExpTypeCmp = checkTypeCompat($2->type, $4->type, RIGHT_LEFT);
+
     // Se der certo, não retorna nada:
     if (tempVarExpTypeCmp != NULL) {
-        if (strcmp(tempVarExpTypeCmp, $2->type) == 0) {
-            return;
-        }
+        return;
     }
+
     // let i : bool = 10;
     printf("ERROR: \"%s\" has type '%s', but got type '%s'\n", $2->id, $2->type,
            $4->type);
     exit(1);
 }
 
-void let__equal_ArrayDecl(Record** $$, Record* varTyped, Record* expression, ASSIGN a) {
-}
 void let__equal(Record** $$, Record* varTyped, Record* expression, ASSIGN a) {
     switch (a) {
     case STAT:

@@ -1,0 +1,12 @@
+func main() -> s_int32 {
+    let a1 : u_int16 = 0;
+    let d1 : [u_int16; 3] = {1, 2, 3};
+    let b1 : [[u_int16; 3]; 3] = {{1}, {1}, {2}};
+    let c1 : [[[u_int16; 3]; 3]; 3] = {{{0}}, {{1}}, {{2}}};
+
+    let mut a : u_int32 = 1;
+    let mut b : u_int32 = 2;
+    let mut c : u_int32 = 3;
+    let mut e : [u_int32; 3] = {a, b, c};
+    let mut f : [u_int32; 3] = {1, 2, 3};
+}
