@@ -213,7 +213,7 @@ Attribution: ID '=' Expression ';'                                              
 		   | '(' Expression ')' {char* temp[]={"(",$2->code,")"};
 								$$=CreateRecordType(cat(temp,3),$2->type);
                                 }
-		   | Array {$$=CreateRecord($1->code,$1->type);}
+		   | Array {$$=CreateRecordType($1->code,$1->type);}
 		   | '&' ID {} // TALVEZ IDs?
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
@@ -226,12 +226,12 @@ Attribution: ID '=' Expression ';'                                              
 	Array: ID ArrayAccesses {
 			type typeArrayAcess=getVarType($1);
 			for(int i=0;i<$2->sizeOfArrayAcess;i++){
-				type arrayStore=lookup_symbol(typeTable,typeArrayAcess)->info->isArray;
+				type arrayStore=lookup_symbol(typeTable,typeArrayAcess)->info->isArrayOf;
 				if(arrayStore !=NULL){
 					typeArrayAcess=arrayStore;
 				}
 			}
-			char temp[]={$1,$2->code};
+			char* temp[]={$1,$2->code};
 			$$=CreateRecordType(cat(temp,2),typeArrayAcess);
 	}
          ;
@@ -246,7 +246,9 @@ Attribution: ID '=' Expression ';'                                              
 	ArrayDecl: '{' ArrayDeclForm '}' { arrayDeclaration(&$$, $2); }
              ;
 	ArrayDeclForm: Expression ',' ArrayDeclForm { arrayDeclarationForm(&$$, $1, $3); }
+			     | ArrayDecl ',' ArrayDeclForm { arrayDeclarationForm(&$$, $1, $3); }
                  | Expression { $$ = newArrayType($1->code, $1->type, 1); }
+                 | ArrayDecl { $$ = newArrayType($1->content, $1->type, 1); }
                  ;
 
     IDs:

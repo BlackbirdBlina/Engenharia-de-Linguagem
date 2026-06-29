@@ -1,3 +1,4 @@
 func main() -> s_int32 {
-    let mut b:[s_int32;3]={1,2,3};
+    //let b:[[bool;2];2] = { {1,2} , {3,4} };
+    let b: [s_int32;2]={1,2};
 }
