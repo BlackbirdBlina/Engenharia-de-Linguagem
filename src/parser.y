@@ -45,7 +45,7 @@ extern FILE * yyin, * yyout;
 %token RESERVE
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
-%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 StructAcess List Print Input
+%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 StructAccess List Print Input
 %type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf 
 %type <rec> StructDecl Attributes EnumDecl Variants Compare Literal
 %type <rec> ReserveMem
@@ -157,7 +157,7 @@ extern FILE * yyin, * yyout;
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
               ;
 Attribution: ID '=' Expression ';'                                                        { attribute_id_expression(&$$, $1, $3); }
-           | StructAcess'=' Expression ';'                                                { attribute_struct_expression(&$$,$1,$3); }
+           | StructAccess'=' Expression ';'                                                { attribute_struct_expression(&$$,$1,$3); }
            | ID PLUS_ATTRIBUTION Expression ';'                                           { }
            | ID MINUS_ATTRIBUTION Expression ';' {  }
            | ID MULTIPLY_ATTRIBUTION Expression ';' {  }
@@ -235,7 +235,7 @@ Attribution: ID '=' Expression ';'                                              
 
                 $$ = CreateRecordType(c_code, t);
            }
-		   | StructAcess {}
+		   | StructAccess {}
 		   | SubprogramCall {$$=CreateRecordType($1->code,$1->type);}
            | List {}
            // let mut var : &u_int16 = reserve(sizeof(u_int16), 2);
@@ -265,7 +265,7 @@ Attribution: ID '=' Expression ';'                                              
 			type typeMemAccess = getVarType($1);
             checkVarScope($1);
 
-			for(int i = 0; i < $2->sizeOfArrayAcess; i++) {
+			for(int i = 0; i < $2->sizeOfArrayAccess; i++) {
                 // TODO: Check if ID exists first:
 				type arrayStore = lookup_symbol(typeTable,typeMemAccess)->info->isArrayOf;
 				type refStore = lookup_symbol(typeTable,typeMemAccess)->info->isRefOf;
@@ -291,11 +291,11 @@ Attribution: ID '=' Expression ';'                                              
 
 	ArrayAccesses: '[' Expression ']' ArrayAccesses {
                                                     char* temp[]={"[",$2->code,"]",$4->code};
-													$$ = CreateRecordArrayAcess(cat(temp,4),$4->sizeOfArrayAcess+1);
+													$$ = CreateRecordArrayAccess(cat(temp,4),$4->sizeOfArrayAccess+1);
                                                     }
 		         | '[' Expression ']' {
 										char* temp[]={"[",$2->code,"]"};
-										$$ = CreateRecordArrayAcess(cat(temp,3),1);}
+										$$ = CreateRecordArrayAccess(cat(temp,3),1);}
 		         ;
 
 	ArrayDecl: '{' ArrayDeclForm '}' { arrayDeclaration(&$$, $2); }
@@ -306,7 +306,7 @@ Attribution: ID '=' Expression ';'                                              
                  | ArrayDecl                            { $$ = newArrayType($1->content, $1->type, 1); }
                  ;
 
-    StructAcess:
+    StructAccess:
         ID '.' ID {
             checkVarScope($1);
 			char* varType=getVarType($1);
