@@ -1,0 +1,110 @@
+func main() -> s_int32 {
+    let mut m1 : & &u_int32;
+    let mut m1lin : u_int32;
+    let mut m1col : u_int32;
+
+    let mut m2 : & &u_int32;
+    let mut m2lin : u_int32;
+    let mut m2col : u_int32;
+
+    print << "Matriz 1:\n";
+    print << "Digite o número de filas: ";
+    input >> m1lin; print << "\n";
+    print << "Digite o número de colunas: ";
+    input >> m1col; print << "\n";
+    m1 = reserve(&u_int32, m1lin);
+    for (i in 0..m1lin) { m1[i] = reserve(u_int32, m1col); }
+    for (i in 0..m1lin) {
+        for (j in 0..m1col) {
+            print << "[" << i << "]" << "[" << j << "]: ";
+            let mut user_input : u_int32;
+            input >> user_input;
+            m1[i][j] = user_input;
+            print << "\n";
+        }
+    }
+
+    print << "Matriz 2:\n";
+    print << "Digite o número de filas: ";
+    input >> m2lin; print << "\n";
+    print << "Digite o número de colunas: ";
+    input >> m2col; print << "\n";
+    m2 = reserve(&u_int32, m2lin);
+    for (i in 0..m2lin) { m2[i] = reserve(u_int32, m2col); }
+    for (i in 0..m2lin) {
+        for (j in 0..m2col) {
+            print << "[" << i << "]" << "[" << j << "]: ";
+            let mut user_input : u_int32;
+            input >> user_input;
+            m2[i][j] = user_input;
+            print << "\n";
+        }
+    }
+
+    // MATRIX SUM:
+    if (m1lin == m2lin && m1col == m2col) {
+        print << "Matrix SUM:\n";
+        for (i in 0..m1lin) {
+            for (j in 0..m1col) {
+                let sum : u_int32 = m1[i][j] + m2[i][j];
+                print << sum << " ";
+            }
+            print << "\n";
+        }
+    } else {
+        print << "CANNOT SUM\n";
+    }
+    // MATRIX PROD:
+    let mut mx : & &u_int32;
+    mx = reserve(&u_int32, m1lin);
+    if (m1col == m2lin) {
+        for (i in 0..m1lin) {
+            mx[i] = reserve(u_int32, m2col);
+        }
+
+        // Fill up mx w/ 0
+        for (i in 0..m1lin) {
+            for (j in 0..m2col) {
+                mx[i][j] = 0;
+            }
+        }
+
+        // Multiply m1 with m2
+        for (i in 0..m1lin) {
+            for (j in 0..m2col) {
+                for (h in 0..m1col) {
+                    mx[i][j] = mx[i][j] + (m1[i][h] * m2[h][j]);
+                }
+            }
+        }
+        // Print mx
+        print << "Matrix PRODUCT:\n";
+        for (i in 0..m1lin) {
+            for (j in 0..m2col) {
+                let printMatrix : u_int32 = mx[i][j];
+                print << printMatrix << " ";
+            }
+            print << "\n";
+        }
+
+    } else {
+        print << "CANNOT MULTIPLY\n";
+    }
+
+    print << "M1:\n";
+    for (i in 0..m1lin) {
+        for (j in 0..m1col) {
+            let printMatrix : u_int32 = m1[i][j];
+            print << printMatrix << " ";
+        }
+        print << "\n";
+    }
+    print << "M2:\n";
+    for (i in 0..m2lin) {
+        for (j in 0..m2col) {
+            let printMatrix : u_int32 = m2[i][j];
+            print << printMatrix << " ";
+        }
+        print << "\n";
+    }
+}
