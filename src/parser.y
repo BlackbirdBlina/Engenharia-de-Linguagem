@@ -45,7 +45,7 @@ extern FILE * yyin, * yyout;
 %token RESERVE
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
-%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 StructAccess List Print Input
+%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 StructAccess List Print Input
 %type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf 
 %type <rec> StructDecl Attributes EnumDecl Variants Compare Literal
 %type <rec> ReserveMem
@@ -178,12 +178,8 @@ Attribution: ID '=' Expression ';'                                              
                 | AuxExp1 {$$=CreateRecordType($1->code,$1->type);}
                 ;
 
-	AuxExp1: AuxExp1 AND AuxExp2 {handleOperandTypes(&$$,$1,$3,"&&",bool_);}
-		   | AuxExp2 {$$=CreateRecordType($1->code,$1->type);}
-		   ;
-	
-	AuxExp2: AuxExp2 NOT_EQUAL AuxExp3{handleOperandTypes(&$$,$1,$3,"!=",literal_int);}
-	       | AuxExp3{$$=CreateRecordType($1->code,$1->type);}
+	AuxExp1: AuxExp1 AND AuxExp3 {handleOperandTypes(&$$,$1,$3,"&&",bool_);}
+		   | AuxExp3 {$$=CreateRecordType($1->code,$1->type);}
 		   ;
 	
 	AuxExp3: AuxExp3 Compare AuxExp4{handleOperandTypes(&$$,$1,$3,$2->code,literal_int);$$->type=bool_;}
@@ -557,21 +553,12 @@ Attribution: ID '=' Expression ';'                                              
         }
         ;
 
-	Compare: '<' {
-    $$=CreateRecord("<");
-    }
-		   | '>' {
-           $$=CreateRecord(">");
-           }
-		   | LESS_EQUAL {
-           $$=CreateRecord("<=");
-           }
-		   | GREATER_EQUAL {
-           $$=CreateRecord(">=");
-           }
-		   | EQUAL {
-           $$=CreateRecord("==");
-           }
+	Compare: '<' { $$=CreateRecord("<"); }
+		   | '>' { $$=CreateRecord(">"); }
+		   | LESS_EQUAL { $$=CreateRecord("<="); }
+		   | GREATER_EQUAL { $$=CreateRecord(">="); }
+		   | EQUAL { $$=CreateRecord("=="); }
+		   | NOT_EQUAL { $$=CreateRecord("!="); }
 		   ;
 
 	Literal: VALUE_INT {

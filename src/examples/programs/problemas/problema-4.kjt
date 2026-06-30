@@ -1,0 +1,193 @@
+struct reg_racional_t {
+    numerador  : s_int16,
+    denominador: s_int16,
+}
+
+func frac(a: s_int16, b: s_int16) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    r.numerador = a;
+    r.denominador = b;
+
+    return r;
+}
+
+func igual(a: reg_racional_t, b: reg_racional_t) -> bool {
+    return (a.numerador * b.denominador) ==
+           (b.numerador * a.denominador);
+}
+
+func soma(a: reg_racional_t, b: reg_racional_t) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    r.numerador =
+        a.numerador * b.denominador +
+        b.numerador * a.denominador;
+
+    r.denominador =
+        a.denominador * b.denominador;
+
+    return r;
+}
+
+func sub(a: reg_racional_t, b: reg_racional_t) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    r.numerador =
+        a.numerador * b.denominador -
+        b.numerador * a.denominador;
+
+    r.denominador =
+        a.denominador * b.denominador;
+
+    return r;
+}
+
+func mult(a: reg_racional_t, b: reg_racional_t) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    r.numerador = a.numerador * b.numerador;
+    r.denominador = a.denominador * b.denominador;
+
+    return r;
+}
+
+func neg(a: reg_racional_t) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    r.numerador = a.numerador * -1;
+    r.denominador = a.denominador;
+
+    return r;
+}
+
+func inversao(a: reg_racional_t) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    if (a.numerador == 0) {
+        print << "Nao existe inverso\n";
+        return a;
+    }
+
+    r.numerador = a.denominador;
+    r.denominador = a.numerador;
+
+    return r;
+}
+
+func division(a: reg_racional_t, b: reg_racional_t) -> reg_racional_t {
+    let mut r : reg_racional_t;
+
+    if (b.numerador == 0) {
+        print << "Divisao por zero\n";
+        return a;
+    }
+
+    r.numerador = a.numerador * b.denominador;
+    r.denominador = a.denominador * b.numerador;
+
+    return r;
+}
+
+func main() -> s_int32 {
+    let mut r1 : reg_racional_t;
+    let mut r2 : reg_racional_t;
+    let mut r3 : reg_racional_t;
+    
+    let mut num1 : s_int16;
+    let mut den1 : s_int16;
+    let mut num2 : s_int16;
+    let mut den2 : s_int16;
+
+    print << "\nInsert num: ";
+    input >> num1;
+    print << "\nInsert den: ";
+    input >> den1;
+    print << "\n";
+    print << "\nInsert num: ";
+    input >> num2;
+    print << "\nInsert den: ";
+    input >> den2;
+    print << "\n";
+
+    while (num1 != -1 && den1 != -1 && num2 != -1 && den2 != -1) {
+        r1 = frac(num1, den1);
+        r2 = frac(num2, den2);
+
+        let mut r1num : s_int32 = r1.numerador;
+        let mut r1den : s_int32 = r1.denominador;
+        let mut r2num : s_int32 = r2.numerador;
+        let mut r2den : s_int32 = r2.denominador;
+
+        print << "r1 = "
+            << r1num << "/"
+            << r1den << "\n";
+
+        print << "r2 = "
+            << r2num << "/"
+            << r2den << "\n\n";
+
+        let eq : bool = igual(r1, r2);
+        print << "Igual? " << eq << "\n\n";
+
+        r3 = soma(r1, r2);
+        let mut r3num : s_int16 = r3.numerador;
+        let mut r3den : s_int16 = r3.denominador;
+
+        print << "Soma: "
+            << r3num << "/"
+            << r3den << "\n";
+
+        r3 = sub(r1, r2);
+        r3num = r3.numerador;
+        r3den = r3.denominador;
+
+        print << "Subtracao: "
+            << r3num << "/"
+            << r3den << "\n";
+
+        r3 = mult(r1, r2);
+        r3num = r3.numerador;
+        r3den = r3.denominador;
+
+        print << "Multiplicacao: "
+            << r3num << "/"
+            << r3den << "\n";
+
+        r3 = division(r1, r2);
+        r3num = r3.numerador;
+        r3den = r3.denominador;
+
+        print << "Divisao: "
+            << r3num << "/"
+            << r3den << "\n";
+
+        r3 = neg(r1);
+        r3num = r3.numerador;
+        r3den = r3.denominador;
+
+        print << "Negacao de r1: "
+            << r3num << "/"
+            << r3den << "\n";
+
+        r3 = inversao(r1);
+        r3num = r3.numerador;
+        r3den = r3.denominador;
+
+        print << "Inverso de r1: "
+            << r3num << "/"
+            << r3den << "\n";
+
+        print << "\nInsert num: ";
+        input >> num1;
+        print << "\nInsert den: ";
+        input >> den1;
+        print << "\n";
+        print << "\nInsert num: ";
+        input >> num2;
+        print << "\nInsert den: ";
+        input >> den2;
+        print << "\n";
+    }
+    return 0;
+}

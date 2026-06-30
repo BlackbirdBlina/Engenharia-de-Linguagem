@@ -5,5 +5,7 @@ struct racional_t{
 
 func main()->s_int32{
     let mut oi:racional_t;
-    oi.numerador=10;
+    oi.numerador = 10;
+    let mut i : s_int32 = oi.numerador;
+    print << i ;
 }
