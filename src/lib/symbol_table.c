@@ -65,7 +65,7 @@ SymbolInfo* alloc_type_type(type t, const char** conversions, int conversionsQnt
     symbolInfo->structFields = NULL;
     return symbolInfo;
 }
-SymbolInfo* alloc_type_typeStructField(type t){
+SymbolInfo* alloc_type_typeStructField(type t) {
     SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
     if (!symbolInfo) {
         return NULL;
@@ -76,6 +76,8 @@ SymbolInfo* alloc_type_typeStructField(type t){
     symbolInfo->isRefOf = NULL;
     symbolInfo->size = 0;
     symbolInfo->structFields = NULL;
+
+    return symbolInfo;
 }
 SymbolInfo* alloc_type_typeStruct(type t, SymbolTable* structFields) {
     SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
