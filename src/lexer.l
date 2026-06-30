@@ -122,6 +122,7 @@ id                  {letter}({letter}|{number})*
 "struct"            { return STRUCT;}
 "enum"              { return ENUM;}
 "main"              { return MAIN;}
+"reserve"           { return RESERVE;}
 "print"             { return PRINT;}
 "input"             { return INPUT;}
 "<<"                { return TOPRINT;}
@@ -133,12 +134,12 @@ id                  {letter}({letter}|{number})*
                                                 return VALUE_BOOL;
                                             }
 
-{number}+(E[+-]?{number}+)?                 {
+(-)?{number}+(E[+-]?{number}+)?                 {
                                                 yylval.iValue = atoll(strdup(yytext));
                                                 return VALUE_INT;
                                             }
 
-{number}+\.{number}+(E[+-]?{number}+)?      {
+(-)?{number}+\.{number}+(E[+-]?{number}+)?      {
                                                 yylval.sValue = strdup(yytext);
                                                 return VALUE_FLOAT;
                                             }

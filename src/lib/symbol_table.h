@@ -41,6 +41,8 @@ typedef struct SymbolInfo {
 
     LinkedList* typeParams;
 
+    type isRefOf;
+
     type isArrayOf;
     long long size;
 } SymbolInfo;
@@ -61,6 +63,7 @@ extern int global_counter;
 SymbolInfo* alloc_type_var(char* type, char* scope, ASSIGN assign);
 SymbolInfo* alloc_type_type(char* type, const char** conversions, int conversionsQnt);
 SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size);
+SymbolInfo* allocTypeRef(type t, type isRefOf);
 SymbolInfo* alloc_type_func(char* returnType, LinkedList* paramsList);
 void free_type_info(SymbolInfo* info);
 SymbolTable* create_table();

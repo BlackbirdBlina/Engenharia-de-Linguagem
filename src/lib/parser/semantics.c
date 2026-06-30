@@ -144,25 +144,25 @@ type checkTypeCompat(char* type1, char* type2, compatDirection direction) {
     if (!type1 || !type2) {
         return NULL;
     }
-    
+
     // If they are the same
     if (strcmp(type1, type2) == 0) {
         return type1;
     }
-    
+
     // Find
     SymbolNode* type1Node = lookup_symbol(typeTable, type1);
     SymbolNode* type2Node = lookup_symbol(typeTable, type2);
     if (!type1Node || !type2Node) {
         return NULL;
     }
-    
+
     // If type1Node is an array
     type isArrayType1 = type1Node->info->isArrayOf;
     type isArrayType2 = type2Node->info->isArrayOf;
-    
+
     if (isArrayType1 != NULL && isArrayType2 != NULL) {
-        
+
         int arraySizeType1 = type1Node->info->size;
         int arraySizeType2 = type2Node->info->size;
 
@@ -173,12 +173,12 @@ type checkTypeCompat(char* type1, char* type2, compatDirection direction) {
             return NULL;
         }
     }
-    
+
     // TODO: When tried LEFT_RIGHT (or vice-versa) but did not find, show:
     // printf("Line %d: the type '%s' does not convert to '%s', did you mean '%s' -> '%s'",
     //        yylineno, type1, type2, type2, type1);
     // exit(1);
-    
+
     // Check the conversions list:
     if (direction == LEFT_RIGHT || direction == BOTH) {
         for (int i = 0; i < type1Node->info->conversionsQnt; i++) {
@@ -201,11 +201,13 @@ void checkVarScope(ID_t varName) {
     SymbolNode* var = search_var_in_varTable(varName);
     if (var) {
         if (!FindScope(scopeStack, var->info->scope)) {
-            printf("ERROR: Variable  \"%s\" out of scope\n", varName);
+            printf("ERROR Line %d: Variable  \"%s\" out of scope\n",
+                   yylineno, varName);
             exit(1);
         }
     } else {
-        printf("ERROR: Variable \"%s\" not declared\n", varName);
+        printf("ERROR Line %d: Variable \"%s\" not declared\n",
+               yylineno, varName);
         exit(1);
     }
 }
@@ -223,7 +225,8 @@ ASSIGN getVarAssign(ID_t var) {
     if (tabled_var != NULL) {
         return tabled_var->info->assign;
     } else {
-        printf("ERROR: The variable %s has not a assign", var);
+        printf("ERROR Line %d: The variable %s has not a assign",
+               yylineno, var);
         exit(1);
     }
 }

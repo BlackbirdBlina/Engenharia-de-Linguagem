@@ -1,4 +1,5 @@
 #include "record.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -62,10 +63,10 @@ Record* CreateRecordIO(char* code, char* prefix, char* sufix) {
     record->returnType = NULL;
     return record;
 }
-Record* CreateRecordArrayAcess(char* code,int sizeOfArrayAcess){
+Record* CreateRecordArrayAcess(char* code, int sizeOfArrayAcess) {
     Record* record = (Record*)malloc(sizeof(Record));
     record->code = strdup(code);
-    record->sizeOfArrayAcess=sizeOfArrayAcess;
+    record->sizeOfArrayAcess = sizeOfArrayAcess;
     record->returnType = NULL;
     return record;
 }

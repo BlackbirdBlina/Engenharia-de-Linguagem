@@ -8,4 +8,12 @@
 [] For que Sabrina fez
 [] Documentação
 
+[-] Problema 1
+FEITO, mas precisa do código em .kjt
+[-] Problema 2
+FEITO, mas precisa do código em .kjt
+[] Problema 3
+[] Problema 4
+[] Problema 5
+[] Problema 6
 

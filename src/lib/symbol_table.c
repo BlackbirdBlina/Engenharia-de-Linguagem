@@ -11,6 +11,20 @@ SymbolInfo* alloc_type_var(type t, char* scope, ASSIGN assign) {
     symbolInfo->type = t;
     symbolInfo->scope = scope;
     symbolInfo->assign = assign;
+    symbolInfo->isArrayOf = NULL;
+    symbolInfo->isRefOf = NULL;
+    return symbolInfo;
+}
+SymbolInfo* allocTypeRef(type t, type isRefOf) {
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
+    if (!symbolInfo)
+        return NULL;
+    symbolInfo->type = t;
+    symbolInfo->isArrayOf = NULL;
+    symbolInfo->isRefOf = isRefOf;
+    symbolInfo->size = 0;
+    symbolInfo->conversions = NULL;
+    symbolInfo->conversionsQnt = 0;
     return symbolInfo;
 }
 SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size) {
@@ -20,6 +34,7 @@ SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size) {
     }
     symbolInfo->type = t;
     symbolInfo->isArrayOf = isArrayOf;
+    symbolInfo->isRefOf = NULL;
     symbolInfo->size = size;
     symbolInfo->conversions = NULL;
     symbolInfo->conversionsQnt = 0;
@@ -42,6 +57,7 @@ SymbolInfo* alloc_type_type(type t, const char** conversions, int conversionsQnt
         symbolInfo->conversions = NULL;
     }
     symbolInfo->isArrayOf = NULL;
+    symbolInfo->isRefOf = NULL;
     symbolInfo->size = 0;
     return symbolInfo;
 }
@@ -52,6 +68,9 @@ SymbolInfo* alloc_type_func(type returnType, LinkedList* paramsList) {
     }
     symbolInfo->type = returnType;
     symbolInfo->typeParams = paramsList;
+    symbolInfo->isArrayOf = NULL;
+    symbolInfo->isRefOf = NULL;
+
     return symbolInfo;
 }
 unsigned int hash(const char* key) {

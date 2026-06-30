@@ -4,13 +4,15 @@
 
 #include "../../record.h"
 #include "../../symbol_table.h"
+#include "../parser.h"
 #include "../semantics.h"
 
 void check_let__equal(Record* $2, Record* $4) {
     // let i : bool = false;
     // let i : bool = false;
     if (search_var_in_currentScope($2->id)) {
-        printf("ERROR: \"%s\" was already declared\n", $2->id);
+        printf("ERROR Line %d: \"%s\" was already declared\n",
+               yylineno, $2->id);
         exit(1);
     }
 
@@ -22,8 +24,8 @@ void check_let__equal(Record* $2, Record* $4) {
     }
 
     // let i : bool = 10;
-    printf("ERROR: \"%s\" has type '%s', but got type '%s'\n", $2->id, $2->type,
-           $4->type);
+    printf("ERROR Line %d: \"%s\" has type '%s', but got type '%s'\n",
+           yylineno, $2->id, $2->type, $4->type);
     exit(1);
 }
 void let__equal(Record** $$, Record* varTyped, Record* expression, ASSIGN a) {
@@ -48,7 +50,8 @@ void let__equal(Record** $$, Record* varTyped, Record* expression, ASSIGN a) {
         break;
 
     default:
-        printf("ERROR: Assigment not defined");
+        printf("ERROR Line %d: Assigment not defined",
+               yylineno);
         exit(1);
         break;
     }
@@ -58,7 +61,8 @@ void check_let__equal_array(Record* $2, ArrayType* $4) {
     // let i : bool = false;
     // let i : bool = false;
     if (search_var_in_currentScope($2->id)) {
-        printf("ERROR: \"%s\" was already declared\n", $2->id);
+        printf("ERROR Line %d: \"%s\" was already declared\n",
+               yylineno, $2->id);
         exit(1);
     }
 
@@ -70,8 +74,8 @@ void check_let__equal_array(Record* $2, ArrayType* $4) {
     }
 
     // let i : bool = 10;
-    printf("ERROR: \"%s\" has type '%s', but got type '%s'\n", $2->id, $2->type,
-           $4->type);
+    printf("ERROR Line %d: \"%s\" has type '%s', but got type '%s'\n",
+           yylineno, $2->id, $2->type, $4->type);
     exit(1);
 }
 void let__equal_array(Record** $$, Record* varTyped, ArrayType* arrayDecl, ASSIGN a) {
@@ -96,18 +100,20 @@ void let__equal_array(Record** $$, Record* varTyped, ArrayType* arrayDecl, ASSIG
         break;
 
     default:
-        printf("ERROR: Assigment not defined");
+        printf("ERROR Line %d: Assigment not defined",
+               yylineno);
         exit(1);
         break;
     }
 }
 
-void let__equal_without_exp(Record** $$, Record* varTyped, ASSIGN a){
+void let__equal_without_exp(Record** $$, Record* varTyped, ASSIGN a) {
     if (search_var_in_currentScope(varTyped->id)) {
-        printf("ERROR: \"%s\" was already declared\n", varTyped->id);
+        printf("ERROR Line %d: \"%s\" was already declared\n",
+               yylineno, varTyped->id);
         exit(1);
     }
-    char* temp[] = {varTyped->code,";"};
+    char* temp[] = {varTyped->code, ";"};
     store_var_in_varTable(varTyped->id, varTyped->type, a);
     *$$ = CreateRecord(cat(temp, 2));
 }

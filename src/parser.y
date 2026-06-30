@@ -42,11 +42,13 @@ extern FILE * yyin, * yyout;
 %token <typeRec> TYPE_BOOL TYPE_S_INT64 TYPE_S_INT32 TYPE_S_SIZE TYPE_S_INT16 TYPE_U_INT64 TYPE_U_INT32 TYPE_U_SIZE TYPE_FLOAT32 TYPE_FLOAT64 TYPE_CHAR TYPE_STRING TYPE_VEC TYPE_SET TYPE_MATRIX TYPE_RESULT TYPE_OPTION
 %token <typeRec> TYPE_U_INT16
 %token INTERVAL MATCH WHILE STRUCT ENUM ARROW MAIN INPUT TOINPUT
+%token RESERVE
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
 %type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print Input
 %type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
 %type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Compare Literal
+%type <rec> ReserveMem
 %type <typeRec> Type
 // EXAMPLE:
 //     ArrayDecl '{' ArrayDeclForm '}'
@@ -59,7 +61,7 @@ extern FILE * yyin, * yyout;
 %%
     Program:
         Decls  {
-            fprintf(yyout,"#include<stdio.h>\n#include<stdbool.h>\n%s", $1->code);
+            fprintf(yyout,"#include<stdio.h>\n#include<stdbool.h>\n#include<stdlib.h>\n%s", $1->code);
         }
         ;
 	Decls: SubProgram Decls{
@@ -114,7 +116,8 @@ extern FILE * yyin, * yyout;
                                               $$->returnType = temp; 
                                           }
                                           else{
-                                              printf("ERROR: Returns with incompatible types;");
+                                              printf("ERROR Line %d: Returns with incompatible types;",
+                                                  yylineno);
                                               exit(1);
                                           }
                                        }
@@ -136,7 +139,7 @@ extern FILE * yyin, * yyout;
 			 | CONTINUE ';' { $$=CreateRecord("break"); }
 			 | BREAK ';' { $$=CreateRecord("continue"); }
              | Print ';' { $$=CreateRecord($1->code); }
-             |Input{ $$=CreateRecord($1->code); }
+             | Input{ $$=CreateRecord($1->code); }
 			 ;
 	Return: RETURN ';' { $$=CreateRecord("return;"); $$->returnType=void_; }
 	      | RETURN Expression ';' {char* temp[]={"return ",$2->code,";"};
@@ -154,12 +157,13 @@ extern FILE * yyin, * yyout;
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
               ;
 Attribution: ID '=' Expression ';'                                                        { attribute_id_expression(&$$, $1, $3); }
-           | ID '.' ID '=' Expression ';'                                                 { /* TODO: Aqui n pode ser id.id.id.id não? */ }
-           | ID PLUS_ATTRIBUTION Expression ';'                                           {  }
+           | ID '.' ID '=' Expression ';'                                                 { }
+           | ID PLUS_ATTRIBUTION Expression ';'                                           { }
            | ID MINUS_ATTRIBUTION Expression ';' {  }
            | ID MULTIPLY_ATTRIBUTION Expression ';' {  }
            | ID DIVIDE_ATTRIBUTION Expression ';' {  }
-           | Array '=' Expression ';' { }
+           // arr[0] = ... ;
+           | Array '=' Expression ';' { attribute_array_expression(&$$, $1, $3); }
            | IncrOrDecr ';' {}
            ;
     IncrOrDecr: ID INCREMENT {}
@@ -214,30 +218,82 @@ Attribution: ID '=' Expression ';'                                              
 								$$=CreateRecordType(cat(temp,3),$2->type);
                                 }
 		   | Array {$$=CreateRecordType($1->code,$1->type);}
-		   | '&' ID {} // TALVEZ IDs?
+		   | '&' ID {
+                checkVarScope($2);
+
+                char* c_tmp[] = {"&", $2};
+                c_code c_code = cat(c_tmp, 2);
+
+                char* t_tmp[] = {"&", getVarType($2)};
+                type t = cat(t_tmp, 2);
+
+                if (lookup_symbol(typeTable, t) == NULL) {
+                    insert_symbol(typeTable, t, allocTypeRef(t, getVarType($2)));
+                }
+
+                $$ = CreateRecordType(c_code, t);
+           }
            | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
            | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
            | '&' ID '[' INTERVAL VALUE_INT ']' {}
            | '&' ID '[' VALUE_INT INTERVAL ']' {}
 		   | SubprogramCall {$$=CreateRecordType($1->code,$1->type);}
            | List {}
+           // let mut var : &u_int16 = reserve(sizeof(u_int16), 2);
+           | ReserveMem { 
+            $$ = CreateRecordType($1->code, $1->type); }
 		   ;
 
+    ReserveMem: RESERVE '(' Type ',' Expression ')' {
+        // TODO: Deixa isso Expression mesmo? Faz verificação?
+        char* c_code[] = {
+            "malloc(",
+                "sizeof(", $3->c_code, ")",
+                        " * ",
+                            "(", $5->code, ")",
+                   ")" };
+        char* temp[] = {"&", $3->type};
+        char* typeID = cat(temp, 2);
+        
+        if (lookup_symbol(typeTable, typeID) == NULL) {
+            insert_symbol(typeTable, typeID, allocTypeRef(typeID, $3->type));
+        }
+
+        $$ = CreateRecordType(cat(c_code, 9), typeID);
+    }
+
 	Array: ID ArrayAccesses {
-			type typeArrayAcess=getVarType($1);
-			for(int i=0;i<$2->sizeOfArrayAcess;i++){
-				type arrayStore=lookup_symbol(typeTable,typeArrayAcess)->info->isArrayOf;
-				if(arrayStore !=NULL){
-					typeArrayAcess=arrayStore;
-				}
+			type typeMemAccess = getVarType($1);
+            checkVarScope($1);
+
+			for(int i = 0; i < $2->sizeOfArrayAcess; i++) {
+                // TODO: Check if ID exists first:
+				type arrayStore = lookup_symbol(typeTable,typeMemAccess)->info->isArrayOf;
+				type refStore = lookup_symbol(typeTable,typeMemAccess)->info->isRefOf;
+
+				if(arrayStore != NULL){
+					typeMemAccess = arrayStore;
+				} else if (refStore != NULL) {
+                    typeMemAccess = refStore;
+                }
+                // Caso de erro:
+                // - let arr : [u_int32; 1] = {0};
+                // - ... arr[0][0];
+                else {
+                    printf("ERROR Line %d: Improper Access of memory \"%s\"\n",
+                        yylineno, $1);
+                    exit(1);
+                }
 			}
-			char* temp[]={$1,$2->code};
-			$$=CreateRecordType(cat(temp,2),typeArrayAcess);
+			char* temp[] = {$1, $2->code};
+			$$ = CreateRecordVarTyped(cat(temp,2), typeMemAccess, $1);
 	}
          ;
 
-	ArrayAccesses: '[' Expression ']' ArrayAccesses {char* temp[]={"[",$2->code,"]",$4->code};
-													$$ = CreateRecordArrayAcess(cat(temp,3),$4->sizeOfArrayAcess+1);}
+	ArrayAccesses: '[' Expression ']' ArrayAccesses {
+                                                    char* temp[]={"[",$2->code,"]",$4->code};
+													$$ = CreateRecordArrayAcess(cat(temp,4),$4->sizeOfArrayAcess+1);
+                                                    }
 		         | '[' Expression ']' {
 										char* temp[]={"[",$2->code,"]"};
 										$$ = CreateRecordArrayAcess(cat(temp,3),1);}
@@ -245,10 +301,10 @@ Attribution: ID '=' Expression ';'                                              
 
 	ArrayDecl: '{' ArrayDeclForm '}' { arrayDeclaration(&$$, $2); }
              ;
-	ArrayDeclForm: Expression ',' ArrayDeclForm { arrayDeclarationForm(&$$, $1, $3); }
-			     | ArrayDecl ',' ArrayDeclForm { arrayDeclarationForm(&$$, $1, $3); }
-                 | Expression { $$ = newArrayType($1->code, $1->type, 1); }
-                 | ArrayDecl { $$ = newArrayType($1->content, $1->type, 1); }
+	ArrayDeclForm: Expression ',' ArrayDeclForm         { arrayDeclForm_Expression(&$$, $1, $3); }
+			     | ArrayDecl ',' ArrayDeclForm          { arrayDeclForm_ArrayDecl(&$$, $1, $3); }
+                 | Expression                           { $$ = newArrayType($1->code, $1->type, 1); }
+                 | ArrayDecl                            { $$ = newArrayType($1->content, $1->type, 1); }
                  ;
 
     IDs:
@@ -321,12 +377,32 @@ Attribution: ID '=' Expression ';'                                              
 						}; // Guarda em temp as informações da estrutura do while em C simplificado
 						$$ = CreateRecord(cat(temp, 20)); // Realiza o registro da estrutura que deve ser apresentada em C
                     }
-					|  FOR '(' ID IN Expression INTERVAL Expression ')' Scope{
-																			char* tempf[]={"FOR_",forCount()};
-																			char* forLabel=cat(tempf,2);
-																			char* temp[]={"{ int",$3,"=",$5->code,";",forLabel,":if(",$3,"!=",$7->code,"){",$9->code,"if(",$3,"<",$7->code,"){",$3,"++;}","else{",$3,"--;} goto ",forLabel,"}}"};
-																			$$=CreateRecord(cat(temp,24));
-                                                                            }
+					|  FOR '(' ID  IN Expression INTERVAL Expression ')' { store_var_in_varTable($3, literal_int, MUT); } Scope {
+					     char* counter = forCount();
+					     char* tempPrepar[] = {"FOR_PREP_", counter};
+					     char* tempFor[] = {"FOR_", counter};
+					     char* tempEndFor[] = {"END_FOR_", counter};
+					     char* tempForScope[] = {"FOR_SCOPE_", counter};
+					     char* prepFor = cat(tempPrepar, 2);
+					     char* forLabel = cat(tempFor, 2); 
+					     char* endFor = cat(tempEndFor, 2);
+					     char* forScope = cat(tempForScope, 2);
+					     char* temp[] = {
+					     	"{const int inicio_", forLabel, " = ", $5->code, ";\n",
+					     	"const int fim_", forLabel, " = ", $7->code, ";\n",
+					     	"int ", $3, " = ", "inicio_", forLabel, ";\n",
+					     	forLabel, ":\n",
+					     	"if (", $3, " < fim_", forLabel, ")", " goto ", forScope, ";\n", 
+					     	"goto ", endFor, ";\n",
+					     	forScope, ":\n",
+					     	$10->code, "\n",
+					     	$3, " = ", $3, " + 1;\n",
+					     	"goto ", forLabel, ";\n",
+					     	endFor, ":\n}"
+					     };
+						
+						$$ = CreateRecord(cat(temp, 42)); 
+                        }
 					|  FOR '(' ID IN Expression ')' Scope{}
 					|  LOOP Scope {}
 					;
@@ -405,7 +481,6 @@ Attribution: ID '=' Expression ';'                                              
 			| ID ',' {}
 			;
 
-
 	Type: TYPE_BOOL     { $$=newTypeRec("short int",s_int16,1); }
         | TYPE_S_INT16  { $$=newTypeRec("short int",s_int16,1); }
         | TYPE_S_INT32  { $$=newTypeRec("int",s_int32, 1); }
@@ -419,7 +494,6 @@ Attribution: ID '=' Expression ';'                                              
         | TYPE_FLOAT64  { $$=newTypeRec("double",float64,1); }
         | TYPE_CHAR     { $$=newTypeRec("char",char_,1); }
         | TYPE_STRING   { $$=newTypeRec("char*","string",1); }
-		| ID {}
         | '[' Type ';' VALUE_INT ']' {
                                         // Max algorismos for long long
                                         char value_int[20];
@@ -435,14 +509,39 @@ Attribution: ID '=' Expression ';'                                              
 
                                         $$ = newTypeRec($2->c_code, type, $4);
         }
-        | '&' '[' Type ']' {}
-        | '&' Type {}
+        // let arr : [u_int16; 2] = {0, 1};
+        // let ref : &[u_int16] = &arr;
+        // ref[2]
+        // let int : u_int16 = 0;
+        // let ref : &u_int16 = &int;
+        // | '&' '[' Type ']' {}
+        | '&' Type {
+            char* c_type[] = {$2->c_code, "*"};
+            char* temp[] = {"&", $2->type};
+            char* our_type = cat(temp, 2);
+
+            if (lookup_symbol(typeTable, our_type) == NULL) {
+                insert_symbol(typeTable, our_type, allocTypeRef(our_type, $2->type));
+            }
+
+            $$ = newTypeRec(cat(c_type, 2), our_type, 1);
+        }
         | '('')' {}
         | TYPE_VEC '<' Type '>' {}
         | TYPE_SET '<' Type '>' {}
         | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' {}
         | TYPE_RESULT '<' Type ',' Type '>' {}
         | TYPE_OPTION '<' Type ',' Type '>' {}
+        | ID {
+            SymbolNode* findIDType = lookup_symbol(typeTable, $1);
+            if (findIDType == NULL) {
+                printf("ERROR Line %d: type '%s' not found\n",
+                    yylineno, $1);
+                exit(1);
+            } else {
+                $$ = newTypeRec($1, $1, findIDType->info->size);
+            }
+        }
         ;
 
 	Compare: '<' {
@@ -463,12 +562,8 @@ Attribution: ID '=' Expression ';'                                              
 		   ;
 
 	Literal: VALUE_INT {
-        long long size;
-        if ($1 < 2) {
-            size = 2;
-        } else {
-            size = $1;
-        }
+        long long size = 20;
+
         char VALUE_INT_STRING[size];
         snprintf(VALUE_INT_STRING, sizeof(VALUE_INT_STRING), "%lld", $1);
 
