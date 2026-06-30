@@ -387,7 +387,7 @@ Attribution: ID '=' Expression ';'                                              
 						}; // Guarda em temp as informações da estrutura do while em C simplificado
 						$$ = CreateRecord(cat(temp, 20)); // Realiza o registro da estrutura que deve ser apresentada em C
                     }
-					|  FOR '(' ID  IN Expression INTERVAL Expression ')' { store_var_in_varTable($3, literal_int, MUT); } Scope {
+					|  FOR '(' ID  IN Expression INTERVAL Expression ')' {PushScope(scopeStack,GenerateScope()); store_var_in_varTable($3, literal_int, MUT); } Scope {
 					     char* counter = forCount();
 					     char* tempPrepar[] = {"FOR_PREP_", counter};
 					     char* tempFor[] = {"FOR_", counter};
@@ -410,7 +410,7 @@ Attribution: ID '=' Expression ';'                                              
 					     	"goto ", forLabel, ";\n",
 					     	endFor, ":\n}"
 					     };
-						
+						PopScope(scopeStack);
 						$$ = CreateRecord(cat(temp, 42)); 
                         }
 					|  FOR '(' ID IN Expression ')' Scope{}
