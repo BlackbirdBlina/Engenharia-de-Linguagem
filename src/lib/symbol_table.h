@@ -29,6 +29,13 @@ typedef enum {
     MUT,
     CONSTANT
 } ASSIGN;
+typedef struct SymbolNode SymbolNode;
+typedef struct SymbolInfo SymbolInfo;
+typedef struct SymbolTable SymbolTable;
+
+typedef struct SymbolTable{
+    struct SymbolNode* buckets[TABLE_SIZE];
+} SymbolTable;
 
 typedef struct SymbolInfo {
     type type;
@@ -40,6 +47,7 @@ typedef struct SymbolInfo {
     int conversionsQnt;
 
     LinkedList* typeParams;
+    struct SymbolTable* structFields;
 
     type isRefOf;
 
@@ -50,26 +58,25 @@ typedef struct SymbolInfo {
 typedef struct SymbolNode {
     char* key;
     char* name;
-    SymbolInfo* info;
+    struct SymbolInfo* info;
     struct SymbolNode* next;
 } SymbolNode;
 
-typedef struct {
-    SymbolNode* buckets[TABLE_SIZE];
-} SymbolTable;
 
 extern int global_counter;
 
-SymbolInfo* alloc_type_var(char* type, char* scope, ASSIGN assign);
-SymbolInfo* alloc_type_type(char* type, const char** conversions, int conversionsQnt);
+SymbolInfo* alloc_type_var(type type, char* scope, ASSIGN assign);
+SymbolInfo* alloc_type_type(type type, const char** conversions, int conversionsQnt);
+SymbolInfo* alloc_type_typeStruct(type t, SymbolTable* structFields);
+SymbolInfo* alloc_type_typeStructField(type t);
 SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size);
 SymbolInfo* allocTypeRef(type t, type isRefOf);
-SymbolInfo* alloc_type_func(char* returnType, LinkedList* paramsList);
-void free_type_info(SymbolInfo* info);
+SymbolInfo* alloc_type_func(type returnType, LinkedList* paramsList);
 SymbolTable* create_table();
 unsigned int hash(const char* key);
 void insert_symbol(SymbolTable* table, const char* id, SymbolInfo* info);
 SymbolNode* lookup_symbol(SymbolTable* table, const char* unique_key);
+void free_type_info(SymbolInfo* info);
 void free_table(SymbolTable* table);
 
 #endif

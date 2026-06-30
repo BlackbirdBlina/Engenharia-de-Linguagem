@@ -44,6 +44,18 @@ void attribute_id_expression(Record** $$, ID_t $1, Record* $3) {
     typeCheckIdExpression($1, $3);
     *$$ = CreateRecord(cat(temp, 4));
 }
+void attribute_struct_expression(Record** $$, Record* structAcess, Record* Expression) {
+    char* temp[] = {structAcess->code, " = ", Expression->code, ";"};
+    checkMutable(structAcess->id);
+
+    type checkTypes = checkTypeCompat(structAcess->type, Expression->type, RIGHT_LEFT);
+    if (checkTypes == NULL) {
+        printf("ERROR Line %d: \"%s\" expects \"%s\", received \"%s\"\n",
+               yylineno, structAcess->code, structAcess->type, Expression->type);
+        exit(1);
+    }
+    *$$ = CreateRecord(cat(temp, 4));
+}
 
 void attribute_array_expression(Record** $$, Record* Array_, Record* Expression_) {
 

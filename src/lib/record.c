@@ -70,6 +70,13 @@ Record* CreateRecordArrayAcess(char* code, int sizeOfArrayAcess) {
     record->returnType = NULL;
     return record;
 }
+Record* CreateRecordAttributes(char* code,SymbolTable* fields){
+    Record* record = (Record*)malloc(sizeof(Record));
+    record->code = strdup(code);
+    record->returnType = NULL;
+    record->structFields=fields;
+    return record;
+}
 void FreeRecord(Record* record) {
     if (record) {
         if (record->code != NULL)

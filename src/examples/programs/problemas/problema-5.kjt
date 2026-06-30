@@ -1,0 +1,32 @@
+proced mdc(n:u_int16, m:u_int16 , r:&u_int16 ){
+    if(n%m==0){
+        r[0]=m;
+        return;
+    }
+    if(m%n==0){
+        r[0]=n;
+        return;
+    }
+    if(m>n){
+        mdc(n,m%n,r);
+    }
+    else{
+        mdc(m,n%m,r);
+    }
+}
+
+
+func main()->s_int32{
+    print<<"Escreva os valores para o cálculo do mdc";
+    let mut n:u_int16;
+    let mut m:u_int16;
+    input>>n>>m;
+    if(n==0 || m==0){
+        print<<"Os valores devem ser positivos";
+        return 1;
+    }
+    let mut r:&u_int16=reserve(u_int16,1);
+    mdc(n,m,r);
+    let mut resultado:u_int16=r[0];
+    print<<"O resultado é: "<<resultado;
+}

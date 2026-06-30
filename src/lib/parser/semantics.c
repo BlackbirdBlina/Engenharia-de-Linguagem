@@ -232,6 +232,11 @@ ASSIGN getVarAssign(ID_t var) {
 }
 str getCurrentScopeName() { return scopeStack->top->scopeName; }
 void store_var_in_varTable(ID_t varID, type type, ASSIGN assign) {
+    if (search_var_in_currentScope(varID)) {
+        printf("ERROR Line %d: \"%s\" was already declared\n",
+               yylineno, varID);
+        exit(1);
+    }
     char* tempVarAndScope[] = {varID, getCurrentScopeName()};
     insert_symbol(varTable, cat(tempVarAndScope, 2),
                   alloc_type_var(type, getCurrentScopeName(), assign));

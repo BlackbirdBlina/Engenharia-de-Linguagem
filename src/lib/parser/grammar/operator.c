@@ -11,7 +11,7 @@ void handleOperandTypes(Record** $$, Record* expression1, Record* expression2, c
     if (!checkTypeCompat(expectedOperandType, expression1->type, BOTH) || !checkTypeCompat(expectedOperandType, expression2->type, BOTH)) {
         printf("ERROR Line %d: incompatible types with operator'%s'\n",
                yylineno, operator);
-        exit(0);
+        exit(1);
     }
 
     char* temp2 = checkTypeCompat(expression1->type, expression2->type, BOTH);

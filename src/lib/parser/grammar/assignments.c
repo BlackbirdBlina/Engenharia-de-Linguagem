@@ -108,11 +108,6 @@ void let__equal_array(Record** $$, Record* varTyped, ArrayType* arrayDecl, ASSIG
 }
 
 void let__equal_without_exp(Record** $$, Record* varTyped, ASSIGN a) {
-    if (search_var_in_currentScope(varTyped->id)) {
-        printf("ERROR Line %d: \"%s\" was already declared\n",
-               yylineno, varTyped->id);
-        exit(1);
-    }
     char* temp[] = {varTyped->code, ";"};
     store_var_in_varTable(varTyped->id, varTyped->type, a);
     *$$ = CreateRecord(cat(temp, 2));

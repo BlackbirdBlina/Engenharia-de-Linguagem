@@ -13,6 +13,7 @@ SymbolInfo* alloc_type_var(type t, char* scope, ASSIGN assign) {
     symbolInfo->assign = assign;
     symbolInfo->isArrayOf = NULL;
     symbolInfo->isRefOf = NULL;
+    symbolInfo->structFields = NULL;
     return symbolInfo;
 }
 SymbolInfo* allocTypeRef(type t, type isRefOf) {
@@ -25,6 +26,7 @@ SymbolInfo* allocTypeRef(type t, type isRefOf) {
     symbolInfo->size = 0;
     symbolInfo->conversions = NULL;
     symbolInfo->conversionsQnt = 0;
+    symbolInfo->structFields = NULL;
     return symbolInfo;
 }
 SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size) {
@@ -38,6 +40,7 @@ SymbolInfo* allocTypeArray(type t, type isArrayOf, long long size) {
     symbolInfo->size = size;
     symbolInfo->conversions = NULL;
     symbolInfo->conversionsQnt = 0;
+    symbolInfo->structFields = NULL;
     return symbolInfo;
 }
 SymbolInfo* alloc_type_type(type t, const char** conversions, int conversionsQnt) {
@@ -59,6 +62,32 @@ SymbolInfo* alloc_type_type(type t, const char** conversions, int conversionsQnt
     symbolInfo->isArrayOf = NULL;
     symbolInfo->isRefOf = NULL;
     symbolInfo->size = 0;
+    symbolInfo->structFields = NULL;
+    return symbolInfo;
+}
+SymbolInfo* alloc_type_typeStructField(type t){
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
+    if (!symbolInfo) {
+        return NULL;
+    }
+    symbolInfo->type = t;
+    symbolInfo->conversionsQnt = 0;
+    symbolInfo->isArrayOf = NULL;
+    symbolInfo->isRefOf = NULL;
+    symbolInfo->size = 0;
+    symbolInfo->structFields = NULL;
+}
+SymbolInfo* alloc_type_typeStruct(type t, SymbolTable* structFields) {
+    SymbolInfo* symbolInfo = (SymbolInfo*)malloc(sizeof(SymbolInfo));
+    if (!symbolInfo) {
+        return NULL;
+    }
+    symbolInfo->type = t;
+    symbolInfo->conversionsQnt = 0;
+    symbolInfo->isArrayOf = NULL;
+    symbolInfo->isRefOf = NULL;
+    symbolInfo->size = 0;
+    symbolInfo->structFields = structFields;
     return symbolInfo;
 }
 SymbolInfo* alloc_type_func(type returnType, LinkedList* paramsList) {
@@ -70,7 +99,7 @@ SymbolInfo* alloc_type_func(type returnType, LinkedList* paramsList) {
     symbolInfo->typeParams = paramsList;
     symbolInfo->isArrayOf = NULL;
     symbolInfo->isRefOf = NULL;
-
+    symbolInfo->structFields = NULL;
     return symbolInfo;
 }
 unsigned int hash(const char* key) {

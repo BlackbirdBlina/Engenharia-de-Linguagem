@@ -3,13 +3,14 @@
 
 #include "linked_list.h"
 #include "parser/types.h"
-
+#include "symbol_table.h"
 struct Record {
     c_code code;
     type type;
     char* id;
 
     LinkedList* paramsTypes;
+    SymbolTable* structFields;
     type returnType;
 
     char* IOPrefix;
@@ -44,6 +45,7 @@ Record* CreateRecordFunc(char* code, LinkedList* paramsTypes, char* returnType);
 Record* CreateRecordFuncParams(char* code, LinkedList* paramsTypes);
 Record* CreateRecordIO(char* code, char* prefix, char* sufix);
 Record* CreateRecordArrayAcess(char* code,int sizeOfArrayAcess);
+Record* CreateRecordAttributes(char* code,SymbolTable* fields);
 
 void FreeRecord(Record*);
 #endif

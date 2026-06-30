@@ -45,9 +45,9 @@ extern FILE * yyin, * yyout;
 %token RESERVE
 
 %type <rec> SubProgram Main Params VarTyped VarTypedList Scope Statements Statement Return Assignment Attribution IncrOrDecr
-%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 IDs List Print Input
-%type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf Pattern
-%type <rec> MatchStructures MaybeType StructDecl Attributes EnumDecl Variants Compare Literal
+%type <rec> Array ArrayAccesses Expression AuxExp1 AuxExp2 AuxExp3 AuxExp4 AuxExp5 AuxExp6 AuxExp7 AuxExp8 StructAcess List Print Input
+%type <rec> SubprogramCall MaybeParams ParamsToCall ElementSequence RepeatStructures DecisionStructures ElseIf 
+%type <rec> StructDecl Attributes EnumDecl Variants Compare Literal
 %type <rec> ReserveMem
 %type <typeRec> Type
 // EXAMPLE:
@@ -82,9 +82,9 @@ extern FILE * yyin, * yyout;
 		 }
 		 ;
     
-	SubProgram: FUNCTION ID '(' Params ')' ARROW Type Scope         { FUNCTION_Decl(&$$, $2, $4, $7, $8); }
-			  | PURE FUNCTION ID '(' Params ')' ARROW Type Scope    { PURE_FUNCTION_Decl(&$$, $3, $5, $8, $9); }
-			  | PROCEDURE ID '(' Params ')' Scope                   { PROCEDURE_Decl(&$$, $2, $4, $6); }
+	SubProgram: FUNCTION ID '(' {PushScope(scopeStack,GenerateScope());} Params ')' ARROW Type{SUBPROGRAM_PREDecl($2,$5,$8);}Scope{ FUNCTION_Decl(&$$, $2, $5, $8, $10);PopScope(scopeStack); }
+			  | PURE FUNCTION ID '(' {PushScope(scopeStack,GenerateScope());} Params ')' ARROW Type {SUBPROGRAM_PREDecl($3,$6,$9);}Scope{ PURE_FUNCTION_Decl(&$$, $3, $6, $9, $11);PopScope(scopeStack); }
+			  | PROCEDURE ID '(' {PushScope(scopeStack,GenerateScope());} Params ')' {PROCEDURE_PREDecl($2,$5);}Scope{ PROCEDURE_Decl(&$$, $2, $5, $8);PopScope(scopeStack); }
 			  ;
 	Main: FUNCTION MAIN '(' Params ')' ARROW Type Scope {
             char* temp[]={"int main() ", $8->code};
@@ -157,7 +157,7 @@ extern FILE * yyin, * yyout;
               | LET MUTABLE STRUCT ID '=' ID '{' ElementSequence '}' ';' {}
               ;
 Attribution: ID '=' Expression ';'                                                        { attribute_id_expression(&$$, $1, $3); }
-           | ID '.' ID '=' Expression ';'                                                 { }
+           | StructAcess'=' Expression ';'                                                { attribute_struct_expression(&$$,$1,$3); }
            | ID PLUS_ATTRIBUTION Expression ';'                                           { }
            | ID MINUS_ATTRIBUTION Expression ';' {  }
            | ID MULTIPLY_ATTRIBUTION Expression ';' {  }
@@ -212,7 +212,9 @@ Attribution: ID '=' Expression ';'                                              
     | AuxExp8{$$=CreateRecordType($1->code,$1->type);}
     ;
 
-	AuxExp8: IDs {$$=CreateRecordType($1->code,$1->type);}
+	AuxExp8: ID {
+	   			checkVarScope($1);
+				$$=CreateRecordType($1,getVarType($1));}
 		   | Literal {$$=CreateRecordType($1->code,$1->type);}
 		   | '(' Expression ')' {char* temp[]={"(",$2->code,")"};
 								$$=CreateRecordType(cat(temp,3),$2->type);
@@ -233,10 +235,7 @@ Attribution: ID '=' Expression ';'                                              
 
                 $$ = CreateRecordType(c_code, t);
            }
-           | '&' ID '[' INTERVAL ID ']' {} // TALVEZ IDs?
-           | '&' ID '[' ID INTERVAL ']' {}// TALVEZ IDs?
-           | '&' ID '[' INTERVAL VALUE_INT ']' {}
-           | '&' ID '[' VALUE_INT INTERVAL ']' {}
+		   | StructAcess {}
 		   | SubprogramCall {$$=CreateRecordType($1->code,$1->type);}
            | List {}
            // let mut var : &u_int16 = reserve(sizeof(u_int16), 2);
@@ -307,16 +306,27 @@ Attribution: ID '=' Expression ';'                                              
                  | ArrayDecl                            { $$ = newArrayType($1->content, $1->type, 1); }
                  ;
 
-    IDs:
-        ID '.' IDs {
-            char* temp[] = {$1, ".", $3->code};
-            $$ = CreateRecord(cat(temp, 3));
+    StructAcess:
+        ID '.' ID {
+            checkVarScope($1);
+			char* varType=getVarType($1);
+			SymbolInfo* typeInfo= lookup_symbol(typeTable,varType)->info;
+			if(typeInfo->structFields!=NULL){
+				if(lookup_symbol(typeInfo->structFields,$3)!=NULL){
+					char* temp[]={$1,".",$3};
+					$$=CreateRecordVarTyped(cat(temp,3),lookup_symbol(typeInfo->structFields,$3)->info->type,$1);
+				}
+				else{
+					printf("ERROR line%d:The variable \"%s\" has tipe \"%s\" and \"%s\"dont have the field\"%s\"",yylineno,$1,varType,varType,$3);
+					exit(1);
+				}
+			}
+			else{
+				printf("ERROR line%d:The variable \"%s\" has tipe \"%s\" and \"%s\" dont have fields",yylineno,$1,varType,varType);
+				exit(1);
+			}
         }
-        | ID {
-            SymbolNode* id = lookup_symbol(varTable, $1);
-	   		checkVarScope($1);
-			$$=CreateRecordType($1,getVarType($1));
-        }
+        
         ;
 		   
     List: '[' ']' {}
@@ -408,6 +418,11 @@ Attribution: ID '=' Expression ';'                                              
 					;
 					
 	DecisionStructures: IF '(' Expression ')' Scope {
+						if(checkTypeCompat($3->type,bool_,LEFT_RIGHT)==NULL){
+							printf("ERROR Line %d: The If expected a boolean expression",
+               				yylineno);
+							exit(1);
+						}
 						char* counter = ifCount();
 						char* tempif[] = {"IF_SCOPE", counter};
 						char* tempend[] = {"ENDIF_", counter};
@@ -422,6 +437,11 @@ Attribution: ID '=' Expression ';'                                              
 						$$ = CreateRecord(cat(temp, 16));
                         }
 					  | IF '(' Expression ')' Scope ELSE Scope {
+						if(checkTypeCompat($3->type,bool_,LEFT_RIGHT)==NULL){
+							printf("ERROR Line %d: The If expected a boolean expression",
+               				yylineno);
+							exit(1);
+						}
 						char* counter = ifCount();
 						char* tempif[] = {"IF_", counter};
 						char* tempend[] = {"ENDIF_", counter};
@@ -442,7 +462,6 @@ Attribution: ID '=' Expression ';'                                              
 					  | IF '(' Expression ')' Scope ElseIf {char* temp[]={"if(",$3->code,")",$5->code,$6->code};
 									   		  				$$=CreateRecord(cat(temp,5));
                                                             }
-					  | MATCH '(' Pattern ')' '{' MatchStructures '}' {}
 					  ;
 
 	ElseIf: ELSE IF '(' Expression ')' Scope ElseIf {char* temp[]={"else{ if(",$4->code,")",$6->code,$7->code,"}"};
@@ -452,26 +471,28 @@ Attribution: ID '=' Expression ';'                                              
 		  												$$=CreateRecord(cat(temp,7));
                                                         }
 		  ;
-	
-	Pattern: Expression{}
-		   ;
 
-	MatchStructures: MatchStructure ',' MatchStructures{}
-				   | {}
-				   ;
 
-	MatchStructure: MaybeType ARROW Scope{}
-			  	  ;
-				  
-	MaybeType: Type '[' ID ']'{}
-		     | Type{}
-		     ;
-
-	StructDecl: STRUCT ID '{' Attributes '}'{}
+	StructDecl: STRUCT ID '{' Attributes '}'{char* temp[]={" typedef struct {",$4->code,"}",$2,";"};
+											$$=CreateRecord(cat(temp,5));
+											if (lookup_symbol(typeTable, $2) == NULL) {
+                								insert_symbol(typeTable, $2,alloc_type_typeStruct($2,$4->structFields));
+        									}
+											else{
+												printf("ERROR: the type \" %s\" already exist",$2);	
+												exit(1);
+											}}
 	          ;
 
-	Attributes: VarTyped ',' Attributes {}
-		      | VarTyped ',' {}
+	Attributes: VarTyped ',' Attributes {char* temp[] = {$1->code, ";", $3->code};
+										insert_symbol($3->structFields,$1->id,alloc_type_typeStructField($1->type));
+										$$ = CreateRecordAttributes(cat(temp, 3), $3->structFields);}
+		      | VarTyped ',' {
+								SymbolTable* attributesTypes = create_table();
+    							insert_symbol(attributesTypes, $1->id,alloc_type_typeStructField($1->type));
+								char* temp[] = {$1->code, ";"};
+    							$$ = CreateRecordAttributes(cat(temp,2), attributesTypes);
+			  			     }
 		      ;
 
 	EnumDecl: ENUM ID '{' Variants '}' {}
@@ -481,15 +502,13 @@ Attribution: ID '=' Expression ';'                                              
 			| ID ',' {}
 			;
 
-	Type: TYPE_BOOL     { $$=newTypeRec("short int",s_int16,1); }
+	Type: TYPE_BOOL     { $$=newTypeRec("bool",bool_,1); }
         | TYPE_S_INT16  { $$=newTypeRec("short int",s_int16,1); }
         | TYPE_S_INT32  { $$=newTypeRec("int",s_int32, 1); }
         | TYPE_S_INT64  { $$=newTypeRec("long long int",s_int64,1); }
-        | TYPE_S_SIZE  // {}
         | TYPE_U_INT16  { $$ = newTypeRec("unsigned short int", u_int16, 1); }
         | TYPE_U_INT32  { $$ = newTypeRec("unsigned int", u_int32, 1); }
         | TYPE_U_INT64  { $$=newTypeRec("unsigned long long int",u_int64,1); }
-        | TYPE_U_SIZE   {}
         | TYPE_FLOAT32  { $$=newTypeRec("float",float32,1); }
         | TYPE_FLOAT64  { $$=newTypeRec("double",float64,1); }
         | TYPE_CHAR     { $$=newTypeRec("char",char_,1); }
@@ -526,12 +545,6 @@ Attribution: ID '=' Expression ';'                                              
 
             $$ = newTypeRec(cat(c_type, 2), our_type, 1);
         }
-        | '('')' {}
-        | TYPE_VEC '<' Type '>' {}
-        | TYPE_SET '<' Type '>' {}
-        | TYPE_MATRIX '<' Type ';' VALUE_INT ';' VALUE_INT '>' {}
-        | TYPE_RESULT '<' Type ',' Type '>' {}
-        | TYPE_OPTION '<' Type ',' Type '>' {}
         | ID {
             SymbolNode* findIDType = lookup_symbol(typeTable, $1);
             if (findIDType == NULL) {

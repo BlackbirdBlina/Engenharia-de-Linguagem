@@ -76,40 +76,40 @@ void checkReturn(SUBPROGRAM_TYPE subType, str ID, type ScopeReturnType, type Typ
     }
 }
 
+void SUBPROGRAM_PREDecl( ID_t ID, Record* Params, TypeRec* Type){
+    store_func_in_funcTable(ID, Params->paramsTypes, Type->type);
+}
+void PROCEDURE_PREDecl( ID_t ID, Record* Params){
+    store_func_in_funcTable(ID, Params->paramsTypes, void_);
+}
 void FUNCTION_Decl(Record** $$, ID_t ID, Record* Params, TypeRec* Type, Record* Scope) {
     checkReturn(FUNCTION_t, ID, Scope->returnType, Type->type);
-
     char* temp[] = {Type->c_code, " ", ID, "(", Params->code, ")", Scope->code};
     *$$ = CreateRecordFunc(cat(temp, 7), Params->paramsTypes, Type->type);
-
-    store_func_in_funcTable(ID, Params->paramsTypes, Type->type);
 }
 
 void PURE_FUNCTION_Decl(Record** $$, ID_t ID, Record* Params, TypeRec* Type, Record* Scope) {
     checkReturn(PURE_FUNCTION_t, ID, Scope->returnType, Type->type);
-
     char* temp[] = {Type->c_code, " ", ID, "(", Params->code, ")", Scope->code};
     *$$ = CreateRecordFunc(cat(temp, 7), Params->paramsTypes, Type->type);
-    store_func_in_funcTable(ID, Params->paramsTypes, Type->type);
 }
 
 void PROCEDURE_Decl(Record** $$, ID_t ID, Record* Params, Record* Scope) {
     checkReturn(PROCEDURE_t, ID, Scope->returnType, void_);
-
     char* temp[] = {"void", " ", ID, "(", Params->code, ")", Scope->code};
     *$$ = CreateRecordFunc(cat(temp, 7), Params->paramsTypes, "");
-
-    store_func_in_funcTable(ID, Params->paramsTypes, void_);
 }
 
 void VarTypedList_Chain(Record** $$, Record* VarTyped, Record* VarTypedList) {
     char* temp[] = {VarTyped->code, ",", VarTypedList->code};
+    store_var_in_varTable(VarTyped->id, VarTyped->type, MUT);
     PushElement(VarTypedList->paramsTypes, CreateNodeInfo(VarTyped->type));
     *$$ = CreateRecordFuncParams(cat(temp, 3), VarTypedList->paramsTypes);
 }
 
 void VarTypedList_Single(Record** $$, Record* VarTyped) {
     LinkedList* paramsTypes = CreateLinkedList();
+    store_var_in_varTable(VarTyped->id, VarTyped->type, MUT);
     PushElement(paramsTypes, CreateNodeInfo(VarTyped->type));
     *$$ = CreateRecordFuncParams(VarTyped->code, paramsTypes);
 }

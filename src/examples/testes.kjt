@@ -1,8 +1,8 @@
-func main() -> s_int32 {
-    // let a : [[s_int32; 2]; 2] = { {1, 2} , {3, 4} };
-    // let c : [s_int32; 2] = a[0][0];
+struct racional_t{
+    numerador:s_int32,
+    denominador:s_int32,
+}
 
-    let mut b : [a; 2] = { 1, 2 };
-
-    b[0] = 10;
+func main()->s_int32{
+    let mut oi:racional_t;
 }
