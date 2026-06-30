@@ -589,6 +589,7 @@ int yyerror (char *msg) {
 }
 
 int main (int argc, char ** argv) {
+    printf("\033[1;31m");
  	int codigo;
     if (argc != 3) {
        printf("Usage: $./compiler input.txt output.txt\nClosing application...\n");
@@ -604,6 +605,7 @@ int main (int argc, char ** argv) {
 
     fclose(yyin);
     fclose(yyout);
+    printf("\033[0m");
 
     
 	return codigo;
